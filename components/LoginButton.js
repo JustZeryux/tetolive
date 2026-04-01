@@ -49,8 +49,11 @@ export default function LoginButton() {
           <span className="text-white font-bold text-sm">
             {user.user_metadata?.custom_claims?.global_name || user.user_metadata?.name || 'Usuario'}
           </span>
-          <button 
-            onClick={handleLogout} 
+           <button 
+            onClick={async () => {
+              const { error } = await supabase.auth.signOut();
+              if (error) console.error("Error al cerrar sesión:", error.message);
+            }} 
             className="text-red-400 text-[10px] font-bold tracking-widest uppercase hover:text-red-300 text-right"
           >
             SALIR
