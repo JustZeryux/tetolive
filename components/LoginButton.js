@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { supabase } from '../utils/Supabase.js';
+import { supabase } from '../utils/Supabase';
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
