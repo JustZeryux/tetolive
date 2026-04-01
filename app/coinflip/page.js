@@ -43,6 +43,7 @@ export default function BloxypotCoinflip() {
   const [partidaSeleccionada, setPartidaSeleccionada] = useState(null); 
   const [selectedPetsToJoin, setSelectedPetsToJoin] = useState([]);
   const [modalJoinAbierto, setModalJoinAbierto] = useState(false);
+  const [mostrarImpacto, setMostrarImpacto] = useState(false); //
 
   // Lobby Fake (Para que haya contra quién jugar)
   const [lobbyGames, setLobbyGames] = useState([
@@ -166,36 +167,49 @@ export default function BloxypotCoinflip() {
     setSelectedPetsToJoin(selected);
   };
 
-  const confirmarUnionYJugar = () => {
+const confirmarUnionYJugar = () => {
     if (!dataJoinValidacion.valida) return alert("Pets are outside the 2% range!");
     
     const partidaActualizada = {
         ...partidaSeleccionada,
         challenger: 'NinjaUser (You)',
         petsChallenger: selectedPetsToJoin,
-        estado: 'playing' // Cambiamos el estado
+        estado: 'playing' 
     };
     
-    // ¡FIX CRÍTICO! Actualizamos el array global para que el Lobby lo refleje
     setLobbyGames(prev => prev.map(g => g.id === partidaActualizada.id ? partidaActualizada : g));
-    
     setPartidaSeleccionada(partidaActualizada);
     setModalJoinAbierto(false); 
     setVistaActual('arena'); 
+    
+    // Reseteamos estados visuales
     setGirando(true); 
     setGanador(null);
+    setMostrarImpacto(false);
 
-    // Animación de la moneda
+    // Animación de la moneda sincronizada
     setTimeout(() => {
       setRotacion(prevRotacion => {
-        const ganaHeads = Math.random() < 0.5;
-        const vueltasBase = prevRotacion + 3600; // Da 10 vueltas
-        const nuevaRot = ganaHeads ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
+        // En tu versión final, esto vendrá del backend. Por ahora simulamos:
+        const ganaHeads = Math.random() < 0.5; 
         
+        // Damos MUCHAS más vueltas (física de tensión)
+        const vueltasBase = prevRotacion + 3600; 
+        
+        // Calculamos la cara exacta en la que debe caer
+        const nuevaRot = ganaHeads 
+            ? vueltasBase + (360 - (vueltasBase % 360)) 
+            : vueltasBase + (180 - (vueltasBase % 360)) + 360;
+        
+        // 1. Esperamos a que la moneda TERMINE DE CAER (ej. 4 segundos de física)
         setTimeout(() => { 
             setGirando(false); 
             setGanador(ganaHeads ? 'Heads' : 'Tails'); 
-        }, 3500);
+            
+            // 2. Detonamos el efecto de impacto milisegundos después de que aterrice
+            setTimeout(() => setMostrarImpacto(true), 150);
+            
+        }, 4000); // <-- Este tiempo DEBE coincidir con la transición CSS abajo
 
         return nuevaRot;
       });
@@ -441,29 +455,40 @@ export default function BloxypotCoinflip() {
                         </div>
                     </div>
 
-                    {/* CENTRO: LA MONEDA 3D */}
-                    <div className="w-[30%] flex justify-center items-center relative z-20">
-                        <div className="relative w-40 h-40 md:w-56 md:h-56 perspective-1000">
-                            <div 
-                                className="w-full h-full relative preserve-3d transition-transform"
-                                style={{
-                                    transitionDuration: girando ? '3.5s' : '0s',
-                                    transitionTimingFunction: 'cubic-bezier(0.1, 0.7, 0.1, 1)',
-                                    transform: `rotateY(${rotacion}deg)`
-                                }}
-                            >
-                                {/* Cara Frontal (Heads) */}
-                                <div className="absolute w-full h-full backface-hidden rounded-full border-4 border-[#facc15] bg-[#0b0e14] shadow-[0_0_40px_rgba(250,204,21,0.4)] flex items-center justify-center">
-                                    <img src={imgMonedaHeads} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Heads" />
-                                </div>
-                                {/* Cara Trasera (Tails) */}
-                                <div className="absolute w-full h-full backface-hidden rounded-full border-4 border-[#a855f7] bg-[#0b0e14] shadow-[0_0_40px_rgba(168,85,247,0.4)] flex items-center justify-center rotate-y-180">
-                                    <img src={imgMonedaTails} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Tails" />
-                                </div>
-                                <div className="absolute w-full h-full rounded-full bg-gradient-to-r from-gray-300 via-gray-100 to-gray-300" style={{ transform: 'translateZ(-2px)', zIndex: -1 }}></div>
-                            </div>
-                        </div>
-                    </div>
+                    {/* Contenedor Principal de Animación */}
+<div className="relative flex justify-center items-center h-64 my-10">
+  
+  {/* Efecto de Impacto Expansivo (Solo se activa al caer) */}
+  <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[80px] rounded-full transition-all duration-700 ease-out z-0 ${mostrarImpacto ? 'opacity-60 scale-150' : 'opacity-0 scale-50'}`}></div>
+
+  {/* La Moneda con físicas de salto y rotación */}
+  <div className="relative w-40 h-40 md:w-56 md:h-56 perspective-1000 z-10"
+       style={{
+         // Simulamos que la moneda salta hacia arriba y vuelve a caer
+         transform: girando ? 'translateY(-60px) scale(1.1)' : 'translateY(0px) scale(1)',
+         transition: girando ? 'transform 2s cubic-bezier(0.25, 1, 0.5, 1)' : 'transform 1s cubic-bezier(0.5, 0, 0.2, 1)'
+       }}
+  >
+    <div className="w-full h-full relative preserve-3d"
+      style={{
+        transitionDuration: girando ? '4s' : '0s', // Coincide con el setTimeout de 4000ms
+        transitionTimingFunction: 'cubic-bezier(0.1, 0.8, 0.1, 1)', // Empieza rápido, termina lento
+        transform: `rotateY(${rotacion}deg)`
+      }}
+    >
+      {/* Cara Frontal (Heads) */}
+      <div className={`absolute w-full h-full backface-hidden rounded-full border-4 bg-[#0b0e14] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_60px_rgba(250,204,21,1)]' : 'border-[#3f4354] shadow-none'}`}>
+        <img src={imgMonedaHeads} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Heads" />
+      </div>
+      
+      {/* Cara Trasera (Tails) */}
+      <div className={`absolute w-full h-full backface-hidden rounded-full border-4 bg-[#0b0e14] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_60px_rgba(168,85,247,1)]' : 'border-[#3f4354] shadow-none'}`}
+           style={{ transform: 'rotateY(180deg)' }}>
+        <img src={imgMonedaTails} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Tails" />
+      </div>
+    </div>
+  </div>
+</div>
 
                     {/* Lado Derecho (Challenger) */}
                     <div className={`w-[35%] flex flex-col items-center transition-opacity duration-500 ${ganador && ganador === partidaSeleccionada.lado ? 'opacity-30 grayscale' : ''}`}>
