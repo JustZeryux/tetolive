@@ -4,61 +4,76 @@ import { supabase } from '../utils/Supabase';
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Comprobar si ya hay una sesión activa al cargar la página
   useEffect(() => {
-    const checkUser = async () => {
+    // 1. Obtener la sesión inicial
+    const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
+      setLoading(false);
     };
-    checkUser();
 
-    // Escuchar cambios (cuando inicia o cierra sesión)
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    getInitialSession();
 
-    return () => authListener.subscription.unsubscribe();
+    // 2. Escuchar cambios de autenticación (Login/Logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        console.log("Estado de Auth cambiado:", _event, session?.user); // <-- Esto te ayudará a debuggear
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        // Esto redirigirá de vuelta a tu página principal después del login
+        // Es vital que redirectTo sea exactamente la URL de tu sitio en Cloudflare
         redirectTo: window.location.origin, 
       },
     });
+    if (error) console.error("Error al iniciar sesión:", error.message);
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("Error al cerrar sesión:", error.message);
   };
 
+  if (loading) {
+    return <div className="text-gray-400 text-sm animate-pulse">Cargando...</div>;
+  }
+
   if (user) {
-    // Si está logueado, mostramos su foto y botón de salir
     return (
-      <div className="flex items-center gap-4">
-        <img 
-          src={user.user_metadata.avatar_url} 
-          alt="Avatar" 
-          className="w-10 h-10 rounded-full border-2 border-[#1E2532]"
-        />
-        <div className="flex flex-col">
-          <span className="text-white font-bold">{user.user_metadata.custom_claims?.global_name || 'Usuario'}</span>
-          <button onClick={handleLogout} className="text-red-400 text-xs text-left hover:text-red-300">
-            Cerrar Sesión
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col text-right">
+          <span className="text-white font-bold text-sm">
+            {user.user_metadata?.custom_claims?.global_name || user.user_metadata?.name || 'Usuario'}
+          </span>
+          <button 
+            onClick={handleLogout} 
+            className="text-red-400 text-[10px] font-bold tracking-widest uppercase hover:text-red-300 text-right"
+          >
+            SALIR
           </button>
         </div>
+        <img 
+          src={user.user_metadata?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=fallback"} 
+          alt="Avatar" 
+          className="w-10 h-10 rounded-full bg-[#222630] border-2 border-[#facc15]"
+        />
       </div>
     );
   }
 
-  // Si no está logueado, mostramos el botón de Discord
   return (
     <button 
       onClick={handleLogin}
-      className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-2 px-4 rounded transition-colors"
+      className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-2 px-4 rounded text-sm transition-colors"
     >
       Login con Discord
     </button>
