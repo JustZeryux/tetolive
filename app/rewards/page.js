@@ -37,10 +37,22 @@ export default function RewardsPage() {
     alert("Rakeback claimed! Added to your Green Balance.");
   };
 
-  const openDaily = (caja) => {
-    if (caja.status === 'locked') return alert(`You need Level ${caja.levelReq} to open this case.`);
-    if (caja.status === 'claimed') return alert("You already claimed this today. Come back tomorrow!");
-    alert(`Opening ${caja.name}...`);
+  const openDaily = async (caja) => {
+    if (caja.status === 'locked') return alert(`Necesitas nivel ${caja.levelReq} para abrir esta caja.`);
+    if (caja.status === 'claimed') return alert("Ya reclamaste esto hoy. ¡Vuelve mañana!");
+
+    // Llamada real a Supabase
+    const { data, error } = await supabase.rpc('claim_daily_reward');
+
+    if (error) {
+      alert("❌ Error: " + error.message);
+    } else if (data && data.success) {
+      alert(`🎉 ¡Felicidades! Abriste la ${caja.name} y ganaste una mascota de $${data.value.toLocaleString()}`);
+      // Aquí podrías recargar la página o actualizar el estado para que salga como 'claimed'
+      window.location.reload(); 
+    } else {
+      alert(`⏳ ${data.message}`);
+    }
   };
 
   return (
