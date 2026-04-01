@@ -28,20 +28,15 @@ export default function LoginButton() {
   }, []);
 
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'discord',
-      options: {
-        // Es vital que redirectTo sea exactamente la URL de tu sitio en Cloudflare
-        redirectTo: window.location.origin, 
-      },
-    });
-    if (error) console.error("Error al iniciar sesión:", error.message);
-  };
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error("Error al cerrar sesión:", error.message);
-  };
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'discord',
+          options: {
+            redirectTo: window.location.origin, 
+            scopes: 'identify email', // <-- AGREGA ESTA LÍNEA AQUÍ
+          },
+        });
+        if (error) console.error("Error al iniciar sesión:", error.message);
+      };
 
   if (loading) {
     return <div className="text-gray-400 text-sm animate-pulse">Cargando...</div>;
