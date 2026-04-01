@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import LoginButton from './LoginButton'; // Ajusta la ruta si está en otra carpeta
 
 // Importa las bellezas que creamos
 import EpicToasts from '@/components/EpicToasts';
@@ -174,13 +175,9 @@ export default function CasinoLayout({ children }) {
               DEPOSIT
             </button>
 
-            {/* SECCIÓN DEL PERFIL DE USUARIO */}
+            {/* SECCIÓN DEL PERFIL DE USUARIO CONECTADO A SUPABASE */}
             <div className="flex items-center gap-3 pl-2 md:pl-4 border-l border-[#222630]">
-              <div className="hidden md:block text-right cursor-pointer hover:opacity-80 transition-opacity">
-                <p className="text-white font-bold text-sm">NinjaUser</p>
-                <p className="text-[#7c8291] text-[10px] font-black tracking-widest uppercase">LVL 42</p>
-              </div>
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=NinjaUser" alt="Avatar" className="w-10 h-10 rounded-full bg-[#222630] border-2 border-[#facc15] cursor-pointer hover:opacity-80" />
+              <LoginButton />
             </div>
 
             {/* BOTÓN DE AJUSTES ⚙️ */}
