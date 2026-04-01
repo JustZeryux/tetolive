@@ -24,3 +24,40 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+/* Animación 3D para el Coinflip */
+.coin-container {
+  perspective: 1000px;
+}
+.coin-3d {
+  width: 150px;
+  height: 150px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efecto de rebote al frenar */
+}
+.coin-side {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  font-weight: 900;
+  backface-visibility: hidden;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 20px rgba(0,0,0,0.3);
+}
+.coin-t {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: 4px solid #fbbf24;
+}
+.coin-ct {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  transform: rotateY(180deg);
+  border: 4px solid #60a5fa;
+}

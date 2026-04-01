@@ -1,0 +1,6930 @@
+[
+  {
+    "id": 1,
+    "nombre": "Mythic OG Giant Robot",
+    "valor": 18000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-giant-robot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 2,
+    "nombre": "Mythic Mirror Gem",
+    "valor": 17500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mirror-gem.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 3,
+    "nombre": "Mythic Easter Basket",
+    "valor": 16500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-basket.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 4,
+    "nombre": "Mythic True Titan",
+    "valor": 16000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-true-titan.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 5,
+    "nombre": "Mythic Festive Basket",
+    "valor": 14250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-festive-basket.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 6,
+    "nombre": "Mythic Giant Chocolate Chicken",
+    "valor": 13500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-chocolate-chicken.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 7,
+    "nombre": "Mythic Trophy",
+    "valor": 12000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-trophy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 8,
+    "nombre": "Mythic The Missing Ones",
+    "valor": 11000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-missing-ones.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 9,
+    "nombre": "Mythic Magic Marshmallow",
+    "valor": 10000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-magic-marshmallow.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 10,
+    "nombre": "Mythic Supreme Seraphim",
+    "valor": 9500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-supreme-seraphim.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 11,
+    "nombre": "Mythic Christmas Robot",
+    "valor": 9000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-christmas-robot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 12,
+    "nombre": "Mythic Radiant One",
+    "valor": 8500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-radiant-one.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 13,
+    "nombre": "Mythic Immortal One",
+    "valor": 8250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-immortal-one.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 14,
+    "nombre": "Mythic The Puppeteer",
+    "valor": 8000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-puppeteer.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 15,
+    "nombre": "Mythic Fire Basilisk",
+    "valor": 7500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fire-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 16,
+    "nombre": "Mythic Air Basilisk",
+    "valor": 7250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-air-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 17,
+    "nombre": "Mythic Queen Kitty",
+    "valor": 6750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-queen-kitty.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 18,
+    "nombre": "Mythic Bumble Beast",
+    "valor": 6600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bumble-beast.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 19,
+    "nombre": "Mythic Floral Dogcat",
+    "valor": 6500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-floral-dogcat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 20,
+    "nombre": "Mythic Godly Shamrock",
+    "valor": 6500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-godly-shamrock.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 21,
+    "nombre": "Mythic Ice Basilisk",
+    "valor": 6250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ice-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 22,
+    "nombre": "Mythic Bloomshifter",
+    "valor": 5600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bloomshifter.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 23,
+    "nombre": "Mythic Mariposa",
+    "valor": 5500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mariposa.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 24,
+    "nombre": "Mythic Inferno Gem",
+    "valor": 5500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-inferno-gem.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 25,
+    "nombre": "Mythic Queen Butterfly",
+    "valor": 5000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-queen-butterfly.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 26,
+    "nombre": "Mythic Serendipity",
+    "valor": 4850000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-serendipity.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 27,
+    "nombre": "Mythic Queen Wasp",
+    "valor": 4500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-queen-wasp.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 28,
+    "nombre": "Mythic Wolflord",
+    "valor": 4250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-wolflord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 29,
+    "nombre": "Mythic Deception",
+    "valor": 4250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-deception.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 30,
+    "nombre": "Mythic Okami Spirit",
+    "valor": 4250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-okami-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 31,
+    "nombre": "Mythic Retro Shock",
+    "valor": 4250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-retro-shock.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 32,
+    "nombre": "Mythic BIG ROUND",
+    "valor": 4000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-big-round.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 33,
+    "nombre": "Mythic 67 GOD",
+    "valor": 4000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-67-god.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 34,
+    "nombre": "Mythic OG Godly Gem",
+    "valor": 4000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-godly-gem.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 35,
+    "nombre": "Mythic World Bubble",
+    "valor": 4000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-world-bubble.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 36,
+    "nombre": "Mythic Unlucky Clover",
+    "valor": 4000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-unlucky-clover.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 37,
+    "nombre": "Mythic Pot O Gold",
+    "valor": 3800000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pot-o-gold.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 38,
+    "nombre": "Mythic False Prophet",
+    "valor": 3500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-false-prophet.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 39,
+    "nombre": "Mythic Leviathan Tophat",
+    "valor": 3500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-leviathan-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 40,
+    "nombre": "Mythic Peppermint Leviathan",
+    "valor": 3400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-peppermint-leviathan.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 41,
+    "nombre": "Mythic OG New Years Champion",
+    "valor": 3250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-new-years-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 42,
+    "nombre": "Mythic Morning Star",
+    "valor": 3200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-morning-star.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 43,
+    "nombre": "Mythic Angelic Ghost Spirit",
+    "valor": 3100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-angelic-ghost-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 44,
+    "nombre": "Mythic Destiny",
+    "valor": 3000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-destiny.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 45,
+    "nombre": "Mythic Demonic Ghost Spirit",
+    "valor": 3000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonic-ghost-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 46,
+    "nombre": "Mythic Avernus Tophat",
+    "valor": 3000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-avernus-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 47,
+    "nombre": "Mythic Festive Deity",
+    "valor": 2800000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-festive-deity.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 48,
+    "nombre": "Mythic Heavenly Poinsettia",
+    "valor": 2800000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-heavenly-poinsettia.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 49,
+    "nombre": "Mythic Patriotic Robot",
+    "valor": 2750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-patriotic-robot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 50,
+    "nombre": "Mythic New Years Champion",
+    "valor": 2700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-new-years-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 51,
+    "nombre": "Mythic Epiphany",
+    "valor": 2600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-epiphany.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 52,
+    "nombre": "Mythic Lucky Trophy",
+    "valor": 2500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-trophy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 53,
+    "nombre": "Mythic The Flawless",
+    "valor": 2200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-flawless.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 54,
+    "nombre": "Mythic Super Crimson Bloodmoon",
+    "valor": 2100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-crimson-bloodmoon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 55,
+    "nombre": "Mythic BUBBLE",
+    "valor": 2100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bubble.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 56,
+    "nombre": "Mythic Giant Chocolate Chicken Tophat",
+    "valor": 2100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-chocolate-chicken-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 57,
+    "nombre": "Mythic Dark Guardian",
+    "valor": 2000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-guardian.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 58,
+    "nombre": "Mythic Ghost Wisps",
+    "valor": 1900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ghost-wisps.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 59,
+    "nombre": "Mythic Dragonfruit",
+    "valor": 1850000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dragonfruit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 60,
+    "nombre": "Mythic OG Ice Basilisk",
+    "valor": 1850000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-ice-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 61,
+    "nombre": "Mythic OG Love Thief",
+    "valor": 1800000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-love-thief.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 62,
+    "nombre": "Mythic Witch of The Woods",
+    "valor": 1750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-witch-of-the-woods.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 63,
+    "nombre": "Mythic Memory of Remembrance",
+    "valor": 1750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-memory-of-remembrance.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 64,
+    "nombre": "Mythic Dark Basilisk",
+    "valor": 1700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 65,
+    "nombre": "Mythic Spring Dragon",
+    "valor": 1700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-dragon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 66,
+    "nombre": "Mythic Sinister Skull",
+    "valor": 1650000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sinister-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 67,
+    "nombre": "Mythic OG Radiant One",
+    "valor": 1650000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-radiant-one.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 68,
+    "nombre": "Mythic OG Cardinal Bunny",
+    "valor": 1650000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-cardinal-bunny.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 69,
+    "nombre": "Mythic Everblaze",
+    "valor": 1600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-everblaze.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 70,
+    "nombre": "Mythic OG Lucky Pyramidium",
+    "valor": 1600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-lucky-pyramidium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 71,
+    "nombre": "Mythic Blossom Chime",
+    "valor": 1600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-blossom-chime.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 72,
+    "nombre": "Mythic Royal Trophy",
+    "valor": 1550000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-royal-trophy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 73,
+    "nombre": "Mythic Angelic Skull",
+    "valor": 1550000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-angelic-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 74,
+    "nombre": "Mythic Guardian Skull",
+    "valor": 1525000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-guardian-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 75,
+    "nombre": "Mythic King Skull",
+    "valor": 1500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 76,
+    "nombre": "Mythic Harmonic Harp",
+    "valor": 1500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-harmonic-harp.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 77,
+    "nombre": "Mythic Silly Doggy Tophat",
+    "valor": 1500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-silly-doggy-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 78,
+    "nombre": "Mythic OG Electric Basilisk",
+    "valor": 1450000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-electric-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 79,
+    "nombre": "Mythic Wolf Skull",
+    "valor": 1400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-wolf-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 80,
+    "nombre": "Mythic OG Fire Basilisk",
+    "valor": 1400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-fire-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 81,
+    "nombre": "Mythic OG Air Basilisk",
+    "valor": 1400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-air-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 82,
+    "nombre": "Mythic King Kitty",
+    "valor": 1300000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-kitty.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 83,
+    "nombre": "Mythic Luminosity",
+    "valor": 1250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-luminosity.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 84,
+    "nombre": "Mythic Providence",
+    "valor": 1200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-providence.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 85,
+    "nombre": "Mythic Elegant Emerald",
+    "valor": 1200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-elegant-emerald.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 86,
+    "nombre": "Mythic Avernus",
+    "valor": 1150000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-avernus.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 87,
+    "nombre": "Mythic Angelic Spirit",
+    "valor": 1100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-angelic-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 88,
+    "nombre": "Mythic Kuuhenki",
+    "valor": 1000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-kuuhenki.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 89,
+    "nombre": "Mythic Soul Heart",
+    "valor": 950000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-soul-heart.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 90,
+    "nombre": "Mythic Nexus",
+    "valor": 950000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nexus.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 91,
+    "nombre": "Mythic Dragon Lily",
+    "valor": 935000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dragon-lily.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 92,
+    "nombre": "Mythic Plasma Wolflord",
+    "valor": 925000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-plasma-wolflord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 93,
+    "nombre": "Mythic Almighty Pumpkin",
+    "valor": 915000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-almighty-pumpkin.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 94,
+    "nombre": "Mythic Gryphon",
+    "valor": 900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-gryphon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 95,
+    "nombre": "Mythic D0ggy1337",
+    "valor": 875000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-d0ggy1337.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 96,
+    "nombre": "Mythic Forest Light",
+    "valor": 875000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-forest-light.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 97,
+    "nombre": "Mythic OG Luminance",
+    "valor": 865000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-luminance.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 98,
+    "nombre": "Mythic Eternity",
+    "valor": 850000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-eternity.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 99,
+    "nombre": "Mythic Amour Archer",
+    "valor": 850000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-amour-archer.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 100,
+    "nombre": "Mythic Almighty Hexarium",
+    "valor": 815000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-almighty-hexarium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 101,
+    "nombre": "Mythic Snake Eyes",
+    "valor": 800000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-snake-eyes.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 102,
+    "nombre": "Mythic Auronium",
+    "valor": 765000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-auronium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 103,
+    "nombre": "Mythic Reincarnation",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-reincarnation.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 104,
+    "nombre": "Mythic Lucky Horseshoe",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-horseshoe.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 105,
+    "nombre": "Mythic Lucky Pyramidium",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-pyramidium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 106,
+    "nombre": "Mythic OG Shard",
+    "valor": 725000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 107,
+    "nombre": "Mythic Fortune Star",
+    "valor": 700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fortune-star.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 108,
+    "nombre": "Mythic Equilibrium",
+    "valor": 675000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-equilibrium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 109,
+    "nombre": "Mythic Sakuralord",
+    "valor": 675000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sakuralord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 110,
+    "nombre": "Mythic OG Duality",
+    "valor": 650000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-duality.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 111,
+    "nombre": "Mythic Ice Cream Fairy",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ice-cream-fairy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 112,
+    "nombre": "Mythic Starcaster",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-starcaster.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 113,
+    "nombre": "Mythic Twilight Opal",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-twilight-opal.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 114,
+    "nombre": "Mythic King Spitty",
+    "valor": 550000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-spitty.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 115,
+    "nombre": "Mythic Peppermint Shard",
+    "valor": 550000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-peppermint-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 116,
+    "nombre": "Mythic Foliar Ascension",
+    "valor": 550000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-foliar-ascension.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 117,
+    "nombre": "Mythic Seraph Tophat",
+    "valor": 525000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-seraph-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 118,
+    "nombre": "Mythic Manticore",
+    "valor": 525000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-manticore.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 119,
+    "nombre": "Mythic Devils Skull",
+    "valor": 525000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-devils-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 120,
+    "nombre": "Mythic Overlord Plushie",
+    "valor": 500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-overlord-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 121,
+    "nombre": "Mythic RUMBLECON GOD",
+    "valor": 500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rumblecon-god.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 122,
+    "nombre": "Mythic Lucky Golden Retriever",
+    "valor": 500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-golden-retriever.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 123,
+    "nombre": "Mythic King Slime",
+    "valor": 480000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-slime.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 124,
+    "nombre": "Mythic Tainter Spirit",
+    "valor": 475000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-tainter-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 125,
+    "nombre": "Mythic Grand Guardian",
+    "valor": 475000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-grand-guardian.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 126,
+    "nombre": "Mythic Cup O Cocoa",
+    "valor": 475000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cup-o-cocoa.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 127,
+    "nombre": "Mythic Bruh Tophat",
+    "valor": 475000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bruh-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 128,
+    "nombre": "Mythic Pufferfish Tophat",
+    "valor": 475000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pufferfish-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 129,
+    "nombre": "Mythic Witch Rigby",
+    "valor": 450000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-witch-rigby.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 130,
+    "nombre": "Mythic Azure Fate",
+    "valor": 450000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-azure-fate.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 131,
+    "nombre": "Mythic Golden Retreiver",
+    "valor": 435000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-golden-retreiver.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 132,
+    "nombre": "Mythic Pumpgeist",
+    "valor": 430000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pumpgeist.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 133,
+    "nombre": "Mythic Frost Defender",
+    "valor": 425000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frost-defender.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 134,
+    "nombre": "Mythic Kraken Couplet",
+    "valor": 425000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-kraken-couplet.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 135,
+    "nombre": "Mythic Kitty Pot",
+    "valor": 420000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-kitty-pot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 136,
+    "nombre": "Mythic 1x1x1x1",
+    "valor": 405000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-1x1x1x1.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 137,
+    "nombre": "Mythic Manarium",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-manarium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 138,
+    "nombre": "Mythic Frosty Lord Shock",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frosty-lord-shock.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 139,
+    "nombre": "Mythic OG Sinister Skull",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-sinister-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 140,
+    "nombre": "Mythic OG King Skull",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-king-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 141,
+    "nombre": "Mythic OG Guardian Skull",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-guardian-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 142,
+    "nombre": "Mythic OG Wolf Skull",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-wolf-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 143,
+    "nombre": "Mythic OG Angelic Skull",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-angelic-skull.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 144,
+    "nombre": "Mythic Soulflake",
+    "valor": 390000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-soulflake.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 145,
+    "nombre": "Mythic Monolith",
+    "valor": 385000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-monolith.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 146,
+    "nombre": "Mythic Giant Fall Turkey",
+    "valor": 385000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-fall-turkey.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 147,
+    "nombre": "Mythic Queen of Thorns",
+    "valor": 380000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-queen-of-thorns.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 148,
+    "nombre": "Mythic Elite Soul",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-elite-soul.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 149,
+    "nombre": "Mythic Shinigami",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-shinigami.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 150,
+    "nombre": "Mythic Shimmering Shard",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-shimmering-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 151,
+    "nombre": "Mythic Strawberry Snowcone",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-strawberry-snowcone.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 152,
+    "nombre": "Mythic Giant D.I.Y Robot",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-diy-robot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 153,
+    "nombre": "Mythic Blue Raspberry Snowcone",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-blue-raspberry-snowcone.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 154,
+    "nombre": "Mythic Cream Snowcone",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cream-snowcone.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 155,
+    "nombre": "Mythic Cherry Snowcone",
+    "valor": 375000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cherry-snowcone.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 156,
+    "nombre": "Mythic Geometric Dominus",
+    "valor": 350000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-geometric-dominus.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 157,
+    "nombre": "Mythic Super Tophat Stack",
+    "valor": 350000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-tophat-stack.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 158,
+    "nombre": "Mythic Secret Circus Stack",
+    "valor": 350000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-secret-circus-stack.png",
+    "color": "#ef4444"
+  },
+  {
+    "id": 159,
+    "nombre": "Mythic Super Leviathan",
+    "valor": 335000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-leviathan.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 160,
+    "nombre": "Mythic Stained Star",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-stained-star.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 161,
+    "nombre": "Mythic Sparkly Lemonade",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sparkly-lemonade.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 162,
+    "nombre": "Mythic Symphonic Hieromphant",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-symphonic-hieromphant.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 163,
+    "nombre": "Mythic Azure Lily",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-azure-lily.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 164,
+    "nombre": "Mythic Ghosdeeri",
+    "valor": 320000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ghosdeeri.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 165,
+    "nombre": "Mythic Painted Daze",
+    "valor": 315000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-painted-daze.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 166,
+    "nombre": "Mythic The Keeper",
+    "valor": 315000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-keeper.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 167,
+    "nombre": "Mythic Beelzebub",
+    "valor": 310000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-beelzebub.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 168,
+    "nombre": "Mythic Kraken",
+    "valor": 310000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-kraken.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 169,
+    "nombre": "Mythic Axolotl Army",
+    "valor": 305000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-axolotl-army.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 170,
+    "nombre": "Mythic Surreal Seeker",
+    "valor": 300000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-surreal-seeker.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 171,
+    "nombre": "Mythic Clockwork",
+    "valor": 300000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-clockwork.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 172,
+    "nombre": "Mythic PC-Bot",
+    "valor": 300000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pc-bot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 173,
+    "nombre": "Mythic OG Plasma Wolflord",
+    "valor": 290000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-plasma-wolflord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 174,
+    "nombre": "Mythic Galactic Paladin",
+    "valor": 285000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-galactic-paladin.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 175,
+    "nombre": "Mythic Frankenbot",
+    "valor": 280000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frankenbot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 176,
+    "nombre": "Mythic Chest Mimic",
+    "valor": 275000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-chest-mimic.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 177,
+    "nombre": "Mythic Dark Seer",
+    "valor": 275000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-seer.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 178,
+    "nombre": "Mythic Pot O Doggy",
+    "valor": 275000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pot-o-doggy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 179,
+    "nombre": "Mythic Forest Bloom",
+    "valor": 275000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-forest-bloom.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 180,
+    "nombre": "Mythic Mistletoe Fairy",
+    "valor": 270000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mistletoe-fairy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 181,
+    "nombre": "Mythic Prosperity",
+    "valor": 270000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-prosperity.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 182,
+    "nombre": "Mythic King Mush",
+    "valor": 265000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-mush.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 183,
+    "nombre": "Mythic Gumdrop King",
+    "valor": 265000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-gumdrop-king.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 184,
+    "nombre": "Mythic OG Soulflake",
+    "valor": 250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-soulflake.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 185,
+    "nombre": "Mythic Royal Dogcat",
+    "valor": 250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-royal-dogcat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 186,
+    "nombre": "Mythic Royal Lion",
+    "valor": 250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-royal-lion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 187,
+    "nombre": "Mythic OG OwOlord",
+    "valor": 245000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-owolord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 188,
+    "nombre": "Mythic DUMB SINISTER LORD",
+    "valor": 230000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dumb-sinister-lord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 189,
+    "nombre": "Mythic OG Koi",
+    "valor": 230000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-koi.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 190,
+    "nombre": "Mythic Illumination",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-illumination.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 191,
+    "nombre": "Mythic Sinistar",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sinistar.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 192,
+    "nombre": "Mythic The Hand",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-hand.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 193,
+    "nombre": "Mythic Merry Marshmallow",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-merry-marshmallow.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 194,
+    "nombre": "Mythic Radiant Crystal Dragon",
+    "valor": 220000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-radiant-crystal-dragon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 195,
+    "nombre": "Mythic Void Crystal Dragon",
+    "valor": 220000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-crystal-dragon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 196,
+    "nombre": "Mythic OG Diamond Ring",
+    "valor": 220000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-diamond-ring.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 197,
+    "nombre": "Mythic Sea Chime",
+    "valor": 215000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sea-chime.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 198,
+    "nombre": "Mythic Night Bloom",
+    "valor": 210000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-night-bloom.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 199,
+    "nombre": "Mythic Liberty",
+    "valor": 205000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-liberty.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 200,
+    "nombre": "Mythic Velvet Wolflord",
+    "valor": 205000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-velvet-wolflord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 201,
+    "nombre": "Mythic Sigma Serpent",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sigma-serpent.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 202,
+    "nombre": "Mythic OG Chocolate Sundae Champion",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-chocolate-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 203,
+    "nombre": "Mythic OG Mint Sundae Champion",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-mint-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 204,
+    "nombre": "Mythic OG Strawberry Sundae Champion",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-strawberry-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 205,
+    "nombre": "Mythic OG Vanilla Sundae Champion",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-vanilla-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 206,
+    "nombre": "Mythic Merry-Go Hound",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-merry-go-hound.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 207,
+    "nombre": "Mythic Northern Star",
+    "valor": 190000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-northern-star.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 208,
+    "nombre": "Mythic Spring Duality",
+    "valor": 185000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-duality.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 209,
+    "nombre": "Mythic Moon Goddess",
+    "valor": 175000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moon-goddess.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 210,
+    "nombre": "Mythic OG Godly Shamrock",
+    "valor": 170000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-godly-shamrock.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 211,
+    "nombre": "Mythic Eternal Star",
+    "valor": 165000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-eternal-star.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 212,
+    "nombre": "Mythic Fox O Wisp",
+    "valor": 160000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fox-o-wisp.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 213,
+    "nombre": "Mythic OG Dragonfruit",
+    "valor": 160000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-dragonfruit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 214,
+    "nombre": "Mythic Candycorn Shard",
+    "valor": 155000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-candycorn-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 215,
+    "nombre": "Mythic Sinister Shard",
+    "valor": 155000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sinister-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 216,
+    "nombre": "Mythic Frosted Dogcat",
+    "valor": 155000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frosted-dogcat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 217,
+    "nombre": "Mythic Jackpot",
+    "valor": 150000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jackpot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 218,
+    "nombre": "Mythic Celestial Bruh",
+    "valor": 150000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-celestial-bruh.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 219,
+    "nombre": "Mythic Flake Spirit",
+    "valor": 145000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-flake-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 220,
+    "nombre": "Mythic Christmas Tree",
+    "valor": 145000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-christmas-tree.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 221,
+    "nombre": "Mythic OG Hellshard",
+    "valor": 135000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-hellshard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 222,
+    "nombre": "Mythic Super Shock",
+    "valor": 130000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-shock.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 223,
+    "nombre": "Mythic Hellshard",
+    "valor": 125000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hellshard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 224,
+    "nombre": "Mythic Sunmallow",
+    "valor": 125000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sunmallow.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 225,
+    "nombre": "Mythic Lucky Medallion",
+    "valor": 125000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-medallion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 226,
+    "nombre": "Mythic OG Easter Spirit",
+    "valor": 120000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-easter-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 227,
+    "nombre": "Mythic Queen Bee",
+    "valor": 115000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-queen-bee.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 228,
+    "nombre": "Mythic Love Basilisk",
+    "valor": 115000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-love-basilisk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 229,
+    "nombre": "Mythic Iridescent Catcher",
+    "valor": 110000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-iridescent-catcher.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 230,
+    "nombre": "Mythic Frosty One",
+    "valor": 110000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frosty-one.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 231,
+    "nombre": "Mythic OG Angelic Ghost Spirit",
+    "valor": 107500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-angelic-ghost-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 232,
+    "nombre": "Mythic OG Demonic Ghost Spirit",
+    "valor": 107500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-demonic-ghost-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 233,
+    "nombre": "Mythic Fallen Angel",
+    "valor": 105000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fallen-angel.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 234,
+    "nombre": "Mythic Super Trophy",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-trophy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 235,
+    "nombre": "Mythic Snowstorm",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-snowstorm.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 236,
+    "nombre": "Mythic Galaxium",
+    "valor": 97500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-galaxium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 237,
+    "nombre": "Mythic Crystal Teddy",
+    "valor": 90000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crystal-teddy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 238,
+    "nombre": "Mythic FutureWebsiteOwner Plushie",
+    "valor": 90000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-futurewebsiteowner-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 239,
+    "nombre": "Mythic Chocolate Sundae Champion",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-chocolate-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 240,
+    "nombre": "Mythic Mint Sundae Champion",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mint-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 241,
+    "nombre": "Mythic Vanilla Sundae Champion",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-vanilla-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 242,
+    "nombre": "Mythic Strawberry Sundae Champion",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-strawberry-sundae-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 243,
+    "nombre": "Mythic Festival One",
+    "valor": 82500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-festival-one.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 244,
+    "nombre": "Mythic Starlight",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-starlight.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 245,
+    "nombre": "Mythic Jelly Overlord",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jelly-overlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 246,
+    "nombre": "Mythic Pure of Heart",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pure-of-heart.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 247,
+    "nombre": "Mythic Axolotl Plushie",
+    "valor": 75000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-axolotl-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 248,
+    "nombre": "Mythic Golden Tokage",
+    "valor": 75000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-golden-tokage.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 249,
+    "nombre": "Mythic Shadow Raven",
+    "valor": 72500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-shadow-raven.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 250,
+    "nombre": "Mythic OG Archangel",
+    "valor": 72500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-archangel.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 251,
+    "nombre": "Mythic Diamond Ring",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-diamond-ring.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 252,
+    "nombre": "Mythic Frost Pyramidium",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frost-pyramidium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 253,
+    "nombre": "Mythic Firecracker",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-firecracker.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 254,
+    "nombre": "Mythic Dark Prophet",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-prophet.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 255,
+    "nombre": "Mythic Rainbow Pyramidium",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rainbow-pyramidium.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 256,
+    "nombre": "Mythic Fortune Prophet",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fortune-prophet.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 257,
+    "nombre": "Mythic Stellar Acheron",
+    "valor": 67500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-stellar-acheron.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 258,
+    "nombre": "Mythic Lonely Rose",
+    "valor": 67500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lonely-rose.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 259,
+    "nombre": "Mythic Dinosaur Tophat",
+    "valor": 65000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dinosaur-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 260,
+    "nombre": "Mythic Pig Tophat",
+    "valor": 65000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pig-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 261,
+    "nombre": "Mythic Deer Tophat",
+    "valor": 65000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-deer-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 262,
+    "nombre": "Mythic Dark Jester",
+    "valor": 65000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-jester.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 263,
+    "nombre": "Mythic Archangel",
+    "valor": 62500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-archangel.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 264,
+    "nombre": "Mythic Harmonic Lily",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-harmonic-lily.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 265,
+    "nombre": "Mythic Void Soul",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-soul.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 266,
+    "nombre": "Mythic Dark Gryphon",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-gryphon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 267,
+    "nombre": "Mythic Rainbow Gryphon",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rainbow-gryphon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 268,
+    "nombre": "Mythic Rainbow Dogcat",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rainbow-dogcat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 269,
+    "nombre": "Mythic Spring Soul",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-soul.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 270,
+    "nombre": "Mythic Spring Spirit",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-spirit.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 271,
+    "nombre": "Mythic Hellfire",
+    "valor": 57500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hellfire.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 272,
+    "nombre": "Mythic Royal Guardian",
+    "valor": 55000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-royal-guardian.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 273,
+    "nombre": "Mythic Super Hacker Prism",
+    "valor": 52500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-hacker-prism.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 274,
+    "nombre": "Mythic The Shocklord",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-shocklord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 275,
+    "nombre": "Mythic Earth Champion",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-earth-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 276,
+    "nombre": "Mythic Sky Champion",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sky-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 277,
+    "nombre": "Mythic Fire Champion",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fire-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 278,
+    "nombre": "Mythic Dark Champion",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-champion.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 279,
+    "nombre": "Mythic Permafrost",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-permafrost.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 280,
+    "nombre": "Mythic Festive Wreath",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-festive-wreath.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 281,
+    "nombre": "Mythic Frigid Blade",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frigid-blade.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 282,
+    "nombre": "Mythic Divine Frost",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-divine-frost.png",
+    "color": "#60a5fa"
+  },
+  {
+    "id": 283,
+    "nombre": "Mythic New Years Shard",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-new-years-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 284,
+    "nombre": "Mythic Star Titan",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-star-titan.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 285,
+    "nombre": "Mythic Giant Dreamscape",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-dreamscape.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 286,
+    "nombre": "Mythic Stuffed Tabby",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-stuffed-tabby.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 287,
+    "nombre": "Mythic Dark Star",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-star.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 288,
+    "nombre": "Mythic Light Lantern",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-light-lantern.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 289,
+    "nombre": "Mythic High Roller",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-high-roller.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 290,
+    "nombre": "Mythic Toxic Demon",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-toxic-demon.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 291,
+    "nombre": "Mythic Void Shard",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 292,
+    "nombre": "Mythic Spring Moth",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-moth.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 293,
+    "nombre": "Mythic Bag O Fish",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bag-o-fish.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 294,
+    "nombre": "Mythic Joy Candle",
+    "valor": 47500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-joy-candle.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 295,
+    "nombre": "Mythic Hope Candle",
+    "valor": 47500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hope-candle.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 296,
+    "nombre": "Mythic Love Candle",
+    "valor": 47500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-love-candle.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 297,
+    "nombre": "Mythic Peace Candle",
+    "valor": 47500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-peace-candle.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 298,
+    "nombre": "Mythic Midas",
+    "valor": 45000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-midas.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 299,
+    "nombre": "Mythic Big Rigby",
+    "valor": 42500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-big-rigby.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 300,
+    "nombre": "Mythic Cardinal Bunny",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cardinal-bunny.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 301,
+    "nombre": "Mythic Moonlord",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 302,
+    "nombre": "Mythic OG Overlord Plushie",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-overlord-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 303,
+    "nombre": "Mythic Borealis Elk",
+    "valor": 37500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-borealis-elk.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 304,
+    "nombre": "Mythic Fire Guardian",
+    "valor": 35000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fire-guardian.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 305,
+    "nombre": "Mythic Angelus",
+    "valor": 35000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-angelus.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 306,
+    "nombre": "Mythic Fortuitous Overlord",
+    "valor": 35000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fortuitous-overlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 307,
+    "nombre": "Mythic Money Mouth",
+    "valor": 35000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-money-mouth.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 308,
+    "nombre": "Mythic Lucky Tophat",
+    "valor": 35000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 309,
+    "nombre": "Mythic Giant Snowman",
+    "valor": 32500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-snowman.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 310,
+    "nombre": "Mythic King Doggy",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-doggy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 311,
+    "nombre": "Mythic Harlequin",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-harlequin.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 312,
+    "nombre": "Mythic Spring Shard",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 313,
+    "nombre": "Mythic Lucky Catcher",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-catcher.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 314,
+    "nombre": "Mythic Cyber Kitty",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cyber-kitty.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 315,
+    "nombre": "Mythic Pumpkin Pie",
+    "valor": 27500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pumpkin-pie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 316,
+    "nombre": "Mythic Eternal Cucumber",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-eternal-cucumber.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 317,
+    "nombre": "Mythic Big Leafy",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-big-leafy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 318,
+    "nombre": "Mythic Super Silly Doggy",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-silly-doggy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 319,
+    "nombre": "Mythic Nekomata",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nekomata.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 320,
+    "nombre": "Mythic King Bell",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-bell.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 321,
+    "nombre": "Mythic Rockstar Leviathan",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rockstar-leviathan.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 322,
+    "nombre": "Mythic Lovely Omen",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lovely-omen.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 323,
+    "nombre": "Mythic DOOF",
+    "valor": 22500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-doof.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 324,
+    "nombre": "Mythic Diamond Overlord",
+    "valor": 22500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-diamond-overlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 325,
+    "nombre": "Mythic Duality",
+    "valor": 22500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-duality.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 326,
+    "nombre": "Mythic The Overlord",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-overlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 327,
+    "nombre": "Mythic Mech Robot",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mech-robot.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 328,
+    "nombre": "Mythic Tidal God",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-tidal-god.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 329,
+    "nombre": "Mythic Andromeda",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-andromeda.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 330,
+    "nombre": "Mythic ObscureEntity Plushie",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-obscureentity-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 331,
+    "nombre": "Mythic Sircfenner Plushie",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sircfenner-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 332,
+    "nombre": "Mythic Nert Plushie",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nert-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 333,
+    "nombre": "Mythic Quamatic Plushie",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-quamatic-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 334,
+    "nombre": "Mythic Sylently Plushie",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sylently-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 335,
+    "nombre": "Mythic All Seeing Shard",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-all-seeing-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 336,
+    "nombre": "Mythic Giant NULLvoid",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-nullvoid.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 337,
+    "nombre": "Mythic OG Hellfire",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-hellfire.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 338,
+    "nombre": "Mythic Giant DOOF",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-doof.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 339,
+    "nombre": "Mythic Synthesis",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-synthesis.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 340,
+    "nombre": "Mythic Holy Candle",
+    "valor": 18000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-holy-candle.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 341,
+    "nombre": "Mythic Giant Pearl",
+    "valor": 17500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-pearl.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 342,
+    "nombre": "Mythic Demonlord",
+    "valor": 17500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 343,
+    "nombre": "Mythic OG Lucid Leaf",
+    "valor": 17500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-lucid-leaf.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 344,
+    "nombre": "Mythic Peppermint Heart",
+    "valor": 17500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-peppermint-heart.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 345,
+    "nombre": "Mythic Classic Overlord",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-overlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 346,
+    "nombre": "Mythic Creepy Overlord",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-creepy-overlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 347,
+    "nombre": "Mythic OG Crystal Teddy",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-crystal-teddy.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 348,
+    "nombre": "Mythic Snowverlord",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-snowverlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 349,
+    "nombre": "Mythic New Years Overlord",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-new-years-overlord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 350,
+    "nombre": "Mythic Dark Omen",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-omen.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 351,
+    "nombre": "Mythic LOL",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lol.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 352,
+    "nombre": "Mythic Dark Destiny",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-destiny.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 353,
+    "nombre": "Mythic Overworld Army",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-overworld-army.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 354,
+    "nombre": "Mythic Celtic Shard",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-celtic-shard.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 355,
+    "nombre": "Mythic Capybara Plushie",
+    "valor": 12500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-capybara-plushie.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 356,
+    "nombre": "Mythic Lovely Rose",
+    "valor": 12500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lovely-rose.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 357,
+    "nombre": "Mythic God Tamer",
+    "valor": 12500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-god-tamer.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 358,
+    "nombre": "Mythic Crescent Empress",
+    "valor": 11000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crescent-empress.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 359,
+    "nombre": "Mythic Captain Monkey",
+    "valor": 11000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-captain-monkey.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 360,
+    "nombre": "Mythic Holy Egg",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-holy-egg.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 361,
+    "nombre": "Mythic Hyperwave Kitty",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hyperwave-kitty.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 362,
+    "nombre": "Mythic OG Prisma Cube",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-prisma-cube.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 363,
+    "nombre": "Mythic OG Morning Star",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-morning-star.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 364,
+    "nombre": "Mythic Holy Bell",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-holy-bell.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 365,
+    "nombre": "Mythic Robot Tophat",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-robot-tophat.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 366,
+    "nombre": "Mythic UwUlord",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-uwulord.png",
+    "color": "#3b82f6"
+  },
+  {
+    "id": 367,
+    "nombre": "Mythic Chocolate Bunny",
+    "valor": 9000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-chocolate-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 368,
+    "nombre": "Mythic Toilet Doggy",
+    "valor": 9000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-toilet-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 369,
+    "nombre": "Mythic OG BGS Plaque",
+    "valor": 8500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-bgs-plaque.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 370,
+    "nombre": "Mythic Ophanim",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ophanim.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 371,
+    "nombre": "Mythic DUMB PUMPKIN",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dumb-pumpkin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 372,
+    "nombre": "Mythic Wicked Widow",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-wicked-widow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 373,
+    "nombre": "Mythic OG The Overlord",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-the-overlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 374,
+    "nombre": "Mythic Sweet Heart",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sweet-heart.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 375,
+    "nombre": "Mythic Clown Rigby",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-clown-rigby.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 376,
+    "nombre": "Mythic Moon Deer",
+    "valor": 7000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moon-deer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 377,
+    "nombre": "Mythic Ancient One",
+    "valor": 7000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ancient-one.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 378,
+    "nombre": "Mythic Guardian Angel",
+    "valor": 7000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-guardian-angel.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 379,
+    "nombre": "Mythic Santas Hat",
+    "valor": 6500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-santas-hat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 380,
+    "nombre": "Mythic Big Flakey",
+    "valor": 6500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-big-flakey.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 381,
+    "nombre": "Mythic The Eternity",
+    "valor": 6500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-eternity.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 382,
+    "nombre": "Mythic Heartbroken One",
+    "valor": 6000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-heartbroken-one.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 383,
+    "nombre": "Mythic King Pufferfish",
+    "valor": 5500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-pufferfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 384,
+    "nombre": "Mythic Corrupt Glitch",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-corrupt-glitch.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 385,
+    "nombre": "Mythic Queen Overlord",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-queen-overlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 386,
+    "nombre": "Mythic Gummy Overlord",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-gummy-overlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 387,
+    "nombre": "Mythic Silly King Doggy",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-silly-king-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 388,
+    "nombre": "Mythic Santa Nert Plushie",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-santa-nert-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 389,
+    "nombre": "Mythic Crimson Bloodmoon",
+    "valor": 4500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crimson-bloodmoon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 390,
+    "nombre": "Mythic Ethereal Bunny",
+    "valor": 4000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ethereal-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 391,
+    "nombre": "Mythic Rainbow Marshmellow",
+    "valor": 4000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rainbow-marshmellow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 392,
+    "nombre": "Mythic Maid Nert Plushie",
+    "valor": 3500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-maid-nert-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 393,
+    "nombre": "Mythic Water Serpent",
+    "valor": 3000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-water-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 394,
+    "nombre": "Mythic Retro Face God",
+    "valor": 3000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-retro-face-god.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 395,
+    "nombre": "Mythic Seraphim",
+    "valor": 3000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-seraphim.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 396,
+    "nombre": "Mythic Drippy Slice",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-drippy-slice.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 397,
+    "nombre": "Mythic Eternal Burger",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-eternal-burger.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 398,
+    "nombre": "Mythic Watermelon Round",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-watermelon-round.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 399,
+    "nombre": "Mythic Giant Emerald Golem",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-emerald-golem.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 400,
+    "nombre": "Mythic Rumblecon Halftime Show",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rumblecon-halftime-show.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 401,
+    "nombre": "Mythic Crystal Snowman",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crystal-snowman.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 402,
+    "nombre": "Mythic Gingerbread Shard",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-gingerbread-shard.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 403,
+    "nombre": "Mythic Clown Round",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-clown-round.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 404,
+    "nombre": "Mythic Cyber Pyramidium",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cyber-pyramidium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 405,
+    "nombre": "Mythic Super Radiant One",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-radiant-one.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 406,
+    "nombre": "Mythic Cobalt Sea Dragon",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cobalt-sea-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 407,
+    "nombre": "Mythic Crimson Sea Dragon",
+    "valor": 2500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crimson-sea-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 408,
+    "nombre": "Mythic Dualcorn",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dualcorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 409,
+    "nombre": "Mythic FutureWebsiteOwner Giftbox",
+    "valor": 1500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-futurewebsiteowner-giftbox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 410,
+    "nombre": "Mythic Sylently Giftbox",
+    "valor": 1500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sylently-giftbox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 411,
+    "nombre": "Mythic Sircfenner Giftbox",
+    "valor": 1500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sircfenner-giftbox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 412,
+    "nombre": "Mythic ObscureEntity Giftbox",
+    "valor": 1500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-obscureentity-giftbox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 413,
+    "nombre": "Mythic Nert Giftbox",
+    "valor": 1500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nert-giftbox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 414,
+    "nombre": "Mythic Quamatic Giftbox",
+    "valor": 1500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-quamatic-giftbox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 415,
+    "nombre": "Mythic Man Face Dogcat",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-man-face-dogcat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 416,
+    "nombre": "Mythic Rumblecon Trophy",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rumblecon-trophy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 417,
+    "nombre": "Mythic Festive Snow Jar",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-festive-snow-jar.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 418,
+    "nombre": "Mythic Solitaire",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-solitaire.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 419,
+    "nombre": "Mythic Encore",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-encore.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 420,
+    "nombre": "Mythic Tophat Spitty",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-tophat-spitty.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 421,
+    "nombre": "Mythic Retro Kraken",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-retro-kraken.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 422,
+    "nombre": "Mythic SUPER BIG ROUND",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-big-round.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 423,
+    "nombre": "Mythic Giant Neon Elemental",
+    "valor": 1000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-neon-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 424,
+    "nombre": "Mythic Hot Dog Doggy",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hot-dog-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 425,
+    "nombre": "Mythic Butter Dawg",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-butter-dawg.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 426,
+    "nombre": "Mythic Man Face Lord",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-man-face-lord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 427,
+    "nombre": "Mythic The Golden Ticket",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-golden-ticket.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 428,
+    "nombre": "Mythic Giftbox King Doggy",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giftbox-king-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 429,
+    "nombre": "Mythic Radiant Soul",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-radiant-soul.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 430,
+    "nombre": "Mythic Aero Heart",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-aero-heart.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 431,
+    "nombre": "Mythic Giant Bongo Kitty",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-bongo-kitty.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 432,
+    "nombre": "Mythic Retro Pyramidium",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-retro-pyramidium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 433,
+    "nombre": "Mythic The Superlord",
+    "valor": 500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-superlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 434,
+    "nombre": "Mythic Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-unicorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 435,
+    "nombre": "Mythic Virus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-virus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 436,
+    "nombre": "Mythic Neon Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-neon-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 437,
+    "nombre": "Mythic Sunburst",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sunburst.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 438,
+    "nombre": "Mythic Moonburst",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonburst.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 439,
+    "nombre": "Mythic Hacker Prism",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hacker-prism.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 440,
+    "nombre": "Mythic Seraph",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-seraph.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 441,
+    "nombre": "Mythic Abyssal Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-abyssal-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 442,
+    "nombre": "Mythic Trio Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-trio-cube.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 443,
+    "nombre": "Mythic Inferno Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-inferno-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 444,
+    "nombre": "Mythic Rainbow Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rainbow-shock.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 445,
+    "nombre": "Mythic Demonic Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonic-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 446,
+    "nombre": "Mythic Green Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-green-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 447,
+    "nombre": "Mythic Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 448,
+    "nombre": "Mythic Inferno Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-inferno-cube.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 449,
+    "nombre": "Mythic Emerald Golem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-emerald-golem.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 450,
+    "nombre": "Mythic Lunar Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lunar-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 451,
+    "nombre": "Mythic Dark Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-phoenix.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 452,
+    "nombre": "Mythic Electra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-electra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 453,
+    "nombre": "Mythic Flying Pig",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-flying-pig.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 454,
+    "nombre": "Mythic NULLVoid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nullvoid.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 455,
+    "nombre": "Mythic Seraphic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-seraphic-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 456,
+    "nombre": "Mythic Sweet Treat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sweet-treat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 457,
+    "nombre": "Mythic Godly Gem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-godly-gem.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 458,
+    "nombre": "Mythic Easter Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 459,
+    "nombre": "Mythic Patronus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-patronus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 460,
+    "nombre": "Mythic ROUND",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-round.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 461,
+    "nombre": "Mythic Diamond Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-diamond-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 462,
+    "nombre": "Mythic Overseer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-overseer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 463,
+    "nombre": "Mythic Parasite",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-parasite.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 464,
+    "nombre": "Mythic Diamond Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-diamond-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 465,
+    "nombre": "Mythic Bionic Shard",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bionic-shard.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 466,
+    "nombre": "Mythic Stone Gargoyle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-stone-gargoyle.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 467,
+    "nombre": "Mythic Game Master",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-game-master.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 468,
+    "nombre": "Mythic Dice Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dice-split.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 469,
+    "nombre": "Mythic Dragon Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dragon-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 470,
+    "nombre": "Mythic Magmas",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-magmas.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 471,
+    "nombre": "Mythic Cyborg Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cyborg-phoenix.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 472,
+    "nombre": "Mythic Crystal Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crystal-unicorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 473,
+    "nombre": "Mythic Nebula",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nebula.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 474,
+    "nombre": "Mythic Moonlight",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonlight.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 475,
+    "nombre": "Mythic Space Invader",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-space-invader.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 476,
+    "nombre": "Mythic Crimson Butterfly",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crimson-butterfly.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 477,
+    "nombre": "Mythic Sir Doggyton",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sir-doggyton.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 478,
+    "nombre": "Mythic Prismatic",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-prismatic.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 479,
+    "nombre": "Mythic Demonweb",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonweb.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 480,
+    "nombre": "Mythic Darkness Creature",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-darkness-creature.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 481,
+    "nombre": "Mythic Lord Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lord-shock.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 482,
+    "nombre": "Mythic The Sun",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-sun.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 483,
+    "nombre": "Mythic Ring Master",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ring-master.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 484,
+    "nombre": "Mythic Equalizer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-equalizer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 485,
+    "nombre": "Mythic Neon Wire Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-neon-wire-eye.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 486,
+    "nombre": "Mythic Star Charm",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-star-charm.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 487,
+    "nombre": "Mythic Neon Wyvern",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-neon-wyvern.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 488,
+    "nombre": "Mythic Bongo Kitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bongo-kitty.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 489,
+    "nombre": "Mythic Noctis",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-noctis.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 490,
+    "nombre": "Mythic Mangorium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mangorium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 491,
+    "nombre": "Mythic Glyph Warrior",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-glyph-warrior.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 492,
+    "nombre": "Mythic Kiwi Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-kiwi-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 493,
+    "nombre": "Mythic Rigby",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rigby.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 494,
+    "nombre": "Mythic Soarin Surfer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-soarin-surfer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 495,
+    "nombre": "Mythic Sundae Cone",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sundae-cone.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 496,
+    "nombre": "Mythic Pineapple Tourist",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pineapple-tourist.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 497,
+    "nombre": "Mythic Popsicle Trio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-popsicle-trio.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 498,
+    "nombre": "Mythic Dreamscape",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dreamscape.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 499,
+    "nombre": "Mythic Runic Defender",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-runic-defender.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 500,
+    "nombre": "Mythic Bug Amber",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bug-amber.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 501,
+    "nombre": "Mythic Carrot Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-carrot-pufferfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 502,
+    "nombre": "Mythic Fossilus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fossilus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 503,
+    "nombre": "Mythic Fossil Ghost",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fossil-ghost.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 504,
+    "nombre": "Mythic Electric Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-electric-basilisk.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 505,
+    "nombre": "Mythic Infernal",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-infernal.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 506,
+    "nombre": "Mythic Darkness",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-darkness.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 507,
+    "nombre": "Mythic Dowominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dowominus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 508,
+    "nombre": "Mythic Guardian of Light",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-guardian-of-light.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 509,
+    "nombre": "Mythic EVIL",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-evil.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 510,
+    "nombre": "Mythic Radiant Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-radiant-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 511,
+    "nombre": "Mythic Light Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-light-cube.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 512,
+    "nombre": "Mythic Voidflame",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-voidflame.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 513,
+    "nombre": "Mythic Void Scorpion",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-scorpion.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 514,
+    "nombre": "Mythic Dream Catcher",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dream-catcher.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 515,
+    "nombre": "Mythic Excabot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-excabot.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 516,
+    "nombre": "Mythic Void Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-eye.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 517,
+    "nombre": "Mythic Void Crystal Parasite",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-crystal-parasite.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 518,
+    "nombre": "Mythic Broken TV",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-broken-tv.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 519,
+    "nombre": "Mythic Seraphic Bruh",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-seraphic-bruh.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 520,
+    "nombre": "Mythic Bruhodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bruhodle.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 521,
+    "nombre": "Mythic ROUND BRUH",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-round-bruh.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 522,
+    "nombre": "Mythic Bruh Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bruh-split.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 523,
+    "nombre": "Mythic Pixel Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pixel-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 524,
+    "nombre": "Mythic Starry Kitsune",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-starry-kitsune.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 525,
+    "nombre": "Mythic Wilted Branch",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-wilted-branch.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 526,
+    "nombre": "Mythic Patriotic Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-patriotic-shock.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 527,
+    "nombre": "Mythic Patriotic Penguin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-patriotic-penguin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 528,
+    "nombre": "Mythic Star Lord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-star-lord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 529,
+    "nombre": "Mythic Tole Cat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-tole-cat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 530,
+    "nombre": "Mythic Patriotic Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-patriotic-soul.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 531,
+    "nombre": "Mythic D.I.Y Robot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-diy-robot.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 532,
+    "nombre": "Mythic Glitch",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-glitch.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 533,
+    "nombre": "Mythic Paragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-paragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 534,
+    "nombre": "Mythic Jawbreaker Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jawbreaker-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 535,
+    "nombre": "Mythic Super Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 536,
+    "nombre": "Mythic Platinum Dualcorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-platinum-dualcorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 537,
+    "nombre": "Mythic Evil Bee",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-evil-bee.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 538,
+    "nombre": "Mythic Dominus Astra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dominus-astra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 539,
+    "nombre": "Mythic OwOlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-owolord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 540,
+    "nombre": "Mythic Pearl Goddess",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pearl-goddess.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 541,
+    "nombre": "Mythic Bee Bee Bee",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bee-bee-bee.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 542,
+    "nombre": "Mythic Angel Bee",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-angel-bee.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 543,
+    "nombre": "Mythic Gummy Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-gummy-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 544,
+    "nombre": "Mythic Tigers Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-tigers-eye.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 545,
+    "nombre": "Mythic Amalgamation",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-amalgamation.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 546,
+    "nombre": "Mythic Candy Winged Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-candy-winged-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 547,
+    "nombre": "Mythic Rock Candy Golem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rock-candy-golem.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 548,
+    "nombre": "Mythic Super Beach Boi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-beach-boi.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 549,
+    "nombre": "Mythic Dominus Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dominus-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 550,
+    "nombre": "Mythic Magma Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-magma-cube.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 551,
+    "nombre": "Mythic Minty Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-minty-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 552,
+    "nombre": "Mythic Fire King",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fire-king.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 553,
+    "nombre": "Mythic Gigantic Spitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-gigantic-spitty.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 554,
+    "nombre": "Mythic Sea Turtle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sea-turtle.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 555,
+    "nombre": "Mythic King Seahorse",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-seahorse.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 556,
+    "nombre": "Mythic Night Dweller",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-night-dweller.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 557,
+    "nombre": "Mythic Flower Pot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-flower-pot.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 558,
+    "nombre": "Mythic Thorn Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-thorn-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 559,
+    "nombre": "Mythic Ice Winged Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ice-winged-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 560,
+    "nombre": "Mythic Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-marshmallow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 561,
+    "nombre": "Mythic Lovely Lotus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lovely-lotus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 562,
+    "nombre": "Mythic Pond Queen",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pond-queen.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 563,
+    "nombre": "Mythic Dark Jellyfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-jellyfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 564,
+    "nombre": "Mythic Sea Urchin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sea-urchin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 565,
+    "nombre": "Mythic Koi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-koi.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 566,
+    "nombre": "Mythic Atlantis Guardian",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-atlantis-guardian.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 567,
+    "nombre": "Mythic Jellyfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jellyfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 568,
+    "nombre": "Mythic Void Eclipse",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-eclipse.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 569,
+    "nombre": "Mythic Sailboat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sailboat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 570,
+    "nombre": "Mythic Danger of the Abyss",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-danger-of-the-abyss.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 571,
+    "nombre": "Mythic Angler Fish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-angler-fish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 572,
+    "nombre": "Mythic Cosmic Herald",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cosmic-herald.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 573,
+    "nombre": "Mythic Soul Jam",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-soul-jam.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 574,
+    "nombre": "Mythic Lunar Bloom",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lunar-bloom.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 575,
+    "nombre": "Mythic Moonlit Gaze",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonlit-gaze.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 576,
+    "nombre": "Mythic Serene Axolotl",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-serene-axolotl.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 577,
+    "nombre": "Mythic Dreamscape Influence",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dreamscape-influence.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 578,
+    "nombre": "Mythic Ethereal One",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ethereal-one.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 579,
+    "nombre": "Mythic Prisma",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-prisma.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 580,
+    "nombre": "Mythic Shadow Hunter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-shadow-hunter.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 581,
+    "nombre": "Mythic Lamp Ghost",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lamp-ghost.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 582,
+    "nombre": "Mythic Hallowed Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hallowed-spirit.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 583,
+    "nombre": "Mythic ACE",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ace.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 584,
+    "nombre": "Mythic Dreadful Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dreadful-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 585,
+    "nombre": "Mythic Celestial Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-celestial-split.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 586,
+    "nombre": "Mythic Contrast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-contrast.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 587,
+    "nombre": "Mythic Demonarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 588,
+    "nombre": "Mythic Wyrm of Currents",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-wyrm-of-currents.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 589,
+    "nombre": "Mythic Yin Yang",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-yin-yang.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 590,
+    "nombre": "Mythic Rooted Ratio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rooted-ratio.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 591,
+    "nombre": "Mythic Vectorlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-vectorlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 592,
+    "nombre": "Mythic Mad Hatter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mad-hatter.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 593,
+    "nombre": "Mythic Nert Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nert-pufferfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 594,
+    "nombre": "Mythic Cosmos",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cosmos.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 595,
+    "nombre": "Mythic Stellaris",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-stellaris.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 596,
+    "nombre": "Mythic Brainrot Shark",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-brainrot-shark.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 597,
+    "nombre": "Mythic Moonchanter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonchanter.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 598,
+    "nombre": "Mythic Empyreus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-empyreus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 599,
+    "nombre": "Mythic Giant Classic Chicken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-classic-chicken.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 600,
+    "nombre": "Mythic Classic King Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-king-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 601,
+    "nombre": "Mythic Classic Beta TV",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-beta-tv.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 602,
+    "nombre": "Mythic Classic Dowodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-dowodle.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 603,
+    "nombre": "Mythic Classic Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-leviathan.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 604,
+    "nombre": "Mythic Classic Noob",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-noob.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 605,
+    "nombre": "Mythic Classic Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-dominus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 606,
+    "nombre": "Mythic Classic Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-unicorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 607,
+    "nombre": "Mythic Autumn Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-autumn-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 608,
+    "nombre": "Mythic Crystal Acorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crystal-acorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 609,
+    "nombre": "Mythic Monarch Butterfly",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-monarch-butterfly.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 610,
+    "nombre": "Mythic Eternal Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-eternal-pumpkin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 611,
+    "nombre": "Mythic Demon Tree",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demon-tree.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 612,
+    "nombre": "Mythic Dowodle Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dowodle-pumpkin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 613,
+    "nombre": "Mythic Jack O Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jack-o-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 614,
+    "nombre": "Mythic Autumn Paragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-autumn-paragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 615,
+    "nombre": "Mythic Maple Divinity",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-maple-divinity.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 616,
+    "nombre": "Mythic Shattered Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-shattered-soul.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 617,
+    "nombre": "Mythic Candle Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-candle-phoenix.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 618,
+    "nombre": "Mythic Lantern Demon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lantern-demon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 619,
+    "nombre": "Mythic Test Tube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-test-tube.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 620,
+    "nombre": "Mythic Frost Sentinel",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frost-sentinel.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 621,
+    "nombre": "Mythic Willow Chandelier",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-willow-chandelier.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 622,
+    "nombre": "Mythic Demon Knight",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demon-knight.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 623,
+    "nombre": "Mythic Ultimate Clover",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ultimate-clover.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 624,
+    "nombre": "Mythic Ghostarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ghostarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 625,
+    "nombre": "Mythic Cartoon Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cartoon-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 626,
+    "nombre": "Mythic Bubble Beast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bubble-beast.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 627,
+    "nombre": "Mythic Uncle Cat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-uncle-cat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 628,
+    "nombre": "Mythic Cartoon Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cartoon-overlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 629,
+    "nombre": "Mythic Fangseeker",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fangseeker.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 630,
+    "nombre": "Mythic Cartoon Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cartoon-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 631,
+    "nombre": "Mythic Armageddon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-armageddon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 632,
+    "nombre": "Mythic Voodoo Dowodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-voodoo-dowodle.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 633,
+    "nombre": "Mythic Crimson Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crimson-eye.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 634,
+    "nombre": "Mythic Trickster",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-trickster.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 635,
+    "nombre": "Mythic Nightmare Jester",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-nightmare-jester.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 636,
+    "nombre": "Mythic Ghostlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ghostlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 637,
+    "nombre": "Mythic Witches Pot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-witches-pot.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 638,
+    "nombre": "Mythic Equinox",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-equinox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 639,
+    "nombre": "Mythic Poltergeist",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-poltergeist.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 640,
+    "nombre": "Mythic Pumpkin Pyramidium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pumpkin-pyramidium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 641,
+    "nombre": "Mythic Ghost Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ghost-phoenix.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 642,
+    "nombre": "Mythic Trick O Treat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-trick-o-treat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 643,
+    "nombre": "Mythic Evil Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-evil-marshmallow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 644,
+    "nombre": "Mythic King Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-eye.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 645,
+    "nombre": "Mythic Classic Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-classic-pumpkin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 646,
+    "nombre": "Mythic Starlight Catcher",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-starlight-catcher.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 647,
+    "nombre": "Mythic Dual Act",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dual-act.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 648,
+    "nombre": "Mythic Mother Doll",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mother-doll.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 649,
+    "nombre": "Mythic Ragdoll",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ragdoll.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 650,
+    "nombre": "Mythic Shadow Friend",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-shadow-friend.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 651,
+    "nombre": "Mythic Amethyst",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-amethyst.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 652,
+    "nombre": "Mythic OG Cursed Scorpio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-cursed-scorpio.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 653,
+    "nombre": "Mythic OG Sakuralord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-sakuralord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 654,
+    "nombre": "Mythic Silly Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-silly-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 655,
+    "nombre": "Mythic White Swan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-white-swan.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 656,
+    "nombre": "Mythic OG Element Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-element-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 657,
+    "nombre": "Mythic Silly Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-silly-unicorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 658,
+    "nombre": "Mythic OG Galaxium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-galaxium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 659,
+    "nombre": "Mythic OG Shadow Hunter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-shadow-hunter.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 660,
+    "nombre": "Mythic OG Abyss",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-abyss.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 661,
+    "nombre": "Mythic HotHoundDog",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hothounddog.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 662,
+    "nombre": "Mythic OG Unicore",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-unicore.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 663,
+    "nombre": "Mythic Giant Gummy Worm",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-gummy-worm.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 664,
+    "nombre": "Mythic Lemonade Master",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lemonade-master.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 665,
+    "nombre": "Mythic OG Gem Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-gem-overlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 666,
+    "nombre": "Mythic OG Axolotl Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-axolotl-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 667,
+    "nombre": "Mythic OG Pastel Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-pastel-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 668,
+    "nombre": "Mythic The Infinity Gem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-infinity-gem.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 669,
+    "nombre": "Mythic OG Fruity Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-fruity-shock.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 670,
+    "nombre": "Mythic Guardian Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-guardian-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 671,
+    "nombre": "Mythic Aureate Sunflower",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-aureate-sunflower.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 672,
+    "nombre": "Mythic Corn Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-corn-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 673,
+    "nombre": "Mythic Wheat Angel",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-wheat-angel.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 674,
+    "nombre": "Mythic JellOwOlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jellowolord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 675,
+    "nombre": "Mythic OG Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-pufferfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 676,
+    "nombre": "Mythic The Cornucopia",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-cornucopia.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 677,
+    "nombre": "Mythic Snowman",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-snowman.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 678,
+    "nombre": "Mythic Man Face Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-man-face-shock.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 679,
+    "nombre": "Mythic Man Face Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-man-face-cube.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 680,
+    "nombre": "Mythic Candycane Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-candycane-dominus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 681,
+    "nombre": "Mythic Snowball",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-snowball.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 682,
+    "nombre": "Mythic Frigid Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frigid-star.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 683,
+    "nombre": "Mythic Man Face Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-man-face-leviathan.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 684,
+    "nombre": "Mythic Toilet Puffer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-toilet-puffer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 685,
+    "nombre": "Mythic Rumblecon Ticket Vendor",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rumblecon-ticket-vendor.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 686,
+    "nombre": "Mythic Santa Penguin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-santa-penguin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 687,
+    "nombre": "Mythic Illuminated Fawn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-illuminated-fawn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 688,
+    "nombre": "Mythic Jingle Orb",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jingle-orb.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 689,
+    "nombre": "Mythic Mistletoe Fiend",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mistletoe-fiend.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 690,
+    "nombre": "Mythic Royal Candy Cane",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-royal-candy-cane.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 691,
+    "nombre": "Mythic Santa Rigby",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-santa-rigby.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 692,
+    "nombre": "Mythic MVP Rumblecon Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mvp-rumblecon-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 693,
+    "nombre": "Mythic Demonic Peppermint",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonic-peppermint.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 694,
+    "nombre": "Mythic Giant Nerts Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-nerts-pufferfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 695,
+    "nombre": "Mythic Giftbox Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giftbox-unicorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 696,
+    "nombre": "Mythic Gold Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-gold-marshmallow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 697,
+    "nombre": "Mythic Lunar Fairy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lunar-fairy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 698,
+    "nombre": "Mythic Frost Winged Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frost-winged-hydra.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 699,
+    "nombre": "Mythic Christmas Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-christmas-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 700,
+    "nombre": "Mythic Aurora Borealis",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-aurora-borealis.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 701,
+    "nombre": "Mythic Aurora Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-aurora-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 702,
+    "nombre": "Mythic Giftbox Dark Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giftbox-dark-phoenix.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 703,
+    "nombre": "Mythic Winter Phantom",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-winter-phantom.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 704,
+    "nombre": "Mythic Guardian Cookie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-guardian-cookie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 705,
+    "nombre": "Mythic Macaron King",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-macaron-king.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 706,
+    "nombre": "Mythic Mystical Hybrid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-mystical-hybrid.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 707,
+    "nombre": "Mythic Festive Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-festive-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 708,
+    "nombre": "Mythic Santa Capybara Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-santa-capybara-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 709,
+    "nombre": "Mythic Twin Snowballs",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-twin-snowballs.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 710,
+    "nombre": "Mythic Holiday Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-holiday-spirit.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 711,
+    "nombre": "Mythic Yeti",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-yeti.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 712,
+    "nombre": "Mythic Snowglobe Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-snowglobe-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 713,
+    "nombre": "Mythic Demonic Fireplace",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonic-fireplace.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 714,
+    "nombre": "Mythic Frost Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frost-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 715,
+    "nombre": "Mythic Frost Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-frost-cube.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 716,
+    "nombre": "Mythic Doofus Dingus & Bingus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-doofus-dingus-&-bingus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 717,
+    "nombre": "Mythic New Years Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-new-years-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 718,
+    "nombre": "Mythic Colossal Kraken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-colossal-kraken.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 719,
+    "nombre": "Mythic Radiant Challenger",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-radiant-challenger.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 720,
+    "nombre": "Mythic Aero Koi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-aero-koi.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 721,
+    "nombre": "Mythic 2026 Spitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-2026-spitty.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 722,
+    "nombre": "Mythic Ball Drop Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ball-drop-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 723,
+    "nombre": "Mythic New Years Blast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-new-years-blast.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 724,
+    "nombre": "Mythic Purble Vision",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-purble-vision.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 725,
+    "nombre": "Mythic Poison Apple",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-poison-apple.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 726,
+    "nombre": "Mythic Prince Slime",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-prince-slime.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 727,
+    "nombre": "Mythic Lily Bud",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lily-bud.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 728,
+    "nombre": "Mythic Royal Inferno Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-royal-inferno-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 729,
+    "nombre": "Mythic Pixie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-pixie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 730,
+    "nombre": "Mythic Royalty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-royalty.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 731,
+    "nombre": "Mythic Forest Drifter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-forest-drifter.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 732,
+    "nombre": "Mythic 2026 Sparkler Man",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-2026-sparkler-man.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 733,
+    "nombre": "Mythic Cotton Candy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-cotton-candy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 734,
+    "nombre": "Mythic Catmouse",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-catmouse.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 735,
+    "nombre": "Mythic The Jester",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-jester.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 736,
+    "nombre": "Mythic Chroma Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-chroma-star.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 737,
+    "nombre": "Mythic Circus Stack",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-circus-stack.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 738,
+    "nombre": "Mythic Bubble Circus Show",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bubble-circus-show.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 739,
+    "nombre": "Mythic Music Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-music-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 740,
+    "nombre": "Mythic Golden Balloon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-golden-balloon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 741,
+    "nombre": "Mythic Golden Lion",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-golden-lion.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 742,
+    "nombre": "Mythic Key Performer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-key-performer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 743,
+    "nombre": "Mythic Juggler",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-juggler.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 744,
+    "nombre": "Mythic Dark Force",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-force.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 745,
+    "nombre": "Mythic Dark Trickster",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-trickster.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 746,
+    "nombre": "Mythic Tanuki",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-tanuki.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 747,
+    "nombre": "Mythic Juggler Ditto",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-juggler-ditto.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 748,
+    "nombre": "Mythic Dark Dragon Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-dragon-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 749,
+    "nombre": "Mythic Lily Drop",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lily-drop.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 750,
+    "nombre": "Mythic Fantasia",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fantasia.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 751,
+    "nombre": "Mythic Timid Cannon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-timid-cannon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 752,
+    "nombre": "Mythic Retro Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-retro-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 753,
+    "nombre": "Mythic Retro Sylentlys Pet",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-retro-sylentlys-pet.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 754,
+    "nombre": "Mythic Flagbearer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-flagbearer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 755,
+    "nombre": "Mythic Teddy Bear Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-teddy-bear-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 756,
+    "nombre": "Mythic Retro Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-retro-dominus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 757,
+    "nombre": "Mythic Azure Angel",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-azure-angel.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 758,
+    "nombre": "Mythic Hellish Beast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hellish-beast.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 759,
+    "nombre": "Mythic Divine Seraph",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-divine-seraph.png",
+    "color": "#60a5fa"
+  },
+  {
+    "id": 760,
+    "nombre": "Mythic Bubblegum Pegasus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bubblegum-pegasus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 761,
+    "nombre": "Mythic Hellxarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hellxarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 762,
+    "nombre": "Mythic Azure Gaze",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-azure-gaze.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 763,
+    "nombre": "Mythic Azure Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-azure-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 764,
+    "nombre": "Mythic Demon Dowodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demon-dowodle.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 765,
+    "nombre": "Mythic Demon Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demon-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 766,
+    "nombre": "Mythic Rose Koi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rose-koi.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 767,
+    "nombre": "Mythic Chocolate Bond",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-chocolate-bond.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 768,
+    "nombre": "Mythic Lovebirds",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lovebirds.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 769,
+    "nombre": "Mythic que bonita",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-que-bonita.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 770,
+    "nombre": "Mythic Chocolate Gift",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-chocolate-gift.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 771,
+    "nombre": "Mythic Valentium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-valentium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 772,
+    "nombre": "Mythic Darkness Rose",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-darkness-rose.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 773,
+    "nombre": "Mythic Super Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-unicorn.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 774,
+    "nombre": "Mythic Lovely Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lovely-marshmallow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 775,
+    "nombre": "Mythic Love Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-love-soul.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 776,
+    "nombre": "Mythic Dark Avernus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-avernus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 777,
+    "nombre": "Mythic Blossom Protector",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-blossom-protector.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 778,
+    "nombre": "Mythic Sakura Sprout",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sakura-sprout.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 779,
+    "nombre": "Mythic Super Crescent Empress",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-super-crescent-empress.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 780,
+    "nombre": "Mythic OG Advocate",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-advocate.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 781,
+    "nombre": "Mythic Everlasting Moonglow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-everlasting-moonglow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 782,
+    "nombre": "Mythic Silly Wushi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-silly-wushi.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 783,
+    "nombre": "Mythic Wealthy Trio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-wealthy-trio.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 784,
+    "nombre": "Mythic OG Glitch",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-glitch.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 785,
+    "nombre": "Mythic OG Sky Imp",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-sky-imp.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 786,
+    "nombre": "Mythic Selenic Paladin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-selenic-paladin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 787,
+    "nombre": "Mythic Moonglow Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonglow-elemental.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 788,
+    "nombre": "Mythic Moonglow Axolotl",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonglow-axolotl.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 789,
+    "nombre": "Mythic Moonglow Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-moonglow-serpent.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 790,
+    "nombre": "Mythic Crimson Blossom",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-crimson-blossom.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 791,
+    "nombre": "Mythic Ardent Lantern",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-ardent-lantern.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 792,
+    "nombre": "Mythic All-Seeing Overseer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-all-seeing-overseer.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 793,
+    "nombre": "Mythic Giant Crescent Empress",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-crescent-empress.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 794,
+    "nombre": "Mythic Egg Trophy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-egg-trophy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 795,
+    "nombre": "Mythic Sunshine",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sunshine.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 796,
+    "nombre": "Mythic Windblume",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-windblume.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 797,
+    "nombre": "Mythic Fire Ant",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fire-ant.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 798,
+    "nombre": "Mythic Spring Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 799,
+    "nombre": "Mythic Spring Critter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spring-critter.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 800,
+    "nombre": "Mythic Flower Queen",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-flower-queen.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 801,
+    "nombre": "Mythic Petal Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-petal-spirit.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 802,
+    "nombre": "Mythic OG King Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-king-doggy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 803,
+    "nombre": "Mythic OG Almighty Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-almighty-pumpkin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 804,
+    "nombre": "Mythic OG Angelic Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-angelic-spirit.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 805,
+    "nombre": "Mythic Bubbleviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bubbleviathan.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 806,
+    "nombre": "Mythic Flying Coin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-flying-coin.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 807,
+    "nombre": "Mythic Lucky Jester",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-jester.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 808,
+    "nombre": "Mythic Uranium Hybrid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-uranium-hybrid.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 809,
+    "nombre": "Mythic Lucky Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-phoenix.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 810,
+    "nombre": "Mythic Forest Fae",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-forest-fae.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 811,
+    "nombre": "Mythic Toxic Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-toxic-shock.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 812,
+    "nombre": "Mythic Lucky Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-overlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 813,
+    "nombre": "Mythic Giant Tainter Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-giant-tainter-spirit.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 814,
+    "nombre": "Mythic Shrubbery",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-shrubbery.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 815,
+    "nombre": "Mythic Void Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-void-dominus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 816,
+    "nombre": "Mythic Bubble Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bubble-overlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 817,
+    "nombre": "Mythic Framed Loading Screen",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-framed-loading-screen.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 818,
+    "nombre": "Mythic Lucky Butterfly",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-butterfly.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 819,
+    "nombre": "Mythic Lucky Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-marshmallow.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 820,
+    "nombre": "Mythic Buble",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-buble.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 821,
+    "nombre": "Mythic Forest Wyvern",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-forest-wyvern.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 822,
+    "nombre": "Mythic Jackpot Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jackpot-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 823,
+    "nombre": "Mythic Clover Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-clover-basilisk.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 824,
+    "nombre": "Mythic Spirit of Fortune",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-spirit-of-fortune.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 825,
+    "nombre": "Mythic Unlimited Dollar",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-unlimited-dollar.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 826,
+    "nombre": "Mythic Lucky Magician",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-magician.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 827,
+    "nombre": "Mythic Lucky Squid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-squid.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 828,
+    "nombre": "Mythic Dark Infernal",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dark-infernal.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 829,
+    "nombre": "Mythic Bounty Basket",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bounty-basket.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 830,
+    "nombre": "Mythic Fortune Kraken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-fortune-kraken.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 831,
+    "nombre": "Mythic Lucky Dogcat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-dogcat.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 832,
+    "nombre": "Mythic Jackpot Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-jackpot-hexarium.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 833,
+    "nombre": "Mythic Lucky Equinox",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-equinox.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 834,
+    "nombre": "Mythic Lucky Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-lucky-pufferfish.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 835,
+    "nombre": "Mythic The Prophecy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-the-prophecy.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 836,
+    "nombre": "Mythic Rebirth",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-rebirth.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 837,
+    "nombre": "Mythic Toxic Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-toxic-spirit.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 838,
+    "nombre": "Mythic OG Easter Robot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-easter-robot.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 839,
+    "nombre": "Mythic Queen Spitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-queen-spitty.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 840,
+    "nombre": "Mythic King Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 841,
+    "nombre": "Mythic Easter Warden",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-warden.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 842,
+    "nombre": "Mythic Easter Bunny Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-bunny-plushie.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 843,
+    "nombre": "Mythic Demonic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-demonic-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 844,
+    "nombre": "Mythic Sunlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-sunlord.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 845,
+    "nombre": "Mythic OG Giant Chocolate Chicken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-giant-chocolate-chicken.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 846,
+    "nombre": "Mythic OG Patronus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-patronus.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 847,
+    "nombre": "Mythic OG Holy Egg",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-holy-egg.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 848,
+    "nombre": "Mythic OG Eternal Carrot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-og-eternal-carrot.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 849,
+    "nombre": "Mythic Hellish Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-hellish-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 850,
+    "nombre": "Mythic Heavenly Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-heavenly-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 851,
+    "nombre": "Mythic Easter Guardian",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-guardian.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 852,
+    "nombre": "Mythic Bunny Basket",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bunny-basket.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 853,
+    "nombre": "Mythic Prestige Carrot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-prestige-carrot.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 854,
+    "nombre": "Mythic Chromatic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-chromatic-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 855,
+    "nombre": "Mythic Easter Defender",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-defender.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 856,
+    "nombre": "Mythic Easter Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-dragon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 857,
+    "nombre": "Mythic Molten Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-molten-split.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 858,
+    "nombre": "Mythic Egg Hunt Basket",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-egg-hunt-basket.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 859,
+    "nombre": "Mythic Easter Gryphon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-gryphon.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 860,
+    "nombre": "Mythic Bonbun",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-bonbun.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 861,
+    "nombre": "Mythic Easter Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-spirit.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 862,
+    "nombre": "Mythic King Chocolate Chicken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-king-chocolate-chicken.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 863,
+    "nombre": "Mythic Big Egg Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-big-egg-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 864,
+    "nombre": "Mythic Dual Dreamers",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-dual-dreamers.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 865,
+    "nombre": "Mythic Galactic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-galactic-bunny.png",
+    "color": "#9ca3af"
+  },
+  {
+    "id": 866,
+    "nombre": "Mythic Easter Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/mythic-easter-hydra.png",
+    "color": "#9ca3af"
+  }
+]

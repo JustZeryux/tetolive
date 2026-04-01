@@ -1,0 +1,6802 @@
+[
+  {
+    "id": 1,
+    "nombre": "Shiny Mythic Wolflord",
+    "valor": 8500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-wolflord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 2,
+    "nombre": "Shiny Mythic Luminosity",
+    "valor": 5750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-luminosity.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 3,
+    "nombre": "Shiny Mythic Avernus",
+    "valor": 5250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-avernus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 4,
+    "nombre": "Shiny Mythic Dragonfruit",
+    "valor": 4500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dragonfruit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 5,
+    "nombre": "Shiny Mythic Eternity",
+    "valor": 3500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-eternity.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 6,
+    "nombre": "Shiny Mythic Sinister Skull",
+    "valor": 3200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sinister-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 7,
+    "nombre": "Shiny Mythic Angelic Skull",
+    "valor": 3000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-angelic-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 8,
+    "nombre": "Shiny Mythic Guardian Skull",
+    "valor": 2950000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-guardian-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 9,
+    "nombre": "Shiny Mythic King Skull",
+    "valor": 2900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 10,
+    "nombre": "Shiny Mythic OG Lucky Pyramidium",
+    "valor": 2750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-lucky-pyramidium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 11,
+    "nombre": "Shiny Mythic Wolf Skull",
+    "valor": 2700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-wolf-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 12,
+    "nombre": "Shiny Mythic OG Shard",
+    "valor": 2200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 13,
+    "nombre": "Shiny Mythic D0ggy1337",
+    "valor": 2000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-d0ggy1337.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 14,
+    "nombre": "Shiny Mythic Snake Eyes",
+    "valor": 2000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-snake-eyes.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 15,
+    "nombre": "Shiny Mythic Frost Defender",
+    "valor": 1900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frost-defender.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 16,
+    "nombre": "Shiny Mythic OG Duality",
+    "valor": 1900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-duality.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 17,
+    "nombre": "Shiny Mythic Auronium",
+    "valor": 1750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-auronium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 18,
+    "nombre": "Shiny Mythic Reincarnation",
+    "valor": 1750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-reincarnation.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 19,
+    "nombre": "Shiny Mythic Overlord Plushie",
+    "valor": 1600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-overlord-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 20,
+    "nombre": "Shiny Mythic OG Luminance",
+    "valor": 1600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-luminance.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 21,
+    "nombre": "Shiny Mythic Cup O Cocoa",
+    "valor": 1200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cup-o-cocoa.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 22,
+    "nombre": "Shiny Mythic Kitty Pot",
+    "valor": 1150000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-kitty-pot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 23,
+    "nombre": "Shiny Mythic Pumpgeist",
+    "valor": 1025000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pumpgeist.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 24,
+    "nombre": "Shiny Mythic Shinigami",
+    "valor": 1000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-shinigami.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 25,
+    "nombre": "Shiny Mythic Shimmering Shard",
+    "valor": 1000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-shimmering-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 26,
+    "nombre": "Shiny Mythic Seraph Tophat",
+    "valor": 1000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-seraph-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 27,
+    "nombre": "Shiny Mythic Manticore",
+    "valor": 1000000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-manticore.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 28,
+    "nombre": "Shiny Mythic Strawberry Snowcone",
+    "valor": 925000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-strawberry-snowcone.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 29,
+    "nombre": "Shiny Mythic Blue Raspberry Snowcone",
+    "valor": 925000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-blue-raspberry-snowcone.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 30,
+    "nombre": "Shiny Mythic Cream Snowcone",
+    "valor": 925000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cream-snowcone.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 31,
+    "nombre": "Shiny Mythic Cherry Snowcone",
+    "valor": 925000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cherry-snowcone.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 32,
+    "nombre": "Shiny Mythic Beelzebub",
+    "valor": 900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-beelzebub.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 33,
+    "nombre": "Shiny Mythic Axolotl Army",
+    "valor": 900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-axolotl-army.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 34,
+    "nombre": "Shiny Mythic Bruh Tophat",
+    "valor": 900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bruh-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 35,
+    "nombre": "Shiny Mythic Pufferfish Tophat",
+    "valor": 900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pufferfish-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 36,
+    "nombre": "Shiny Mythic Devils Skull",
+    "valor": 900000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-devils-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 37,
+    "nombre": "Shiny Mythic Ghosdeeri",
+    "valor": 875000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ghosdeeri.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 38,
+    "nombre": "Shiny Mythic Azure Fate",
+    "valor": 875000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-azure-fate.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 39,
+    "nombre": "Shiny Mythic Secret Circus Stack",
+    "valor": 875000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-secret-circus-stack.png",
+    "color": "#ef4444"
+  },
+  {
+    "id": 40,
+    "nombre": "Shiny Mythic Galactic Paladin",
+    "valor": 850000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-galactic-paladin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 41,
+    "nombre": "Shiny Mythic Kraken",
+    "valor": 800000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-kraken.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 42,
+    "nombre": "Shiny Mythic King Mush",
+    "valor": 775000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-mush.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 43,
+    "nombre": "Shiny Mythic Gumdrop King",
+    "valor": 775000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-gumdrop-king.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 44,
+    "nombre": "Shiny Mythic Giant D.I.Y Robot",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-diy-robot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 45,
+    "nombre": "Shiny Mythic 1x1x1x1",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-1x1x1x1.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 46,
+    "nombre": "Shiny Mythic OG Plasma Wolflord",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-plasma-wolflord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 47,
+    "nombre": "Shiny Mythic Soulflake",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-soulflake.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 48,
+    "nombre": "Shiny Mythic Frosty Lord Shock",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frosty-lord-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 49,
+    "nombre": "Shiny Mythic Prosperity",
+    "valor": 750000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-prosperity.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 50,
+    "nombre": "Shiny Mythic OG OwOlord",
+    "valor": 725000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-owolord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 51,
+    "nombre": "Shiny Mythic Void Crystal Dragon",
+    "valor": 700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-crystal-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 52,
+    "nombre": "Shiny Mythic Radiant Crystal Dragon",
+    "valor": 700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-radiant-crystal-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 53,
+    "nombre": "Shiny Mythic The Keeper",
+    "valor": 700000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-keeper.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 54,
+    "nombre": "Shiny Mythic Starlight",
+    "valor": 650000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-starlight.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 55,
+    "nombre": "Shiny Mythic Mistletoe Fairy",
+    "valor": 650000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mistletoe-fairy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 56,
+    "nombre": "Shiny Mythic Illumination",
+    "valor": 635000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-illumination.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 57,
+    "nombre": "Shiny Mythic OG Koi",
+    "valor": 625000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-koi.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 58,
+    "nombre": "Shiny Mythic OG Diamond Ring",
+    "valor": 615000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-diamond-ring.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 59,
+    "nombre": "Shiny Mythic Liberty",
+    "valor": 610000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-liberty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 60,
+    "nombre": "Shiny Mythic OG Strawberry Sundae Champion",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-strawberry-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 61,
+    "nombre": "Shiny Mythic OG Vanilla Sundae Champion",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-vanilla-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 62,
+    "nombre": "Shiny Mythic OG Mint Sundae Champion",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-mint-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 63,
+    "nombre": "Shiny Mythic OG Chocolate Sundae Champion",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-chocolate-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 64,
+    "nombre": "Shiny Mythic Sea Chime",
+    "valor": 600000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sea-chime.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 65,
+    "nombre": "Shiny Mythic Forest Bloom",
+    "valor": 575000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-forest-bloom.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 66,
+    "nombre": "Shiny Mythic Night Bloom",
+    "valor": 550000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-night-bloom.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 67,
+    "nombre": "Shiny Mythic Pot O Doggy",
+    "valor": 550000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pot-o-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 68,
+    "nombre": "Shiny Mythic Eternal Star",
+    "valor": 535000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-eternal-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 69,
+    "nombre": "Shiny Mythic Moon Goddess",
+    "valor": 525000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moon-goddess.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 70,
+    "nombre": "Shiny Mythic Almighty Hexarium",
+    "valor": 515000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-almighty-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 71,
+    "nombre": "Shiny Mythic Hellshard",
+    "valor": 500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hellshard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 72,
+    "nombre": "Shiny Mythic Frankenbot",
+    "valor": 500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frankenbot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 73,
+    "nombre": "Shiny Mythic Royal Lion",
+    "valor": 500000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royal-lion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 74,
+    "nombre": "Shiny Mythic Merry-Go Hound",
+    "valor": 475000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-merry-go-hound.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 75,
+    "nombre": "Shiny Mythic Candycorn Shard",
+    "valor": 465000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-candycorn-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 76,
+    "nombre": "Shiny Mythic DUMB SINISTER LORD",
+    "valor": 460000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dumb-sinister-lord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 77,
+    "nombre": "Shiny Mythic Queen Bee",
+    "valor": 450000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-queen-bee.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 78,
+    "nombre": "Shiny Mythic Velvet Wolflord",
+    "valor": 445000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-velvet-wolflord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 79,
+    "nombre": "Shiny Mythic Northern Star",
+    "valor": 440000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-northern-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 80,
+    "nombre": "Shiny Mythic Spring Duality",
+    "valor": 435000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-duality.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 81,
+    "nombre": "Shiny Mythic OG Dragonfruit",
+    "valor": 425000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-dragonfruit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 82,
+    "nombre": "Shiny Mythic OG Godly Shamrock",
+    "valor": 425000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-godly-shamrock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 83,
+    "nombre": "Shiny Mythic Fallen Angel",
+    "valor": 415000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fallen-angel.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 84,
+    "nombre": "Shiny Mythic Flake Spirit",
+    "valor": 415000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-flake-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 85,
+    "nombre": "Shiny Mythic Super Trophy",
+    "valor": 400000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-trophy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 86,
+    "nombre": "Shiny Mythic Frosted Dogcat",
+    "valor": 380000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frosted-dogcat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 87,
+    "nombre": "Shiny Mythic Super Shock",
+    "valor": 365000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 88,
+    "nombre": "Shiny Mythic Christmas Tree",
+    "valor": 365000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-christmas-tree.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 89,
+    "nombre": "Shiny Mythic OG Angelic Ghost Spirit",
+    "valor": 360000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-angelic-ghost-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 90,
+    "nombre": "Shiny Mythic OG Demonic Ghost Spirit",
+    "valor": 360000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-demonic-ghost-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 91,
+    "nombre": "Shiny Mythic Jelly Overlord",
+    "valor": 350000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jelly-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 92,
+    "nombre": "Shiny Mythic OG Hellshard",
+    "valor": 350000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-hellshard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 93,
+    "nombre": "Shiny Mythic Sinister Shard",
+    "valor": 340000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sinister-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 94,
+    "nombre": "Shiny Mythic Sunmallow",
+    "valor": 335000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sunmallow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 95,
+    "nombre": "Shiny Mythic Iridescent Catcher",
+    "valor": 330000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-iridescent-catcher.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 96,
+    "nombre": "Shiny Mythic Cardinal Bunny",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cardinal-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 97,
+    "nombre": "Shiny Mythic Mint Sundae Champion",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mint-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 98,
+    "nombre": "Shiny Mythic Strawberry Sundae Champion",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-strawberry-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 99,
+    "nombre": "Shiny Mythic Vanilla Sundae Champion",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-vanilla-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 100,
+    "nombre": "Shiny Mythic Chocolate Sundae Champion",
+    "valor": 325000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chocolate-sundae-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 101,
+    "nombre": "Shiny Mythic Midas",
+    "valor": 300000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-midas.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 102,
+    "nombre": "Shiny Mythic FutureWebsiteOwner Plushie",
+    "valor": 300000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-futurewebsiteowner-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 103,
+    "nombre": "Shiny Mythic Snowstorm",
+    "valor": 300000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-snowstorm.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 104,
+    "nombre": "Shiny Mythic Angelus",
+    "valor": 280000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-angelus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 105,
+    "nombre": "Shiny Mythic Fire Guardian",
+    "valor": 275000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fire-guardian.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 106,
+    "nombre": "Shiny Mythic Festival One",
+    "valor": 275000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-festival-one.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 107,
+    "nombre": "Shiny Mythic Pure of Heart",
+    "valor": 270000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pure-of-heart.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 108,
+    "nombre": "Shiny Mythic Golden Tokage",
+    "valor": 260000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-golden-tokage.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 109,
+    "nombre": "Shiny Mythic Shadow Raven",
+    "valor": 255000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-shadow-raven.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 110,
+    "nombre": "Shiny Mythic Royal Guardian",
+    "valor": 250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royal-guardian.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 111,
+    "nombre": "Shiny Mythic OG Archangel",
+    "valor": 250000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-archangel.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 112,
+    "nombre": "Shiny Mythic Diamond Ring",
+    "valor": 245000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-diamond-ring.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 113,
+    "nombre": "Shiny Mythic Firecracker",
+    "valor": 245000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-firecracker.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 114,
+    "nombre": "Shiny Mythic Lonely Rose",
+    "valor": 240000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lonely-rose.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 115,
+    "nombre": "Shiny Mythic Stellar Acheron",
+    "valor": 235000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-stellar-acheron.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 116,
+    "nombre": "Shiny Mythic Earth Champion",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-earth-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 117,
+    "nombre": "Shiny Mythic Sky Champion",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sky-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 118,
+    "nombre": "Shiny Mythic Fire Champion",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fire-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 119,
+    "nombre": "Shiny Mythic Dark Champion",
+    "valor": 225000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 120,
+    "nombre": "Shiny Mythic DOOF",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-doof.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 121,
+    "nombre": "Shiny Mythic Nekomata",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-nekomata.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 122,
+    "nombre": "Shiny Mythic King Bell",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-bell.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 123,
+    "nombre": "Shiny Mythic Dinosaur Tophat",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dinosaur-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 124,
+    "nombre": "Shiny Mythic Pig Tophat",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pig-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 125,
+    "nombre": "Shiny Mythic Deer Tophat",
+    "valor": 200000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-deer-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 126,
+    "nombre": "Shiny Mythic Hellfire",
+    "valor": 165000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hellfire.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 127,
+    "nombre": "Shiny Mythic Archangel",
+    "valor": 160000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-archangel.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 128,
+    "nombre": "Shiny Mythic Synthesis",
+    "valor": 160000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-synthesis.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 129,
+    "nombre": "Shiny Mythic Super Hacker Prism",
+    "valor": 150000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-hacker-prism.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 130,
+    "nombre": "Shiny Mythic Bag O Fish",
+    "valor": 150000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bag-o-fish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 131,
+    "nombre": "Shiny Mythic Joy Candle",
+    "valor": 140000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-joy-candle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 132,
+    "nombre": "Shiny Mythic Hope Candle",
+    "valor": 140000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hope-candle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 133,
+    "nombre": "Shiny Mythic Love Candle",
+    "valor": 140000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-love-candle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 134,
+    "nombre": "Shiny Mythic Peace Candle",
+    "valor": 140000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-peace-candle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 135,
+    "nombre": "Shiny Mythic Moonlord",
+    "valor": 135000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moonlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 136,
+    "nombre": "Shiny Mythic Fortuitous Overlord",
+    "valor": 130000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fortuitous-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 137,
+    "nombre": "Shiny Mythic Lovely Rose",
+    "valor": 125000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lovely-rose.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 138,
+    "nombre": "Shiny Mythic Big Rigby",
+    "valor": 125000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-big-rigby.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 139,
+    "nombre": "Shiny Mythic Lovely Omen",
+    "valor": 125000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lovely-omen.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 140,
+    "nombre": "Shiny Mythic Money Mouth",
+    "valor": 125000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-money-mouth.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 141,
+    "nombre": "Shiny Mythic King Doggy",
+    "valor": 120000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 142,
+    "nombre": "Shiny Mythic Harlequin",
+    "valor": 120000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-harlequin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 143,
+    "nombre": "Shiny Mythic Pumpkin Pie",
+    "valor": 120000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pumpkin-pie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 144,
+    "nombre": "Shiny Mythic OG Overlord Plushie",
+    "valor": 120000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-overlord-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 145,
+    "nombre": "Shiny Mythic Spring Shard",
+    "valor": 120000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 146,
+    "nombre": "Shiny Mythic Lucky Catcher",
+    "valor": 120000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-catcher.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 147,
+    "nombre": "Shiny Mythic Eternal Cucumber",
+    "valor": 115000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-eternal-cucumber.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 148,
+    "nombre": "Shiny Mythic Big Leafy",
+    "valor": 115000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-big-leafy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 149,
+    "nombre": "Shiny Mythic Crescent Empress",
+    "valor": 110000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crescent-empress.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 150,
+    "nombre": "Shiny Mythic Borealis Elk",
+    "valor": 105000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-borealis-elk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 151,
+    "nombre": "Shiny Mythic Giant Snowman",
+    "valor": 105000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-snowman.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 152,
+    "nombre": "Shiny Mythic Super Silly Doggy",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-silly-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 153,
+    "nombre": "Shiny Mythic OG Hellfire",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-hellfire.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 154,
+    "nombre": "Shiny Mythic Giant NULLvoid",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-nullvoid.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 155,
+    "nombre": "Shiny Mythic Giant DOOF",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-doof.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 156,
+    "nombre": "Shiny Mythic Peppermint Heart",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-peppermint-heart.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 157,
+    "nombre": "Shiny Mythic Rockstar Leviathan",
+    "valor": 100000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rockstar-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 158,
+    "nombre": "Shiny Mythic Holy Egg",
+    "valor": 95000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-holy-egg.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 159,
+    "nombre": "Shiny Mythic Chocolate Bunny",
+    "valor": 90000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chocolate-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 160,
+    "nombre": "Shiny Mythic All Seeing Shard",
+    "valor": 90000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-all-seeing-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 161,
+    "nombre": "Shiny Mythic OG Lucid Leaf",
+    "valor": 90000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-lucid-leaf.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 162,
+    "nombre": "Shiny Mythic Holy Candle",
+    "valor": 90000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-holy-candle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 163,
+    "nombre": "Shiny Mythic Cyber Kitty",
+    "valor": 90000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cyber-kitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 164,
+    "nombre": "Shiny Mythic Ancient One",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ancient-one.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 165,
+    "nombre": "Shiny Mythic Diamond Overlord",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-diamond-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 166,
+    "nombre": "Shiny Mythic Creepy Overlord",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-creepy-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 167,
+    "nombre": "Shiny Mythic OG Crystal Teddy",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-crystal-teddy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 168,
+    "nombre": "Shiny Mythic Celtic Shard",
+    "valor": 85000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-celtic-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 169,
+    "nombre": "Shiny Mythic Tidal God",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-tidal-god.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 170,
+    "nombre": "Shiny Mythic Demonlord",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 171,
+    "nombre": "Shiny Mythic Sylently Plushie",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sylently-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 172,
+    "nombre": "Shiny Mythic Sircfenner Plushie",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sircfenner-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 173,
+    "nombre": "Shiny Mythic ObscureEntity Plushie",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-obscureentity-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 174,
+    "nombre": "Shiny Mythic Nert Plushie",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-nert-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 175,
+    "nombre": "Shiny Mythic Quamatic Plushie",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-quamatic-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 176,
+    "nombre": "Shiny Mythic God Tamer",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-god-tamer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 177,
+    "nombre": "Shiny Mythic New Years Overlord",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-new-years-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 178,
+    "nombre": "Shiny Mythic Dark Omen",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-omen.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 179,
+    "nombre": "Shiny Mythic LOL",
+    "valor": 80000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lol.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 180,
+    "nombre": "Shiny Mythic Ophanim",
+    "valor": 75000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ophanim.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 181,
+    "nombre": "Shiny Mythic Andromeda",
+    "valor": 75000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-andromeda.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 182,
+    "nombre": "Shiny Mythic Snowverlord",
+    "valor": 75000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-snowverlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 183,
+    "nombre": "Shiny Mythic The Overlord",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 184,
+    "nombre": "Shiny Mythic Giant Pearl",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-pearl.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 185,
+    "nombre": "Shiny Mythic OG Prisma Cube",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-prisma-cube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 186,
+    "nombre": "Shiny Mythic OG Morning Star",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-morning-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 187,
+    "nombre": "Shiny Mythic Holy Bell",
+    "valor": 70000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-holy-bell.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 188,
+    "nombre": "Shiny Mythic King Pufferfish",
+    "valor": 65000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-pufferfish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 189,
+    "nombre": "Shiny Mythic OG BGS Plaque",
+    "valor": 65000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-bgs-plaque.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 190,
+    "nombre": "Shiny Mythic Moon Deer",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moon-deer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 191,
+    "nombre": "Shiny Mythic Classic Overlord",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 192,
+    "nombre": "Shiny Mythic OG The Overlord",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-the-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 193,
+    "nombre": "Shiny Mythic Robot Tophat",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-robot-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 194,
+    "nombre": "Shiny Mythic UwUlord",
+    "valor": 60000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-uwulord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 195,
+    "nombre": "Shiny Mythic Mech Robot",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mech-robot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 196,
+    "nombre": "Shiny Mythic Wicked Widow",
+    "valor": 50000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-wicked-widow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 197,
+    "nombre": "Shiny Mythic Heartbroken One",
+    "valor": 48000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-heartbroken-one.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 198,
+    "nombre": "Shiny Mythic Corrupt Glitch",
+    "valor": 45000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-corrupt-glitch.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 199,
+    "nombre": "Shiny Mythic Guardian Angel",
+    "valor": 45000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-guardian-angel.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 200,
+    "nombre": "Shiny Mythic Dark Destiny",
+    "valor": 45000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-destiny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 201,
+    "nombre": "Shiny Mythic Overworld Army",
+    "valor": 45000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-overworld-army.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 202,
+    "nombre": "Shiny Mythic Rainbow Marshmellow",
+    "valor": 42500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rainbow-marshmellow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 203,
+    "nombre": "Shiny Mythic Ethereal Bunny",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ethereal-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 204,
+    "nombre": "Shiny Mythic Crimson Bloodmoon",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crimson-bloodmoon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 205,
+    "nombre": "Shiny Mythic Hyperwave Kitty",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hyperwave-kitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 206,
+    "nombre": "Shiny Mythic Queen Overlord",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-queen-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 207,
+    "nombre": "Shiny Mythic Gummy Overlord",
+    "valor": 40000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-gummy-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 208,
+    "nombre": "Shiny Mythic DUMB PUMPKIN",
+    "valor": 32500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dumb-pumpkin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 209,
+    "nombre": "Shiny Mythic Water Serpent",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-water-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 210,
+    "nombre": "Shiny Mythic Silly King Doggy",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-silly-king-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 211,
+    "nombre": "Shiny Mythic Sweet Heart",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sweet-heart.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 212,
+    "nombre": "Shiny Mythic Santas Hat",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-santas-hat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 213,
+    "nombre": "Shiny Mythic Big Flakey",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-big-flakey.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 214,
+    "nombre": "Shiny Mythic Clown Rigby",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-clown-rigby.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 215,
+    "nombre": "Shiny Mythic The Eternity",
+    "valor": 30000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-eternity.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 216,
+    "nombre": "Shiny Mythic Dualcorn",
+    "valor": 25000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dualcorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 217,
+    "nombre": "Shiny Mythic Santa Nert Plushie",
+    "valor": 20000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-santa-nert-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 218,
+    "nombre": "Shiny Mythic Maid Nert Plushie",
+    "valor": 17500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-maid-nert-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 219,
+    "nombre": "Shiny Mythic Gingerbread Shard",
+    "valor": 15000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-gingerbread-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 220,
+    "nombre": "Shiny Mythic Retro Face God",
+    "valor": 12500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-retro-face-god.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 221,
+    "nombre": "Shiny Mythic Drippy Slice",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-drippy-slice.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 222,
+    "nombre": "Shiny Mythic Eternal Burger",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-eternal-burger.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 223,
+    "nombre": "Shiny Mythic Watermelon Round",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-watermelon-round.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 224,
+    "nombre": "Shiny Mythic Man Face Dogcat",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-man-face-dogcat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 225,
+    "nombre": "Shiny Mythic Giant Emerald Golem",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-emerald-golem.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 226,
+    "nombre": "Shiny Mythic Rumblecon Halftime Show",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rumblecon-halftime-show.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 227,
+    "nombre": "Shiny Mythic Crystal Snowman",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crystal-snowman.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 228,
+    "nombre": "Shiny Mythic Clown Round",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-clown-round.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 229,
+    "nombre": "Shiny Mythic Cyber Pyramidium",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cyber-pyramidium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 230,
+    "nombre": "Shiny Mythic Super Radiant One",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-radiant-one.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 231,
+    "nombre": "Shiny Mythic Seraphim",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-seraphim.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 232,
+    "nombre": "Shiny Mythic Cobalt Sea Dragon",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cobalt-sea-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 233,
+    "nombre": "Shiny Mythic Crimson Sea Dragon",
+    "valor": 10000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crimson-sea-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 234,
+    "nombre": "Shiny Mythic FutureWebsiteOwner Giftbox",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-futurewebsiteowner-giftbox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 235,
+    "nombre": "Shiny Mythic Sylently Giftbox",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sylently-giftbox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 236,
+    "nombre": "Shiny Mythic Sircfenner Giftbox",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sircfenner-giftbox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 237,
+    "nombre": "Shiny Mythic ObscureEntity Giftbox",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-obscureentity-giftbox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 238,
+    "nombre": "Shiny Mythic Nert Giftbox",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-nert-giftbox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 239,
+    "nombre": "Shiny Mythic Quamatic Giftbox",
+    "valor": 7500,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-quamatic-giftbox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 240,
+    "nombre": "Shiny Mythic Rumblecon Trophy",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rumblecon-trophy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 241,
+    "nombre": "Shiny Mythic Solitaire",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-solitaire.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 242,
+    "nombre": "Shiny Mythic Encore",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-encore.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 243,
+    "nombre": "Shiny Mythic Retro Kraken",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-retro-kraken.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 244,
+    "nombre": "Shiny Mythic SUPER BIG ROUND",
+    "valor": 5000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-big-round.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 245,
+    "nombre": "Shiny Mythic Festive Snow Jar",
+    "valor": 4000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-festive-snow-jar.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 246,
+    "nombre": "Shiny Mythic Radiant Soul",
+    "valor": 4000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-radiant-soul.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 247,
+    "nombre": "Shiny Mythic Tophat Spitty",
+    "valor": 4000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-tophat-spitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 248,
+    "nombre": "Shiny Mythic Giant Neon Elemental",
+    "valor": 3000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-neon-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 249,
+    "nombre": "Shiny Mythic Hot Dog Doggy",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hot-dog-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 250,
+    "nombre": "Shiny Mythic Butter Dawg",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-butter-dawg.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 251,
+    "nombre": "Shiny Mythic Man Face Lord",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-man-face-lord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 252,
+    "nombre": "Shiny Mythic The Golden Ticket",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-golden-ticket.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 253,
+    "nombre": "Shiny Mythic Giftbox King Doggy",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giftbox-king-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 254,
+    "nombre": "Shiny Mythic Aero Heart",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-aero-heart.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 255,
+    "nombre": "Shiny Mythic Giant Bongo Kitty",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-bongo-kitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 256,
+    "nombre": "Shiny Mythic Retro Pyramidium",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-retro-pyramidium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 257,
+    "nombre": "Shiny Mythic The Superlord",
+    "valor": 2000,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-superlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 258,
+    "nombre": "Shiny Mythic Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-unicorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 259,
+    "nombre": "Shiny Mythic Virus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-virus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 260,
+    "nombre": "Shiny Mythic Neon Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-neon-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 261,
+    "nombre": "Shiny Mythic Sunburst",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sunburst.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 262,
+    "nombre": "Shiny Mythic Sigma Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sigma-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 263,
+    "nombre": "Shiny Mythic Moonburst",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moonburst.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 264,
+    "nombre": "Shiny Mythic Hacker Prism",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hacker-prism.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 265,
+    "nombre": "Shiny Mythic Manarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-manarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 266,
+    "nombre": "Shiny Mythic Seraph",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-seraph.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 267,
+    "nombre": "Shiny Mythic Abyssal Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-abyssal-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 268,
+    "nombre": "Shiny Mythic Trio Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-trio-cube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 269,
+    "nombre": "Shiny Mythic MAN FACE GOD",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-man-face-god.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 270,
+    "nombre": "Shiny Mythic Inferno Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-inferno-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 271,
+    "nombre": "Shiny Mythic Rainbow Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rainbow-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 272,
+    "nombre": "Shiny Mythic Demonic Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonic-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 273,
+    "nombre": "Shiny Mythic Green Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-green-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 274,
+    "nombre": "Shiny Mythic Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 275,
+    "nombre": "Shiny Mythic Inferno Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-inferno-cube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 276,
+    "nombre": "Shiny Mythic Emerald Golem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-emerald-golem.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 277,
+    "nombre": "Shiny Mythic Lunar Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lunar-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 278,
+    "nombre": "Shiny Mythic Dark Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-phoenix.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 279,
+    "nombre": "Shiny Mythic Electra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-electra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 280,
+    "nombre": "Shiny Mythic Flying Pig",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-flying-pig.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 281,
+    "nombre": "Shiny Mythic NULLVoid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-nullvoid.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 282,
+    "nombre": "Shiny Mythic Seraphic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-seraphic-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 283,
+    "nombre": "Shiny Mythic Sweet Treat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sweet-treat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 284,
+    "nombre": "Shiny Mythic Easter Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 285,
+    "nombre": "Shiny Mythic Dementor",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dementor.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 286,
+    "nombre": "Shiny Mythic ROUND",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-round.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 287,
+    "nombre": "Shiny Mythic Diamond Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-diamond-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 288,
+    "nombre": "Shiny Mythic Royal Trophy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royal-trophy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 289,
+    "nombre": "Shiny Mythic Overseer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-overseer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 290,
+    "nombre": "Shiny Mythic Parasite",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-parasite.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 291,
+    "nombre": "Shiny Mythic Diamond Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-diamond-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 292,
+    "nombre": "Shiny Mythic Bionic Shard",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bionic-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 293,
+    "nombre": "Shiny Mythic Stone Gargoyle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-stone-gargoyle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 294,
+    "nombre": "Shiny Mythic Game Master",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-game-master.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 295,
+    "nombre": "Shiny Mythic Dice Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dice-split.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 296,
+    "nombre": "Shiny Mythic Dragon Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dragon-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 297,
+    "nombre": "Shiny Mythic Magmas",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-magmas.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 298,
+    "nombre": "Shiny Mythic Cyborg Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cyborg-phoenix.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 299,
+    "nombre": "Shiny Mythic Crystal Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crystal-unicorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 300,
+    "nombre": "Shiny Mythic Jackpot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jackpot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 301,
+    "nombre": "Shiny Mythic Elite Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-elite-soul.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 302,
+    "nombre": "Shiny Mythic Moonlight",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moonlight.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 303,
+    "nombre": "Shiny Mythic Space Invader",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-space-invader.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 304,
+    "nombre": "Shiny Mythic Toilet Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-toilet-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 305,
+    "nombre": "Shiny Mythic Crimson Butterfly",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crimson-butterfly.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 306,
+    "nombre": "Shiny Mythic Sir Doggyton",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sir-doggyton.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 307,
+    "nombre": "Shiny Mythic Queen Kitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-queen-kitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 308,
+    "nombre": "Shiny Mythic Prismatic",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-prismatic.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 309,
+    "nombre": "Shiny Mythic Demonweb",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonweb.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 310,
+    "nombre": "Shiny Mythic Darkness Creature",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-darkness-creature.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 311,
+    "nombre": "Shiny Mythic Capybara Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-capybara-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 312,
+    "nombre": "Shiny Mythic Neon Wyvern",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-neon-wyvern.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 313,
+    "nombre": "Shiny Mythic Bongo Kitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bongo-kitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 314,
+    "nombre": "Shiny Mythic Star Charm",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-star-charm.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 315,
+    "nombre": "Shiny Mythic The Sun",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-sun.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 316,
+    "nombre": "Shiny Mythic Noctis",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-noctis.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 317,
+    "nombre": "Shiny Mythic Neon Wire Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-neon-wire-eye.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 318,
+    "nombre": "Shiny Mythic Ring Master",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ring-master.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 319,
+    "nombre": "Shiny Mythic Equalizer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-equalizer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 320,
+    "nombre": "Shiny Mythic Kiwi Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-kiwi-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 321,
+    "nombre": "Shiny Mythic Monolith",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-monolith.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 322,
+    "nombre": "Shiny Mythic Dreamscape",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dreamscape.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 323,
+    "nombre": "Shiny Mythic Mangorium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mangorium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 324,
+    "nombre": "Shiny Mythic Sundae Cone",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sundae-cone.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 325,
+    "nombre": "Shiny Mythic Rigby",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rigby.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 326,
+    "nombre": "Shiny Mythic Everblaze",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-everblaze.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 327,
+    "nombre": "Shiny Mythic Popsicle Trio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-popsicle-trio.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 328,
+    "nombre": "Shiny Mythic Soarin Surfer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-soarin-surfer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 329,
+    "nombre": "Shiny Mythic Pineapple Tourist",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pineapple-tourist.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 330,
+    "nombre": "Shiny Mythic Runic Defender",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-runic-defender.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 331,
+    "nombre": "Shiny Mythic Infernal",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-infernal.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 332,
+    "nombre": "Shiny Mythic Crystal Teddy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crystal-teddy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 333,
+    "nombre": "Shiny Mythic Captain Monkey",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-captain-monkey.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 334,
+    "nombre": "Shiny Mythic Bug Amber",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bug-amber.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 335,
+    "nombre": "Shiny Mythic Captains Curse",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-captains-curse.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 336,
+    "nombre": "Shiny Mythic Ice Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ice-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 337,
+    "nombre": "Shiny Mythic Fossilus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fossilus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 338,
+    "nombre": "Shiny Mythic Chest Mimic",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chest-mimic.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 339,
+    "nombre": "Shiny Mythic Fossil Ghost",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fossil-ghost.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 340,
+    "nombre": "Shiny Mythic Fire Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fire-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 341,
+    "nombre": "Shiny Mythic Carrot Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-carrot-pufferfish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 342,
+    "nombre": "Shiny Mythic Guardian of Light",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-guardian-of-light.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 343,
+    "nombre": "Shiny Mythic EVIL",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-evil.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 344,
+    "nombre": "Shiny Mythic Light Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-light-cube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 345,
+    "nombre": "Shiny Mythic Dowominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dowominus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 346,
+    "nombre": "Shiny Mythic Galaxium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-galaxium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 347,
+    "nombre": "Shiny Mythic Voidflame",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-voidflame.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 348,
+    "nombre": "Shiny Mythic Radiant Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-radiant-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 349,
+    "nombre": "Shiny Mythic Darkness",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-darkness.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 350,
+    "nombre": "Shiny Mythic Stained Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-stained-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 351,
+    "nombre": "Shiny Mythic Void Crystal Parasite",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-crystal-parasite.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 352,
+    "nombre": "Shiny Mythic King Slime",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-slime.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 353,
+    "nombre": "Shiny Mythic Void Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-eye.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 354,
+    "nombre": "Shiny Mythic Golden Retreiver",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-golden-retreiver.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 355,
+    "nombre": "Shiny Mythic Broken TV",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-broken-tv.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 356,
+    "nombre": "Shiny Mythic Excabot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-excabot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 357,
+    "nombre": "Shiny Mythic Dream Catcher",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dream-catcher.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 358,
+    "nombre": "Shiny Mythic Void Scorpion",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-scorpion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 359,
+    "nombre": "Shiny Mythic Celestial Bruh",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-celestial-bruh.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 360,
+    "nombre": "Shiny Mythic Seraphic Bruh",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-seraphic-bruh.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 361,
+    "nombre": "Shiny Mythic Bruh Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bruh-split.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 362,
+    "nombre": "Shiny Mythic Bruhodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bruhodle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 363,
+    "nombre": "Shiny Mythic ROUND BRUH",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-round-bruh.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 364,
+    "nombre": "Shiny Mythic BRUH GOD",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bruh-god.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 365,
+    "nombre": "Shiny Mythic Wilted Branch",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-wilted-branch.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 366,
+    "nombre": "Shiny Mythic Tole Cat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-tole-cat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 367,
+    "nombre": "Shiny Mythic Star Lord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-star-lord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 368,
+    "nombre": "Shiny Mythic Pixel Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pixel-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 369,
+    "nombre": "Shiny Mythic Starry Kitsune",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-starry-kitsune.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 370,
+    "nombre": "Shiny Mythic Soul of Plant",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-soul-of-plant.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 371,
+    "nombre": "Shiny Mythic Patriotic Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-patriotic-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 372,
+    "nombre": "Shiny Mythic Patriotic Penguin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-patriotic-penguin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 373,
+    "nombre": "Shiny Mythic Patriotic Robot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-patriotic-robot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 374,
+    "nombre": "Shiny Mythic Patriotic Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-patriotic-soul.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 375,
+    "nombre": "Shiny Mythic Dark Guardian",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-guardian.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 376,
+    "nombre": "Shiny Mythic Geometric Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-geometric-dominus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 377,
+    "nombre": "Shiny Mythic Destiny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-destiny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 378,
+    "nombre": "Shiny Mythic Platinum Dualcorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-platinum-dualcorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 379,
+    "nombre": "Shiny Mythic D.I.Y Robot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-diy-robot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 380,
+    "nombre": "Shiny Mythic Glitch",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-glitch.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 381,
+    "nombre": "Shiny Mythic Paragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-paragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 382,
+    "nombre": "Shiny Mythic Jawbreaker Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jawbreaker-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 383,
+    "nombre": "Shiny Mythic King Kitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-kitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 384,
+    "nombre": "Shiny Mythic Super Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 385,
+    "nombre": "Shiny Mythic Giant Robot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-robot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 386,
+    "nombre": "Shiny Mythic Evil Bee",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-evil-bee.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 387,
+    "nombre": "Shiny Mythic Dominus Astra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dominus-astra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 388,
+    "nombre": "Shiny Mythic Pearl Goddess",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pearl-goddess.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 389,
+    "nombre": "Shiny Mythic Bee Bee Bee",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bee-bee-bee.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 390,
+    "nombre": "Shiny Mythic Angel Bee",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-angel-bee.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 391,
+    "nombre": "Shiny Mythic Gummy Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-gummy-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 392,
+    "nombre": "Shiny Mythic The Shocklord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-shocklord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 393,
+    "nombre": "Shiny Mythic Tigers Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-tigers-eye.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 394,
+    "nombre": "Shiny Mythic Sparkly Lemonade",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sparkly-lemonade.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 395,
+    "nombre": "Shiny Mythic False Prophet",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-false-prophet.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 396,
+    "nombre": "Shiny Mythic Amalgamation",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-amalgamation.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 397,
+    "nombre": "Shiny Mythic Candy Winged Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-candy-winged-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 398,
+    "nombre": "Shiny Mythic Rock Candy Golem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rock-candy-golem.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 399,
+    "nombre": "Shiny Mythic Super Beach Boi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-beach-boi.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 400,
+    "nombre": "Shiny Mythic Dominus Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dominus-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 401,
+    "nombre": "Shiny Mythic Magma Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-magma-cube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 402,
+    "nombre": "Shiny Mythic Minty Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-minty-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 403,
+    "nombre": "Shiny Mythic Fire King",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fire-king.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 404,
+    "nombre": "Shiny Mythic Sea Turtle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sea-turtle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 405,
+    "nombre": "Shiny Mythic King Seahorse",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-seahorse.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 406,
+    "nombre": "Shiny Mythic Night Dweller",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-night-dweller.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 407,
+    "nombre": "Shiny Mythic Flower Pot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-flower-pot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 408,
+    "nombre": "Shiny Mythic Thorn Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-thorn-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 409,
+    "nombre": "Shiny Mythic Ice Winged Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ice-winged-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 410,
+    "nombre": "Shiny Mythic Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-marshmallow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 411,
+    "nombre": "Shiny Mythic Lovely Lotus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lovely-lotus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 412,
+    "nombre": "Shiny Mythic Axolotl Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-axolotl-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 413,
+    "nombre": "Shiny Mythic Gryphon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-gryphon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 414,
+    "nombre": "Shiny Mythic Pond Queen",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pond-queen.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 415,
+    "nombre": "Shiny Mythic Sea Urchin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sea-urchin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 416,
+    "nombre": "Shiny Mythic Atlantis Guardian",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-atlantis-guardian.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 417,
+    "nombre": "Shiny Mythic Jellyfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jellyfish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 418,
+    "nombre": "Shiny Mythic Void Eclipse",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-eclipse.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 419,
+    "nombre": "Shiny Mythic Sailboat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sailboat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 420,
+    "nombre": "Shiny Mythic Angler Fish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-angler-fish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 421,
+    "nombre": "Shiny Mythic Prisma",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-prisma.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 422,
+    "nombre": "Shiny Mythic Cosmic Herald",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cosmic-herald.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 423,
+    "nombre": "Shiny Mythic Soul Jam",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-soul-jam.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 424,
+    "nombre": "Shiny Mythic Surreal Seeker",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-surreal-seeker.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 425,
+    "nombre": "Shiny Mythic Lunar Bloom",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lunar-bloom.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 426,
+    "nombre": "Shiny Mythic Duality",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-duality.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 427,
+    "nombre": "Shiny Mythic Shadow Hunter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-shadow-hunter.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 428,
+    "nombre": "Shiny Mythic Serene Axolotl",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-serene-axolotl.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 429,
+    "nombre": "Shiny Mythic Dreamscape Influence",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dreamscape-influence.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 430,
+    "nombre": "Shiny Mythic Lamp Ghost",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lamp-ghost.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 431,
+    "nombre": "Shiny Mythic ACE",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ace.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 432,
+    "nombre": "Shiny Mythic Celestial Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-celestial-split.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 433,
+    "nombre": "Shiny Mythic Mariposa",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mariposa.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 434,
+    "nombre": "Shiny Mythic Hallowed Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hallowed-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 435,
+    "nombre": "Shiny Mythic Dreadful Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dreadful-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 436,
+    "nombre": "Shiny Mythic Demonarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 437,
+    "nombre": "Shiny Mythic Contrast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-contrast.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 438,
+    "nombre": "Shiny Mythic Royal Fishbowl",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royal-fishbowl.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 439,
+    "nombre": "Shiny Mythic Wyrm of Currents",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-wyrm-of-currents.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 440,
+    "nombre": "Shiny Mythic Plasma Wolflord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-plasma-wolflord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 441,
+    "nombre": "Shiny Mythic Equilibrium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-equilibrium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 442,
+    "nombre": "Shiny Mythic Yin Yang",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-yin-yang.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 443,
+    "nombre": "Shiny Mythic Rooted Ratio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rooted-ratio.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 444,
+    "nombre": "Shiny Mythic Vectorlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-vectorlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 445,
+    "nombre": "Shiny Mythic Mad Hatter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mad-hatter.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 446,
+    "nombre": "Shiny Mythic Moonchanter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moonchanter.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 447,
+    "nombre": "Shiny Mythic Pot O Gold",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pot-o-gold.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 448,
+    "nombre": "Shiny Mythic Soul Heart",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-soul-heart.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 449,
+    "nombre": "Shiny Mythic Nert Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-nert-pufferfish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 450,
+    "nombre": "Shiny Mythic Brainrot Shark",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-brainrot-shark.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 451,
+    "nombre": "Shiny Mythic Cosmos",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cosmos.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 452,
+    "nombre": "Shiny Mythic Stellaris",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-stellaris.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 453,
+    "nombre": "Shiny Mythic Empyreus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-empyreus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 454,
+    "nombre": "Shiny Mythic Classic King Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-king-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 455,
+    "nombre": "Shiny Mythic Classic Beta TV",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-beta-tv.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 456,
+    "nombre": "Shiny Mythic Classic Dowodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-dowodle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 457,
+    "nombre": "Shiny Mythic Classic Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 458,
+    "nombre": "Shiny Mythic Classic Noob",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-noob.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 459,
+    "nombre": "Shiny Mythic Classic Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-dominus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 460,
+    "nombre": "Shiny Mythic Classic Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-unicorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 461,
+    "nombre": "Shiny Mythic Eternal Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-eternal-pumpkin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 462,
+    "nombre": "Shiny Mythic Demon Tree",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demon-tree.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 463,
+    "nombre": "Shiny Mythic Autumn Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-autumn-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 464,
+    "nombre": "Shiny Mythic Jack O Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jack-o-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 465,
+    "nombre": "Shiny Mythic Crystal Acorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crystal-acorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 466,
+    "nombre": "Shiny Mythic Monarch Butterfly",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-monarch-butterfly.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 467,
+    "nombre": "Shiny Mythic Dowodle Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dowodle-pumpkin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 468,
+    "nombre": "Shiny Mythic Autumn Paragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-autumn-paragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 469,
+    "nombre": "Shiny Mythic Forest Light",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-forest-light.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 470,
+    "nombre": "Shiny Mythic Almighty Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-almighty-pumpkin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 471,
+    "nombre": "Shiny Mythic Maple Divinity",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-maple-divinity.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 472,
+    "nombre": "Shiny Mythic Ultimate Clover",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ultimate-clover.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 473,
+    "nombre": "Shiny Mythic Willow Chandelier",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-willow-chandelier.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 474,
+    "nombre": "Shiny Mythic Fox O Wisp",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fox-o-wisp.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 475,
+    "nombre": "Shiny Mythic Candle Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-candle-phoenix.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 476,
+    "nombre": "Shiny Mythic Lantern Demon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lantern-demon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 477,
+    "nombre": "Shiny Mythic Aureate Koi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-aureate-koi.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 478,
+    "nombre": "Shiny Mythic Test Tube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-test-tube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 479,
+    "nombre": "Shiny Mythic Shattered Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-shattered-soul.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 480,
+    "nombre": "Shiny Mythic Demon Knight",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demon-knight.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 481,
+    "nombre": "Shiny Mythic Bubble Beast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bubble-beast.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 482,
+    "nombre": "Shiny Mythic Cartoon Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cartoon-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 483,
+    "nombre": "Shiny Mythic Sinistar",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sinistar.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 484,
+    "nombre": "Shiny Mythic Angelic Ghost Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-angelic-ghost-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 485,
+    "nombre": "Shiny Mythic Cartoon Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cartoon-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 486,
+    "nombre": "Shiny Mythic Cartoon Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cartoon-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 487,
+    "nombre": "Shiny Mythic Demonic Ghost Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonic-ghost-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 488,
+    "nombre": "Shiny Mythic Uncle Cat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-uncle-cat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 489,
+    "nombre": "Shiny Mythic Armageddon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-armageddon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 490,
+    "nombre": "Shiny Mythic Fangseeker",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fangseeker.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 491,
+    "nombre": "Shiny Mythic Ghostarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ghostarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 492,
+    "nombre": "Shiny Mythic Crimson Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crimson-eye.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 493,
+    "nombre": "Shiny Mythic Ghostlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ghostlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 494,
+    "nombre": "Shiny Mythic Trickster",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-trickster.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 495,
+    "nombre": "Shiny Mythic Nightmare Jester",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-nightmare-jester.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 496,
+    "nombre": "Shiny Mythic Equinox",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-equinox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 497,
+    "nombre": "Shiny Mythic Voodoo Dowodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-voodoo-dowodle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 498,
+    "nombre": "Shiny Mythic The Hand",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-hand.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 499,
+    "nombre": "Shiny Mythic Witches Pot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-witches-pot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 500,
+    "nombre": "Shiny Mythic Witch Rigby",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-witch-rigby.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 501,
+    "nombre": "Shiny Mythic Angelic Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-angelic-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 502,
+    "nombre": "Shiny Mythic Poltergeist",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-poltergeist.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 503,
+    "nombre": "Shiny Mythic Ghost Wisps",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ghost-wisps.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 504,
+    "nombre": "Shiny Mythic Pumpkin Pyramidium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pumpkin-pyramidium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 505,
+    "nombre": "Shiny Mythic Tainter Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-tainter-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 506,
+    "nombre": "Shiny Mythic Ghost Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ghost-phoenix.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 507,
+    "nombre": "Shiny Mythic Trick O Treat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-trick-o-treat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 508,
+    "nombre": "Shiny Mythic Evil Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-evil-marshmallow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 509,
+    "nombre": "Shiny Mythic King Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-eye.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 510,
+    "nombre": "Shiny Mythic Classic Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-classic-pumpkin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 511,
+    "nombre": "Shiny Mythic Radiant One",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-radiant-one.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 512,
+    "nombre": "Shiny Mythic Shadow Friend",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-shadow-friend.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 513,
+    "nombre": "Shiny Mythic King Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 514,
+    "nombre": "Shiny Mythic Mother Doll",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mother-doll.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 515,
+    "nombre": "Shiny Mythic Starlight Catcher",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-starlight-catcher.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 516,
+    "nombre": "Shiny Mythic Ragdoll",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ragdoll.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 517,
+    "nombre": "Shiny Mythic All Seeing Eye",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-all-seeing-eye.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 518,
+    "nombre": "Shiny Mythic Harmonic Harp",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-harmonic-harp.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 519,
+    "nombre": "Shiny Mythic Dual Act",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dual-act.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 520,
+    "nombre": "Shiny Mythic OG Cursed Scorpio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-cursed-scorpio.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 521,
+    "nombre": "Shiny Mythic 67 GOD",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-67-god.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 522,
+    "nombre": "Shiny Mythic Silly Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-silly-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 523,
+    "nombre": "Shiny Mythic White Swan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-white-swan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 524,
+    "nombre": "Shiny Mythic OG Element Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-element-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 525,
+    "nombre": "Shiny Mythic OG Sakuralord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-sakuralord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 526,
+    "nombre": "Shiny Mythic Amethyst",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-amethyst.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 527,
+    "nombre": "Shiny Mythic OG Galaxium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-galaxium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 528,
+    "nombre": "Shiny Mythic Silly Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-silly-unicorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 529,
+    "nombre": "Shiny Mythic Grand Guardian",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-grand-guardian.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 530,
+    "nombre": "Shiny Mythic Lemonade Master",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lemonade-master.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 531,
+    "nombre": "Shiny Mythic OG Dementor",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-dementor.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 532,
+    "nombre": "Shiny Mythic OG Ice Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-ice-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 533,
+    "nombre": "Shiny Mythic OG Fire Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-fire-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 534,
+    "nombre": "Shiny Mythic OG Unicore",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-unicore.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 535,
+    "nombre": "Shiny Mythic Clockwork",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-clockwork.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 536,
+    "nombre": "Shiny Mythic OG Cardinal Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-cardinal-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 537,
+    "nombre": "Shiny Mythic Guardian Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-guardian-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 538,
+    "nombre": "Shiny Mythic OG Air Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-air-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 539,
+    "nombre": "Shiny Mythic Giant Gummy Worm",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-gummy-worm.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 540,
+    "nombre": "Shiny Mythic OG King Kitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-king-kitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 541,
+    "nombre": "Shiny Mythic OG Axolotl Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-axolotl-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 542,
+    "nombre": "Shiny Mythic The Infinity Gem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-infinity-gem.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 543,
+    "nombre": "Shiny Mythic HotHoundDog",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hothounddog.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 544,
+    "nombre": "Shiny Mythic OG Abyss",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-abyss.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 545,
+    "nombre": "Shiny Mythic OG Fruity Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-fruity-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 546,
+    "nombre": "Shiny Mythic OG Pastel Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-pastel-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 547,
+    "nombre": "Shiny Mythic OG Shadow Hunter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-shadow-hunter.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 548,
+    "nombre": "Shiny Mythic OG Radiant One",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-radiant-one.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 549,
+    "nombre": "Shiny Mythic OG Gem Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-gem-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 550,
+    "nombre": "Shiny Mythic OG Electric Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-electric-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 551,
+    "nombre": "Shiny Mythic Aureate Sunflower",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-aureate-sunflower.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 552,
+    "nombre": "Shiny Mythic Corn Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-corn-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 553,
+    "nombre": "Shiny Mythic Wheat Angel",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-wheat-angel.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 554,
+    "nombre": "Shiny Mythic Infinity Wisp",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-infinity-wisp.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 555,
+    "nombre": "Shiny Mythic OG Love Thief",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-love-thief.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 556,
+    "nombre": "Shiny Mythic JellOwOlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jellowolord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 557,
+    "nombre": "Shiny Mythic OG Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-pufferfish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 558,
+    "nombre": "Shiny Mythic Giant Fall Turkey",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-fall-turkey.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 559,
+    "nombre": "Shiny Mythic Candycane Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-candycane-dominus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 560,
+    "nombre": "Shiny Mythic Snowman",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-snowman.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 561,
+    "nombre": "Shiny Mythic Snowball",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-snowball.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 562,
+    "nombre": "Shiny Mythic Toilet Puffer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-toilet-puffer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 563,
+    "nombre": "Shiny Mythic Kuuhenki",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-kuuhenki.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 564,
+    "nombre": "Shiny Mythic Man Face Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-man-face-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 565,
+    "nombre": "Shiny Mythic OG Soulflake",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-soulflake.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 566,
+    "nombre": "Shiny Mythic King Spitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-spitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 567,
+    "nombre": "Shiny Mythic Man Face Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-man-face-cube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 568,
+    "nombre": "Shiny Mythic Frigid Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frigid-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 569,
+    "nombre": "Shiny Mythic Man Face Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-man-face-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 570,
+    "nombre": "Shiny Mythic The Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 571,
+    "nombre": "Shiny Mythic RUMBLECON GOD",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rumblecon-god.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 572,
+    "nombre": "Shiny Mythic Rumblecon Ticket Vendor",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rumblecon-ticket-vendor.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 573,
+    "nombre": "Shiny Mythic Santa Penguin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-santa-penguin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 574,
+    "nombre": "Shiny Mythic Illuminated Fawn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-illuminated-fawn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 575,
+    "nombre": "Shiny Mythic Jingle Orb",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jingle-orb.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 576,
+    "nombre": "Shiny Mythic Mistletoe Fiend",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mistletoe-fiend.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 577,
+    "nombre": "Shiny Mythic Royal Candy Cane",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royal-candy-cane.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 578,
+    "nombre": "Shiny Mythic Permafrost",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-permafrost.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 579,
+    "nombre": "Shiny Mythic Santa Rigby",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-santa-rigby.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 580,
+    "nombre": "Shiny Mythic Morning Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-morning-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 581,
+    "nombre": "Shiny Mythic MVP Rumblecon Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mvp-rumblecon-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 582,
+    "nombre": "Shiny Mythic Demonic Peppermint",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonic-peppermint.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 583,
+    "nombre": "Shiny Mythic Giant Nerts Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-nerts-pufferfish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 584,
+    "nombre": "Shiny Mythic Giftbox Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giftbox-unicorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 585,
+    "nombre": "Shiny Mythic Festive Wreath",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-festive-wreath.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 586,
+    "nombre": "Shiny Mythic Merry Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-merry-marshmallow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 587,
+    "nombre": "Shiny Mythic Gold Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-gold-marshmallow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 588,
+    "nombre": "Shiny Mythic Lunar Fairy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lunar-fairy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 589,
+    "nombre": "Shiny Mythic Frost Winged Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frost-winged-hydra.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 590,
+    "nombre": "Shiny Mythic Christmas Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-christmas-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 591,
+    "nombre": "Shiny Mythic Aurora Borealis",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-aurora-borealis.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 592,
+    "nombre": "Shiny Mythic Aurora Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-aurora-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 593,
+    "nombre": "Shiny Mythic Giftbox Dark Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giftbox-dark-phoenix.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 594,
+    "nombre": "Shiny Mythic Peppermint Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-peppermint-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 595,
+    "nombre": "Shiny Mythic Winter Phantom",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-winter-phantom.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 596,
+    "nombre": "Shiny Mythic Guardian Cookie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-guardian-cookie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 597,
+    "nombre": "Shiny Mythic Macaron King",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-macaron-king.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 598,
+    "nombre": "Shiny Mythic Peppermint Shard",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-peppermint-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 599,
+    "nombre": "Shiny Mythic Mystical Hybrid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-mystical-hybrid.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 600,
+    "nombre": "Shiny Mythic Festive Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-festive-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 601,
+    "nombre": "Shiny Mythic Santa Capybara Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-santa-capybara-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 602,
+    "nombre": "Shiny Mythic Festive Deity",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-festive-deity.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 603,
+    "nombre": "Shiny Mythic Twin Snowballs",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-twin-snowballs.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 604,
+    "nombre": "Shiny Mythic Holiday Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-holiday-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 605,
+    "nombre": "Shiny Mythic Frigid Blade",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frigid-blade.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 606,
+    "nombre": "Shiny Mythic Yeti",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-yeti.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 607,
+    "nombre": "Shiny Mythic Divine Frost",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-divine-frost.png",
+    "color": "#bae6fd"
+  },
+  {
+    "id": 608,
+    "nombre": "Shiny Mythic Snowglobe Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-snowglobe-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 609,
+    "nombre": "Shiny Mythic Demonic Fireplace",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonic-fireplace.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 610,
+    "nombre": "Shiny Mythic Frost Pyramidium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frost-pyramidium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 611,
+    "nombre": "Shiny Mythic Frosty One",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frosty-one.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 612,
+    "nombre": "Shiny Mythic Frost Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frost-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 613,
+    "nombre": "Shiny Mythic Heavenly Poinsettia",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-heavenly-poinsettia.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 614,
+    "nombre": "Shiny Mythic Frost Cube",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-frost-cube.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 615,
+    "nombre": "Shiny Mythic Doofus Dingus & Bingus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-doofus-dingus-&-bingus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 616,
+    "nombre": "Shiny Mythic New Years Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-new-years-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 617,
+    "nombre": "Shiny Mythic Colossal Kraken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-colossal-kraken.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 618,
+    "nombre": "Shiny Mythic Radiant Challenger",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-radiant-challenger.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 619,
+    "nombre": "Shiny Mythic The Flawless",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-flawless.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 620,
+    "nombre": "Shiny Mythic Aero Koi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-aero-koi.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 621,
+    "nombre": "Shiny Mythic 2026 Spitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-2026-spitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 622,
+    "nombre": "Shiny Mythic Super Crimson Bloodmoon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-crimson-bloodmoon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 623,
+    "nombre": "Shiny Mythic Painted Daze",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-painted-daze.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 624,
+    "nombre": "Shiny Mythic New Years Champion",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-new-years-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 625,
+    "nombre": "Shiny Mythic Ball Drop Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ball-drop-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 626,
+    "nombre": "Shiny Mythic New Years Blast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-new-years-blast.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 627,
+    "nombre": "Shiny Mythic Purble Vision",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-purble-vision.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 628,
+    "nombre": "Shiny Mythic BUBBLE",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bubble.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 629,
+    "nombre": "Shiny Mythic Dark Prophet",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-prophet.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 630,
+    "nombre": "Shiny Mythic New Years Shard",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-new-years-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 631,
+    "nombre": "Shiny Mythic Royal Dogcat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royal-dogcat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 632,
+    "nombre": "Shiny Mythic Poison Apple",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-poison-apple.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 633,
+    "nombre": "Shiny Mythic OG New Years Champion",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-new-years-champion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 634,
+    "nombre": "Shiny Mythic Prince Slime",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-prince-slime.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 635,
+    "nombre": "Shiny Mythic Lily Bud",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lily-bud.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 636,
+    "nombre": "Shiny Mythic Royal Inferno Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royal-inferno-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 637,
+    "nombre": "Shiny Mythic OG Infinity Gem",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-infinity-gem.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 638,
+    "nombre": "Shiny Mythic Harmonic Lily",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-harmonic-lily.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 639,
+    "nombre": "Shiny Mythic Pixie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pixie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 640,
+    "nombre": "Shiny Mythic Royalty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-royalty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 641,
+    "nombre": "Shiny Mythic Forest Drifter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-forest-drifter.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 642,
+    "nombre": "Shiny Mythic 2026 Sparkler Man",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-2026-sparkler-man.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 643,
+    "nombre": "Shiny Mythic Witch of The Woods",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-witch-of-the-woods.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 644,
+    "nombre": "Shiny Mythic Avernus Tophat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-avernus-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 645,
+    "nombre": "Shiny Mythic Cotton Candy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-cotton-candy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 646,
+    "nombre": "Shiny Mythic Catmouse",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-catmouse.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 647,
+    "nombre": "Shiny Mythic The Jester",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-jester.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 648,
+    "nombre": "Shiny Mythic Symphonic Hieromphant",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-symphonic-hieromphant.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 649,
+    "nombre": "Shiny Mythic Leviathan Tophat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-leviathan-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 650,
+    "nombre": "Shiny Mythic Void Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-soul.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 651,
+    "nombre": "Shiny Mythic Chroma Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chroma-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 652,
+    "nombre": "Shiny Mythic Circus Stack",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-circus-stack.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 653,
+    "nombre": "Shiny Mythic Giant Chocolate Chicken Tophat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-chocolate-chicken-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 654,
+    "nombre": "Shiny Mythic Music Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-music-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 655,
+    "nombre": "Shiny Mythic Nexus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-nexus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 656,
+    "nombre": "Shiny Mythic Silly Doggy Tophat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-silly-doggy-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 657,
+    "nombre": "Shiny Mythic Golden Balloon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-golden-balloon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 658,
+    "nombre": "Shiny Mythic Golden Lion",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-golden-lion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 659,
+    "nombre": "Shiny Mythic Key Performer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-key-performer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 660,
+    "nombre": "Shiny Mythic Ice Cream Fairy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ice-cream-fairy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 661,
+    "nombre": "Shiny Mythic Super Tophat Stack",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-tophat-stack.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 662,
+    "nombre": "Shiny Mythic Providence",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-providence.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 663,
+    "nombre": "Shiny Mythic Juggler",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-juggler.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 664,
+    "nombre": "Shiny Mythic Dark Force",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-force.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 665,
+    "nombre": "Shiny Mythic Dark Jester",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-jester.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 666,
+    "nombre": "Shiny Mythic Circus Monster",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-circus-monster.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 667,
+    "nombre": "Shiny Mythic Starcaster",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-starcaster.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 668,
+    "nombre": "Shiny Mythic Elegant Emerald",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-elegant-emerald.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 669,
+    "nombre": "Shiny Mythic Dark Gryphon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-gryphon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 670,
+    "nombre": "Shiny Mythic Star Titan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-star-titan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 671,
+    "nombre": "Shiny Mythic Twilight Opal",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-twilight-opal.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 672,
+    "nombre": "Shiny Mythic Dark Trickster",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-trickster.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 673,
+    "nombre": "Shiny Mythic Tanuki",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-tanuki.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 674,
+    "nombre": "Shiny Mythic Juggler Ditto",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-juggler-ditto.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 675,
+    "nombre": "Shiny Mythic Azure Lily",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-azure-lily.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 676,
+    "nombre": "Shiny Mythic Dark Dragon Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-dragon-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 677,
+    "nombre": "Shiny Mythic Lily Drop",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lily-drop.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 678,
+    "nombre": "Shiny Mythic Fantasia",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fantasia.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 679,
+    "nombre": "Shiny Mythic Timid Cannon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-timid-cannon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 680,
+    "nombre": "Shiny Mythic Malware",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-malware.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 681,
+    "nombre": "Shiny Mythic PC-Bot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-pc-bot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 682,
+    "nombre": "Shiny Mythic Retro Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-retro-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 683,
+    "nombre": "Shiny Mythic Floral Dogcat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-floral-dogcat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 684,
+    "nombre": "Shiny Mythic Okami Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-okami-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 685,
+    "nombre": "Shiny Mythic Dragon Lily",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dragon-lily.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 686,
+    "nombre": "Shiny Mythic Giant Dreamscape",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-dreamscape.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 687,
+    "nombre": "Shiny Mythic Retro Sylentlys Pet",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-retro-sylentlys-pet.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 688,
+    "nombre": "Shiny Mythic Flagbearer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-flagbearer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 689,
+    "nombre": "Shiny Mythic Teddy Bear Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-teddy-bear-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 690,
+    "nombre": "Shiny Mythic Retro Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-retro-dominus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 691,
+    "nombre": "Shiny Mythic Azure Angel",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-azure-angel.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 692,
+    "nombre": "Shiny Mythic Hellish Beast",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hellish-beast.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 693,
+    "nombre": "Shiny Mythic Divine Seraph",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-divine-seraph.png",
+    "color": "#bae6fd"
+  },
+  {
+    "id": 694,
+    "nombre": "Shiny Mythic Bubblegum Pegasus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bubblegum-pegasus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 695,
+    "nombre": "Shiny Mythic Equipoise",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-equipoise.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 696,
+    "nombre": "Shiny Mythic Hellxarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hellxarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 697,
+    "nombre": "Shiny Mythic Azure Gaze",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-azure-gaze.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 698,
+    "nombre": "Shiny Mythic Azure Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-azure-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 699,
+    "nombre": "Shiny Mythic Demon Dowodle",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demon-dowodle.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 700,
+    "nombre": "Shiny Mythic Demon Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demon-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 701,
+    "nombre": "Shiny Mythic Dark Seer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-seer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 702,
+    "nombre": "Shiny Mythic Amour Archer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-amour-archer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 703,
+    "nombre": "Shiny Mythic Chocolate Bond",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chocolate-bond.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 704,
+    "nombre": "Shiny Mythic Lovebirds",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lovebirds.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 705,
+    "nombre": "Shiny Mythic Kraken Couplet",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-kraken-couplet.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 706,
+    "nombre": "Shiny Mythic Love Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-love-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 707,
+    "nombre": "Shiny Mythic que bonita",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-que-bonita.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 708,
+    "nombre": "Shiny Mythic Chocolate Gift",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chocolate-gift.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 709,
+    "nombre": "Shiny Mythic Valentium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-valentium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 710,
+    "nombre": "Shiny Mythic Elegant Sakura",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-elegant-sakura.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 711,
+    "nombre": "Shiny Mythic Darkness Rose",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-darkness-rose.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 712,
+    "nombre": "Shiny Mythic Super Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 713,
+    "nombre": "Shiny Mythic Super Unicorn",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-unicorn.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 714,
+    "nombre": "Shiny Mythic Memory of Remembrance",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-memory-of-remembrance.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 715,
+    "nombre": "Shiny Mythic Lovely Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lovely-marshmallow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 716,
+    "nombre": "Shiny Mythic Queen of Thorns",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-queen-of-thorns.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 717,
+    "nombre": "Shiny Mythic Love Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-love-soul.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 718,
+    "nombre": "Shiny Mythic Dark Avernus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-avernus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 719,
+    "nombre": "Shiny Mythic Stuffed Tabby",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-stuffed-tabby.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 720,
+    "nombre": "Shiny Mythic Dark Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 721,
+    "nombre": "Shiny Mythic Sakura Specter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sakura-specter.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 722,
+    "nombre": "Shiny Mythic Blossom Protector",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-blossom-protector.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 723,
+    "nombre": "Shiny Mythic Blossom Chime",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-blossom-chime.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 724,
+    "nombre": "Shiny Mythic Sakura Sprout",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sakura-sprout.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 725,
+    "nombre": "Shiny Mythic Super Crescent Empress",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-super-crescent-empress.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 726,
+    "nombre": "Shiny Mythic Dark Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 727,
+    "nombre": "Shiny Mythic Sakuralord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sakuralord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 728,
+    "nombre": "Shiny Mythic OG Advocate",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-advocate.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 729,
+    "nombre": "Shiny Mythic OG Sinister Skull",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-sinister-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 730,
+    "nombre": "Shiny Mythic Everlasting Moonglow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-everlasting-moonglow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 731,
+    "nombre": "Shiny Mythic OG King Skull",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-king-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 732,
+    "nombre": "Shiny Mythic Silly Wushi",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-silly-wushi.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 733,
+    "nombre": "Shiny Mythic Fortune Star",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fortune-star.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 734,
+    "nombre": "Shiny Mythic Wealthy Trio",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-wealthy-trio.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 735,
+    "nombre": "Shiny Mythic OG Guardian Skull",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-guardian-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 736,
+    "nombre": "Shiny Mythic OG Wolf Skull",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-wolf-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 737,
+    "nombre": "Shiny Mythic OG Angelic Skull",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-angelic-skull.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 738,
+    "nombre": "Shiny Mythic OG Easter Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-easter-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 739,
+    "nombre": "Shiny Mythic OG Glitch",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-glitch.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 740,
+    "nombre": "Shiny Mythic OG Sky Imp",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-sky-imp.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 741,
+    "nombre": "Shiny Mythic Moonglow Elemental",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moonglow-elemental.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 742,
+    "nombre": "Shiny Mythic Moonglow Axolotl",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moonglow-axolotl.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 743,
+    "nombre": "Shiny Mythic Moonglow Serpent",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-moonglow-serpent.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 744,
+    "nombre": "Shiny Mythic Chinese Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chinese-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 745,
+    "nombre": "Shiny Mythic Crimson Blossom",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-crimson-blossom.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 746,
+    "nombre": "Shiny Mythic Ardent Lantern",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-ardent-lantern.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 747,
+    "nombre": "Shiny Mythic All-Seeing Overseer",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-all-seeing-overseer.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 748,
+    "nombre": "Shiny Mythic Giant Crescent Empress",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-crescent-empress.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 749,
+    "nombre": "Shiny Mythic Egg Trophy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-egg-trophy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 750,
+    "nombre": "Shiny Mythic World Bubble",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-world-bubble.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 751,
+    "nombre": "Shiny Mythic Rainbow Pyramidium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rainbow-pyramidium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 752,
+    "nombre": "Shiny Mythic Rainbow Gryphon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rainbow-gryphon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 753,
+    "nombre": "Shiny Mythic Light Lantern",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-light-lantern.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 754,
+    "nombre": "Shiny Mythic Rainbow Dogcat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rainbow-dogcat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 755,
+    "nombre": "Shiny Mythic Sunshine",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sunshine.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 756,
+    "nombre": "Shiny Mythic Windblume",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-windblume.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 757,
+    "nombre": "Shiny Mythic Fire Ant",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fire-ant.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 758,
+    "nombre": "Shiny Mythic Spring Soul",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-soul.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 759,
+    "nombre": "Shiny Mythic Spring Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 760,
+    "nombre": "Shiny Mythic Blossom Dementor",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-blossom-dementor.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 761,
+    "nombre": "Shiny Mythic Foliar Ascension",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-foliar-ascension.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 762,
+    "nombre": "Shiny Mythic Spring Critter",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-critter.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 763,
+    "nombre": "Shiny Mythic Flower Queen",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-flower-queen.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 764,
+    "nombre": "Shiny Mythic Petal Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-petal-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 765,
+    "nombre": "Shiny Mythic OG King Doggy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-king-doggy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 766,
+    "nombre": "Shiny Mythic OG Almighty Pumpkin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-almighty-pumpkin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 767,
+    "nombre": "Shiny Mythic Spring Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 768,
+    "nombre": "Shiny Mythic Spring Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 769,
+    "nombre": "Shiny Mythic Essence of Life",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-essence-of-life.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 770,
+    "nombre": "Shiny Mythic OG Angelic Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-angelic-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 771,
+    "nombre": "Shiny Mythic Lucky Horseshoe",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-horseshoe.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 772,
+    "nombre": "Shiny Mythic Fortune Prophet",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fortune-prophet.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 773,
+    "nombre": "Shiny Mythic High Roller",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-high-roller.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 774,
+    "nombre": "Shiny Mythic Queen Wasp",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-queen-wasp.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 775,
+    "nombre": "Shiny Mythic Lucky Medallion",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-medallion.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 776,
+    "nombre": "Shiny Mythic Bubbleviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bubbleviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 777,
+    "nombre": "Shiny Mythic Flying Coin",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-flying-coin.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 778,
+    "nombre": "Shiny Mythic Lucky Tophat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-tophat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 779,
+    "nombre": "Shiny Mythic Lucky Jester",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-jester.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 780,
+    "nombre": "Shiny Mythic Toxic Demon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-toxic-demon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 781,
+    "nombre": "Shiny Mythic Void Shard",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-shard.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 782,
+    "nombre": "Shiny Mythic Trifolium Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-trifolium-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 783,
+    "nombre": "Shiny Mythic Uranium Hybrid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-uranium-hybrid.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 784,
+    "nombre": "Shiny Mythic Lucky Phoenix",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-phoenix.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 785,
+    "nombre": "Shiny Mythic Forest Fae",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-forest-fae.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 786,
+    "nombre": "Shiny Mythic Lucky Golden Retriever",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-golden-retriever.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 787,
+    "nombre": "Shiny Mythic Toxic Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-toxic-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 788,
+    "nombre": "Shiny Mythic Godly Shamrock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-godly-shamrock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 789,
+    "nombre": "Shiny Mythic Lucky Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 790,
+    "nombre": "Shiny Mythic Giant Tainter Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-giant-tainter-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 791,
+    "nombre": "Shiny Mythic Shrubbery",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-shrubbery.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 792,
+    "nombre": "Shiny Mythic Spring Moth",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spring-moth.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 793,
+    "nombre": "Shiny Mythic Void Dominus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-void-dominus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 794,
+    "nombre": "Shiny Mythic Retro Shock",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-retro-shock.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 795,
+    "nombre": "Shiny Mythic Bubble Overlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bubble-overlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 796,
+    "nombre": "Shiny Mythic Framed Loading Screen",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-framed-loading-screen.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 797,
+    "nombre": "Shiny Mythic OG Leviathan",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-leviathan.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 798,
+    "nombre": "Shiny Mythic Epiphany",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-epiphany.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 799,
+    "nombre": "Shiny Mythic Lucky Butterfly",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-butterfly.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 800,
+    "nombre": "Shiny Mythic Lucky Marshmallow",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-marshmallow.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 801,
+    "nombre": "Shiny Mythic Buble",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-buble.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 802,
+    "nombre": "Shiny Mythic Forest Wyvern",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-forest-wyvern.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 803,
+    "nombre": "Shiny Mythic Lucky Pyramidium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-pyramidium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 804,
+    "nombre": "Shiny Mythic Lucky Trophy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-trophy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 805,
+    "nombre": "Shiny Mythic Jackpot Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jackpot-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 806,
+    "nombre": "Shiny Mythic Clover Basilisk",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-clover-basilisk.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 807,
+    "nombre": "Shiny Mythic Unlucky Clover",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-unlucky-clover.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 808,
+    "nombre": "Shiny Mythic Spirit of Fortune",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-spirit-of-fortune.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 809,
+    "nombre": "Shiny Mythic Unlimited Dollar",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-unlimited-dollar.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 810,
+    "nombre": "Shiny Mythic Lucky Magician",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-magician.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 811,
+    "nombre": "Shiny Mythic Lucky Squid",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-squid.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 812,
+    "nombre": "Shiny Mythic Dark Infernal",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dark-infernal.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 813,
+    "nombre": "Shiny Mythic Bounty Basket",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bounty-basket.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 814,
+    "nombre": "Shiny Mythic Fortune Kraken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-fortune-kraken.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 815,
+    "nombre": "Shiny Mythic Lucky Dogcat",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-dogcat.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 816,
+    "nombre": "Shiny Mythic Jackpot Hexarium",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-jackpot-hexarium.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 817,
+    "nombre": "Shiny Mythic Lucky Equinox",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-equinox.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 818,
+    "nombre": "Shiny Mythic Lucky Pufferfish",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-lucky-pufferfish.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 819,
+    "nombre": "Shiny Mythic The Prophecy",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-the-prophecy.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 820,
+    "nombre": "Shiny Mythic Rebirth",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-rebirth.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 821,
+    "nombre": "Shiny Mythic Toxic Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-toxic-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 822,
+    "nombre": "Shiny Mythic OG Easter Robot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-easter-robot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 823,
+    "nombre": "Shiny Mythic Queen Spitty",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-queen-spitty.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 824,
+    "nombre": "Shiny Mythic King Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 825,
+    "nombre": "Shiny Mythic Easter Warden",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-warden.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 826,
+    "nombre": "Shiny Mythic Easter Bunny Plushie",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-bunny-plushie.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 827,
+    "nombre": "Shiny Mythic Demonic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-demonic-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 828,
+    "nombre": "Shiny Mythic Sunlord",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-sunlord.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 829,
+    "nombre": "Shiny Mythic OG Giant Chocolate Chicken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-giant-chocolate-chicken.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 830,
+    "nombre": "Shiny Mythic OG Patronus",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-patronus.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 831,
+    "nombre": "Shiny Mythic OG Holy Egg",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-holy-egg.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 832,
+    "nombre": "Shiny Mythic OG Eternal Carrot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-og-eternal-carrot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 833,
+    "nombre": "Shiny Mythic Hellish Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-hellish-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 834,
+    "nombre": "Shiny Mythic Heavenly Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-heavenly-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 835,
+    "nombre": "Shiny Mythic Easter Guardian",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-guardian.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 836,
+    "nombre": "Shiny Mythic Bunny Basket",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bunny-basket.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 837,
+    "nombre": "Shiny Mythic Prestige Carrot",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-prestige-carrot.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 838,
+    "nombre": "Shiny Mythic Chromatic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-chromatic-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 839,
+    "nombre": "Shiny Mythic Easter Defender",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-defender.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 840,
+    "nombre": "Shiny Mythic Easter Dragon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-dragon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 841,
+    "nombre": "Shiny Mythic Molten Split",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-molten-split.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 842,
+    "nombre": "Shiny Mythic Egg Hunt Basket",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-egg-hunt-basket.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 843,
+    "nombre": "Shiny Mythic Easter Gryphon",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-gryphon.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 844,
+    "nombre": "Shiny Mythic Bonbun",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-bonbun.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 845,
+    "nombre": "Shiny Mythic Easter Spirit",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-spirit.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 846,
+    "nombre": "Shiny Mythic King Chocolate Chicken",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-king-chocolate-chicken.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 847,
+    "nombre": "Shiny Mythic Big Egg Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-big-egg-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 848,
+    "nombre": "Shiny Mythic Dual Dreamers",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-dual-dreamers.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 849,
+    "nombre": "Shiny Mythic Galactic Bunny",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-galactic-bunny.png",
+    "color": "#fde047"
+  },
+  {
+    "id": 850,
+    "nombre": "Shiny Mythic Easter Hydra",
+    "valor": 0,
+    "rareza": "Variant",
+    "img": "https://cdn.bgsi.gg/items/shiny-mythic-easter-hydra.png",
+    "color": "#fde047"
+  }
+]
