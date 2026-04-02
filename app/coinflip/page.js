@@ -75,8 +75,25 @@ export default function BloxypotCoinflip() {
   const [lobbyGames, setLobbyGames] = useState([]);
 
 useEffect(() => {
-    // 0. Obtener Usuario Actual y su PERFIL REAL
-// 1. CARGAR INVENTARIO REAL CON JOIN A LA TABLA ITEMS
+    // 1. OBTENER USUARIO ACTUAL Y CARGAR INVENTARIO REAL
+    const initUserAndInventory = async () => {
+        const { data: authData } = await supabase.auth.getUser();
+        
+        if (authData?.user) {
+            // 1. Obtener datos del perfil
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('username, avatar_url')
+                .eq('id', authData.user.id)
+                .single();
+
+            setCurrentUser({ 
+                id: authData.user.id, 
+                username: profile?.username || 'Player',
+                avatar_url: profile?.avatar_url || '/default-avatar.png'
+            });
+
+            // 2. Cargar inventario real con JOIN a la tabla items
             const { data: inventoryData, error } = await supabase
                 .from('inventory')
                 .select(`
@@ -85,31 +102,37 @@ useEffect(() => {
                     items ( id, name, value, image_url, color )
                 `)
                 .eq('user_id', authData.user.id)
-                .eq('is_locked', false); // No mostrar las que ya están apostadas
+                .eq('is_locked', false);
 
             if (inventoryData && !error) {
-               // Traducimos los nombres para que no se rompan tus botones del frontend (que usan .valor y .nombre)
-               const mascotasReales = inventoryData.map(inv => ({
-                   inventarioId: inv.id,
-                   item_id: inv.items.id,
-                   nombre: inv.items.name,
-                   valor: inv.items.value,
-                   image_url: inv.items.image_url,
-                   color: inv.items.color
-               }));
-               
-               // Ordenamos de mayor valor a menor valor
-               setMisPets(mascotasReales.sort((a, b) => b.valor - a.valor));
+                const mascotasReales = inventoryData.map(inv => ({
+                    inventarioId: inv.id,
+                    item_id: inv.items.id,
+                    nombre: inv.items.name,
+                    valor: inv.items.value,
+                    image_url: inv.items.image_url,
+                    color: inv.items.color
+                }));
+                setMisPets(mascotasReales.sort((a, b) => b.valor - a.valor));
             } else {
-               setMisPets([]); 
+                setMisPets([]); 
             }
-            
+
         } else {
+            // 3. Fallback si no está logueado
             let tempId = localStorage.getItem('temp_user_id');
-            if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
-            setCurrentUser({ id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar_url: '/default-avatar.png' });
+            if (!tempId) { 
+                tempId = crypto.randomUUID(); 
+                localStorage.setItem('temp_user_id', tempId); 
+            }
+            setCurrentUser({ 
+                id: tempId, 
+                username: 'Guest_' + tempId.substring(0,4), 
+                avatar_url: '/default-avatar.png' 
+            });
         }
     };
+
     initUserAndInventory();
 
     // 2. Cargar partidas reales (Waiting, In_progress y Completed para el historial)
