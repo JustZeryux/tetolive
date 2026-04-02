@@ -1,5 +1,6 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/utils/Supabase';
 
 const RedCoin = ({cls="w-4 h-4"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
 const GreenCoin = ({cls="w-4 h-4"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
@@ -11,17 +12,47 @@ const formatValue = (val) => {
 };
 
 export default function VaultPage() {
-  // Estados simulados (esto lo conectarás a tu base de datos)
+  const [user, setUser] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [procesando, setProcesando] = useState(false);
+
+  // Estados reales desde la Base de Datos
   const [balances, setBalances] = useState({
-    wallet: { green: 15500000, red: 25000000 },
-    vault: { green: 5000000, red: 0 }
+    wallet: { green: 0, red: 0 },
+    vault: { green: 0, red: 0 }
   });
 
   const [currency, setCurrency] = useState('green'); // 'green' | 'red'
   const [action, setAction] = useState('deposit'); // 'deposit' | 'withdraw'
   const [amountInput, setAmountInput] = useState('');
 
-  // Helpers para obtener el balance máximo dependiendo de la acción y moneda
+  // 1. Cargar datos del usuario y sus saldos
+  const fetchBalances = async () => {
+    setCargando(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      setUser(user);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('saldo_verde, saldo_rojo, vault_verde, vault_rojo')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setBalances({
+          wallet: { green: data.saldo_verde || 0, red: data.saldo_rojo || 0 },
+          vault: { green: data.vault_verde || 0, red: data.vault_rojo || 0 }
+        });
+      }
+    }
+    setCargando(false);
+  };
+
+  useEffect(() => {
+    fetchBalances();
+  }, []);
+
   const getMaxBalance = () => {
     if (action === 'deposit') return balances.wallet[currency];
     return balances.vault[currency];
@@ -34,27 +65,63 @@ export default function VaultPage() {
     else if (multiplier === 'CLEAR') setAmountInput('');
   };
 
-  const handleTransaction = () => {
+  // 2. Procesar Transacción en la Base de Datos
+  const handleTransaction = async () => {
+    if (procesando) return;
     const val = parseInt(amountInput);
     if (isNaN(val) || val <= 0) return alert("Enter a valid amount!");
     if (val > getMaxBalance()) return alert("Insufficient balance!");
 
-    // Simular transacción
-    setBalances(prev => {
-      const newBalances = { ...prev };
-      if (action === 'deposit') {
-        newBalances.wallet[currency] -= val;
-        newBalances.vault[currency] += val;
-      } else {
-        newBalances.vault[currency] -= val;
-        newBalances.wallet[currency] += val;
-      }
-      return newBalances;
-    });
-    
-    setAmountInput('');
-    // Aquí puedes agregar un toast/alerta visual bonita
+    setProcesando(true);
+
+    // Calcular nuevos saldos
+    let newWallet = balances.wallet[currency];
+    let newVault = balances.vault[currency];
+
+    if (action === 'deposit') {
+      newWallet -= val;
+      newVault += val;
+    } else {
+      newVault -= val;
+      newWallet += val;
+    }
+
+    // Preparar el objeto de actualización dependiendo de la moneda
+    const updates = {};
+    if (currency === 'green') {
+      updates.saldo_verde = newWallet;
+      updates.vault_verde = newVault;
+    } else {
+      updates.saldo_rojo = newWallet;
+      updates.vault_rojo = newVault;
+    }
+
+    // Actualizar en Supabase
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (error) {
+      alert("Error procesando la transacción.");
+      console.error(error);
+    } else {
+      alert(`¡${action === 'deposit' ? 'Depósito' : 'Retiro'} de ${formatValue(val)} exitoso!`);
+      // Registrar en el log de transacciones
+      await supabase.from('transactions_log').insert({
+        user_id: user.id,
+        tipo: action === 'deposit' ? 'vault_deposit' : 'vault_withdraw',
+        monto: val,
+        moneda: currency
+      });
+      // Recargar saldos actualizados
+      fetchBalances();
+      setAmountInput('');
+    }
+    setProcesando(false);
   };
+
+  if (cargando) return <div className="min-h-screen bg-[#0b0e14] flex items-center justify-center text-white">Loading vault...</div>;
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 animate-fade-in flex items-center justify-center">
@@ -106,80 +173,83 @@ export default function VaultPage() {
 
           </div>
 
-          {/* PANEL DERECHO: ACCIONES (DEPOSIT / WITHDRAW) */}
-          <div className="w-full md:w-2/3 bg-[#141323] border border-[#252839] rounded-2xl p-6 md:p-8 shadow-xl">
+          {/* PANEL DERECHO: CONTROLES DE TRANSACCIÓN */}
+          <div className="w-full md:w-2/3 bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-lg">
             
-            {/* TABS DE ACCIÓN */}
-            <div className="flex bg-[#0b0e14] p-1 rounded-xl mb-6 border border-[#252839]">
+            {/* TABS (Deposit / Withdraw) */}
+            <div className="flex bg-[#0b0e14] p-1 rounded-xl mb-6">
               <button 
                 onClick={() => setAction('deposit')}
-                className={`flex-1 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${action === 'deposit' ? 'bg-[#2a2e44] text-white shadow-sm' : 'text-[#555b82] hover:text-white'}`}
+                className={`flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-lg transition-all ${action === 'deposit' ? 'bg-[#252839] text-white shadow-md' : 'text-[#555b82] hover:text-[#8f9ac6]'}`}
               >
                 Deposit
               </button>
               <button 
                 onClick={() => setAction('withdraw')}
-                className={`flex-1 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${action === 'withdraw' ? 'bg-[#2a2e44] text-white shadow-sm' : 'text-[#555b82] hover:text-white'}`}
+                className={`flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-lg transition-all ${action === 'withdraw' ? 'bg-[#252839] text-white shadow-md' : 'text-[#555b82] hover:text-[#8f9ac6]'}`}
               >
                 Withdraw
               </button>
             </div>
 
-            {/* SELECCIÓN DE MONEDA */}
-            <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mb-3">Select Currency</h3>
-            <div className="flex gap-4 mb-6">
-              <button 
-                onClick={() => setCurrency('green')}
-                className={`flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${currency === 'green' ? 'bg-[#22c55e]/10 border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'bg-[#1c1f2e] border-[#252839] hover:border-[#3f4354]'}`}
-              >
-                <GreenCoin cls="w-8 h-8"/>
-                <span className={`font-black uppercase tracking-widest text-xs ${currency === 'green' ? 'text-[#22c55e]' : 'text-[#8f9ac6]'}`}>Green</span>
-              </button>
-              <button 
-                onClick={() => setCurrency('red')}
-                className={`flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${currency === 'red' ? 'bg-[#ef4444]/10 border-[#ef4444] shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-[#1c1f2e] border-[#252839] hover:border-[#3f4354]'}`}
-              >
-                <RedCoin cls="w-8 h-8"/>
-                <span className={`font-black uppercase tracking-widest text-xs ${currency === 'red' ? 'text-[#ef4444]' : 'text-[#8f9ac6]'}`}>Red</span>
-              </button>
-            </div>
-
-            {/* INPUT DE MONTO */}
-            <div className="flex justify-between items-end mb-2">
-              <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Amount</h3>
-              <p className="text-[10px] font-bold text-[#555b82] uppercase tracking-widest flex items-center gap-1">
-                Available: {currency === 'green' ? <GreenCoin cls="w-3 h-3"/> : <RedCoin cls="w-3 h-3"/>} {formatValue(getMaxBalance())}
-              </p>
-            </div>
-            
-            <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-2 flex items-center mb-8 focus-within:border-[#6C63FF] transition-colors">
-              <div className="pl-3 pr-2">
-                {currency === 'green' ? <GreenCoin cls="w-5 h-5"/> : <RedCoin cls="w-5 h-5"/>}
-              </div>
-              <input 
-                type="number" 
-                placeholder="0"
-                value={amountInput}
-                onChange={(e) => setAmountInput(e.target.value)}
-                className="w-full bg-transparent text-white font-black text-lg outline-none placeholder-[#252839]"
-              />
-              <div className="flex gap-1 pr-1">
-                <button onClick={() => handleQuickAmount('CLEAR')} className="px-3 py-1.5 bg-[#1c1f2e] hover:bg-[#252839] text-[#8f9ac6] rounded text-[10px] font-black transition-colors">CLR</button>
-                <button onClick={() => handleQuickAmount('HALF')} className="px-3 py-1.5 bg-[#1c1f2e] hover:bg-[#252839] text-[#8f9ac6] rounded text-[10px] font-black transition-colors">1/2</button>
-                <button onClick={() => handleQuickAmount('MAX')} className="px-3 py-1.5 bg-[#1c1f2e] hover:bg-[#252839] text-white rounded text-[10px] font-black transition-colors">MAX</button>
+            {/* CURRENCY SELECTOR */}
+            <div className="mb-6">
+              <p className="text-[10px] text-[#8f9ac6] font-black uppercase tracking-widest mb-2">Select Currency</p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setCurrency('green')}
+                  className={`flex-1 py-4 flex items-center justify-center gap-2 rounded-xl border-2 transition-all ${currency === 'green' ? 'border-[#22c55e] bg-[#22c55e]/10' : 'border-[#252839] bg-[#0b0e14] hover:border-[#3f4354]'}`}
+                >
+                  <GreenCoin cls="w-6 h-6"/> <span className="font-bold">Green</span>
+                </button>
+                <button 
+                  onClick={() => setCurrency('red')}
+                  className={`flex-1 py-4 flex items-center justify-center gap-2 rounded-xl border-2 transition-all ${currency === 'red' ? 'border-[#ef4444] bg-[#ef4444]/10' : 'border-[#252839] bg-[#0b0e14] hover:border-[#3f4354]'}`}
+                >
+                  <RedCoin cls="w-6 h-6"/> <span className="font-bold">Red</span>
+                </button>
               </div>
             </div>
 
-            {/* BOTÓN DE ACCIÓN */}
+            {/* AMOUNT INPUT */}
+            <div className="mb-6">
+              <div className="flex justify-between items-end mb-2">
+                <p className="text-[10px] text-[#8f9ac6] font-black uppercase tracking-widest">Amount</p>
+                <p className="text-[10px] text-[#555b82] font-black uppercase">Max: {formatValue(getMaxBalance())}</p>
+              </div>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                  {currency === 'green' ? <GreenCoin/> : <RedCoin/>}
+                </div>
+                <input 
+                  type="number" 
+                  value={amountInput}
+                  onChange={(e) => setAmountInput(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-[#0b0e14] border-2 border-[#252839] focus:border-[#6C63FF] rounded-xl py-4 pl-12 pr-4 text-xl font-bold text-white outline-none transition-all"
+                />
+              </div>
+              
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => handleQuickAmount('CLEAR')} className="flex-1 bg-[#252839] hover:bg-[#3f4354] text-[#8f9ac6] text-xs font-black uppercase py-2 rounded-lg transition-colors">Clear</button>
+                <button onClick={() => handleQuickAmount('HALF')} className="flex-1 bg-[#252839] hover:bg-[#3f4354] text-white text-xs font-black uppercase py-2 rounded-lg transition-colors">1/2</button>
+                <button onClick={() => handleQuickAmount('MAX')} className="flex-1 bg-[#252839] hover:bg-[#3f4354] text-white text-xs font-black uppercase py-2 rounded-lg transition-colors">Max</button>
+              </div>
+            </div>
+
+            {/* ACTION BUTTON */}
             <button 
               onClick={handleTransaction}
-              className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all hover:-translate-y-1 shadow-lg border ${
-                action === 'deposit' 
-                  ? 'bg-[linear-gradient(135deg,#6C63FF_0%,#5147D9_100%)] border-[#5E55D9]/40 text-white hover:shadow-[0_6px_20px_rgba(108,99,255,0.4)]' 
-                  : 'bg-transparent border-[#6C63FF] text-[#6C63FF] hover:bg-[#6C63FF]/10'
-              }`}
+              disabled={procesando || !amountInput}
+              className={`w-full py-4 rounded-xl font-black uppercase tracking-widest text-lg transition-all shadow-lg flex items-center justify-center gap-2
+                ${action === 'deposit' 
+                  ? 'bg-gradient-to-r from-[#6C63FF] to-[#8a84ff] hover:opacity-90 text-white shadow-[#6C63FF]/20' 
+                  : 'bg-gradient-to-r from-[#1c1f2e] to-[#252839] hover:bg-[#2a2e44] border border-[#3f4354] text-white'
+                }
+                ${(procesando || !amountInput) ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
             >
-              {action === 'deposit' ? 'Deposit to Vault' : 'Withdraw to Wallet'}
+              {procesando ? 'Processing...' : (action === 'deposit' ? 'Deposit to Vault' : 'Withdraw to Wallet')}
             </button>
 
           </div>
