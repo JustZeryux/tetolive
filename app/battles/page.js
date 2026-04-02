@@ -17,10 +17,8 @@ const [availableCases, setAvailableCases] = useState([]);
 useEffect(() => {
   const loadCasesForBattles = async () => {
     // Pedimos exactamente las columnas que creaste en tu tabla "cases"
-    const { data, error } = await supabase
-      .from('cases')
-      .select('id, name, price, image_url, color, items');
-
+const { data, error } = await supabase.from('cases').select('id, name, price, image_url');
+    .from('cases')
     if (data && !error) {
       setAvailableCases(data);
     } else {
