@@ -18,11 +18,27 @@ export default function RewardsPage() {
 
       // CAMBIO A TABLA REAL: profiles
       const { data: profile } = await supabase.from('profiles').select('ultimo_reclamo_diario').eq('id', user.id).single();
+// Función para reclamar el bono diario
+  const claimDaily = async () => {
+    if (!currentUser) return alert("Debes iniciar sesión para reclamar recompensas.");
+    
+    // Aquí puedes llamar a tu RPC o hacer el update directo a la BD
+    const { data, error } = await supabase.rpc('reclamar_diario', {
+        p_user_id: currentUser.id
+    });
 
+    if (error) {
+        alert(error.message || "Error al reclamar la recompensa.");
+    } else {
+        alert("¡Recompensa diaria reclamada con éxito!");
+        // Aquí actualizas tu UI o el estado para deshabilitar el botón
+    }
+  };
       if (profile && profile.ultimo_reclamo_diario) {
           const lastClaim = new Date(profile.ultimo_reclamo_diario).getTime();
           const now = Date.now();
           const nextClaimTime = lastClaim + (24 * 60 * 60 * 1000);
+        
           
           if (now < nextClaimTime) {
             setTimeLeft(Math.floor((nextClaimTime - now) / 1000));
