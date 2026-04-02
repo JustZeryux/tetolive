@@ -254,33 +254,47 @@ export default function BloxypotCoinflip() {
     iniciarCinematicaMoneda(uiData);
   };
 
-  const iniciarCinematicaMoneda = (datosPartida) => {
+
+const iniciarCinematicaMoneda = async (datosPartida) => {
     setGirando(true); 
     setGanador(null);
     setMostrarImpacto(false);
 
-    // Animación de la moneda fluida y con peso (simula backend por ahora)
+    // 1. Llamamos a Supabase para que tire la moneda de forma segura
+    const { data: resultado, error } = await supabase
+      .rpc('resolver_partida_coinflip', { p_partida_id: datosPartida.id });
+
+    if (error) {
+      console.error("Error al resolver partida:", error);
+      setGirando(false);
+      return alert("Hubo un error al procesar el resultado de la partida.");
+    }
+
+    // 2. Extraemos el resultado real que nos dio el servidor
+    const servidorLadoGanador = resultado.lado_ganador; // 'Heads' o 'Tails'
+    const ganaHeads = servidorLadoGanador === 'Heads';
+
+    // 3. Iniciamos la animación que ya arreglamos, sabiendo exactamente dónde va a caer
     setTimeout(() => {
       setRotacion(prevRotacion => {
-        const ganaHeads = Math.random() < 0.5; // Todo: Mover al servidor
         const vueltasBase = prevRotacion + 3600; // Suspenso extremo (10 vueltas)
         const nuevaRot = ganaHeads ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
         
         // Esperamos a que la moneda caiga físicamente (4 segundos)
         setTimeout(() => { 
             setGirando(false); 
-            setGanador(ganaHeads ? 'Heads' : 'Tails'); 
+            setGanador(servidorLadoGanador); 
             
             // Efecto de impacto suave una fracción de segundo después de aterrizar
             setTimeout(() => setMostrarImpacto(true), 150);
             
+            // TODO FUTURO: Aquí es donde mostrarás un popup de "+$500" o "¡Ganaste!"
         }, 4000);
 
         return nuevaRot;
       });
     }, 100); 
   };
-
   // --- COMPONENTES VISUALES ---
   const AvatarVS = ({ img, side, isWaiting = false }) => (
     <div className={`relative box-border h-12 w-12 md:h-14 md:w-14 rounded-full border-2 md:border-[3px] border-solid bg-[#1C1F2E] transition-colors shrink-0 ${isWaiting ? 'border-[#2F3347] border-dashed opacity-60' : side === 'Heads' ? 'border-[#facc15]' : 'border-[#a855f7]'}`}>
