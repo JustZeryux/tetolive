@@ -37,29 +37,22 @@ export default function RewardsPage() {
     fetchUserData();
   }, []);
 
-  useEffect(() => {
+  
+ useEffect(() => {
     if (timeLeft <= 0) return;
-    const interval = setInterval(() => setTimeLeft(prev => (prev > 0 ? prev - 1 : 0)), 1000);
-    return () => clearInterval(interval);
-  }, [timeLeft]);
-
-  const claimDaily = async () => {
-    if (!currentUser) return alert("Debes iniciar sesión.");
-    if (timeLeft > 0) return alert("Aún no es hora.");
     
-    setProcesando(true);
-    // ⚠️ IMPORTANTE: Asegúrate de que la función RPC 'reclamar_recompensa_diaria'
-    // en tu Supabase también haya sido actualizada para modificar la tabla 'profiles'.
-    const { data, error } = await supabase.rpc('reclamar_recompensa_diaria', { p_user_id: currentUser.id });
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0; // Ya se puede reclamar
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    if (error || data?.error) {
-        alert("Error: " + (data?.error || error?.message || "Algo falló."));
-    } else {
-        alert(`¡Reclamado con éxito! Recibiste tu bonificación diaria.`);
-        setTimeLeft(24 * 60 * 60); 
-    }
-    setProcesando(false);
-  };
+    return () => clearInterval(interval);
+  }, []); // <-- DEJA EL ARREGLO VACÍO AQUÍ
 
   const formatTime = (ts) => {
     if (ts <= 0) return "00h 00m 00s";
