@@ -45,7 +45,7 @@ export default function WalletPage() {
     await supabase.rpc('reparar_pet_35k', { p_user_id: user.id });
 
     // 2. Cargar Saldos
-    const { data: profile } = await supabase.from('perfiles').select('saldo_verde, saldo_rojo').eq('id', user.id).single();
+const { data: profile } = await supabase.from('profiles').select('saldo_verde, saldo_rojo').eq('id', user.id).single();
     if (profile) {
         setSaldoVerde(profile.saldo_verde || 0);
         setSaldoRojo(profile.saldo_rojo || 0);
