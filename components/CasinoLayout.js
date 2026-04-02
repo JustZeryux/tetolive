@@ -77,7 +77,8 @@ export default function CasinoLayout({ children }) {
 
       if (authData?.user) {
         // Si hay login real, sacamos su perfil y saldo
-        const { data: profile } = await supabase.from('perfiles').select('*').eq('id', authData.user.id).single();
+// Si hay login real, sacamos su perfil y saldo
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
         if (profile) {
           tempUser = { 
             id: authData.user.id, 
