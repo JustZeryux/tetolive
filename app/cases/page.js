@@ -1,8 +1,7 @@
 "use client";
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/utils/Supabase';
 
-// Componentes Visuales
 const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
 
 const formatValue = (val) => {
@@ -17,15 +16,11 @@ export default function CasesPage() {
   const [casesData, setCasesData] = useState([]); 
   const [cargando, setCargando] = useState(true);
 
-  // Filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('price_asc'); // price_asc, price_desc, name_asc
-
-  // Vistas
+  const [sortBy, setSortBy] = useState('price_asc'); 
   const [view, setView] = useState('store'); 
   const [selectedCase, setSelectedCase] = useState(null);
 
-  // Modal de Dinero Insuficiente
   const [showNoMoneyModal, setShowNoMoneyModal] = useState(false);
   const [moneyNeeded, setMoneyNeeded] = useState(0);
 
@@ -33,10 +28,11 @@ export default function CasesPage() {
   const [spinnerItems, setSpinnerItems] = useState([]);
   const [winningItem, setWinningItem] = useState(null);
   const [spinning, setSpinning] = useState(false);
-  const [offset, setOffset] = useState(0);
+  const sliderRef = useRef(null); // <-- Usamos useRef para animaciones a prueba de balas
   
-  const ITEM_WIDTH = 180; 
   const WINNING_INDEX = 40; 
+  // Ancho exacto del item: 180px + 8px de margen (mx-1) = 188px
+  const REAL_ITEM_WIDTH = 188; 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,13 +46,8 @@ export default function CasesPage() {
       const { data: dbCases } = await supabase.from('cases').select('*');
       if (dbCases) {
         const formatCases = dbCases.map(c => ({
-          id: c.id,
-          name: c.name,
-          price: c.price,
-          img: c.image_url,
-          color: c.color,
-          shadow: c.shadow,
-          items: c.items
+          id: c.id, name: c.name, price: c.price, img: c.image_url,
+          color: c.color, shadow: c.shadow, items: c.items
         }));
         setCasesData(formatCases);
       }
@@ -67,9 +58,7 @@ export default function CasesPage() {
 
   const filteredAndSortedCases = useMemo(() => {
     let result = [...casesData];
-    if (searchTerm) {
-      result = result.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
+    if (searchTerm) result = result.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
     result.sort((a, b) => {
       if (sortBy === 'price_asc') return a.price - b.price;
       if (sortBy === 'price_desc') return b.price - a.price;
@@ -79,21 +68,10 @@ export default function CasesPage() {
     return result;
   }, [casesData, searchTerm, sortBy]);
 
-  const getRandomVisualItem = (items) => {
-    const random = Math.random() * 100;
-    let sum = 0;
-    for (let item of items) {
-      sum += item.chance;
-      if (random <= sum) return item;
-    }
-    return items[0];
-  };
-
   const openCase = async () => {
-    if (!currentUser) return alert("Please log in to open cases.");
+    if (!currentUser) return alert("Por favor inicia sesión.");
     if (spinning) return;
 
-    // --- CHECK DE DINERO ---
     if (userProfile.saldo_verde < selectedCase.price) {
       setMoneyNeeded(selectedCase.price);
       setShowNoMoneyModal(true);
@@ -101,35 +79,58 @@ export default function CasesPage() {
     }
     
     setView('opening');
-    setSpinning(false);
-    setOffset(0);
+    setSpinning(true); // Bloqueamos el botón inmediatamente
 
-    // NOTA: Si en tu código real llamas a supabase.rpc() para sacar el ganador del backend, ponlo aquí.
-    // Estoy usando tu lógica visual del commit para no romper la UI.
-    const winner = getRandomVisualItem(selectedCase.items);
+    // 1. LLAMADA REAL AL BACKEND (Lo que habías borrado)
+    const { data: dbWinner, error } = await supabase.rpc('open_case', { case_id: selectedCase.id });
+    
+    if (error || dbWinner?.error) {
+      setSpinning(false);
+      setView('inspect');
+      return alert(dbWinner?.error || "Error al abrir la caja. ¿Tienes saldo?");
+    }
 
-    // Actualizar saldo localmente
+    // Actualizar saldo localmente para que se vea reflejado el cobro
     setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - selectedCase.price}));
+    
+    // Buscar el item visual en base a lo que dictó el servidor
+    // (Asume que tu dbWinner trae el ID o nombre del item)
+    const winner = selectedCase.items.find(i => i.id === dbWinner.id || i.name === dbWinner.name) || selectedCase.items[0];
     setWinningItem(winner);
 
-    // Rellenar array de la ruleta
+    // 2. PREPARAR LA RULETA
     const track = Array.from({length: 55}, (_, i) => 
       i === WINNING_INDEX ? winner : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
     );
-
     setSpinnerItems(track);
     
-    // Dejar que React renderice el array en posición 0 antes de aplicar la transición
+    // 3. EJECUTAR ANIMACIÓN PERFECTA SIN DEPENDER DE REACT
     setTimeout(() => {
-      setSpinning(true);
-      // Offset aleatorio para que no frene exacto en el centro matemático
-      const targetOffset = -(WINNING_INDEX * ITEM_WIDTH) + (Math.floor(Math.random() * 140) - 70);
-      setOffset(targetOffset);
-      
+      if (sliderRef.current) {
+        // Reseteamos posición a 0 instantáneamente
+        sliderRef.current.style.transition = 'none';
+        sliderRef.current.style.transform = `translateX(0px)`;
+        
+        // Forzamos al navegador a registrar el reseteo
+        void sliderRef.current.offsetWidth; 
+
+        // Calculamos distancia exacta para que el item 40 quede en el centro
+        const centerOffset = REAL_ITEM_WIDTH / 2;
+        // Un ligero desvío aleatorio para que no caiga siempre en el puro centro exacto del item
+        const randomOffset = (Math.floor(Math.random() * 100) - 50); 
+        const targetPx = -(WINNING_INDEX * REAL_ITEM_WIDTH) - centerOffset + randomOffset;
+
+        // Disparamos la transición cabrona
+        sliderRef.current.style.transition = 'transform 6s cubic-bezier(0.12, 0.8, 0.15, 1)';
+        sliderRef.current.style.transform = `translateX(${targetPx}px)`;
+      }
+
+      // Termina la animación
       setTimeout(() => { 
         setSpinning(false); 
         setView('result'); 
-      }, 5500); // Duración de la animación
+      }, 6200); 
+
     }, 50);
   };
 
@@ -142,29 +143,26 @@ export default function CasesPage() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 relative overflow-hidden font-sans">
-      {/* Luces Ambientales */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[500px] bg-gradient-to-b from-[#6C63FF]/15 to-transparent blur-[150px] pointer-events-none z-0"></div>
       
-      {/* MODAL: NO MONEY */}
       {showNoMoneyModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-black/60">
           <div className="bg-[#1a1d29] border-2 border-red-500/50 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(239,68,68,0.2)] animate-bounce-in">
             <div className="flex justify-center mb-4 text-6xl">⚠️</div>
             <h2 className="text-2xl font-black text-center uppercase mb-2">Insufficient Balance</h2>
-            <p className="text-[#8f9ac6] text-center mb-6">You don't have enough green coins to open this case.</p>
-            
+            <p className="text-[#8f9ac6] text-center mb-6">No tienes suficientes monedas para esta caja.</p>
             <div className="bg-[#0b0e14] rounded-2xl p-4 mb-6 border border-[#252839]">
               <div className="flex justify-between mb-2">
-                <span className="text-xs font-bold uppercase text-[#4a506b]">Your Balance:</span>
+                <span className="text-xs font-bold uppercase text-[#4a506b]">Tu Saldo:</span>
                 <span className="font-bold text-white"><GreenCoin/> {userProfile?.saldo_verde.toLocaleString()}</span>
               </div>
               <div className="flex justify-between border-t border-[#252839] pt-2">
-                <span className="text-xs font-bold uppercase text-[#4a506b]">Price:</span>
+                <span className="text-xs font-bold uppercase text-[#4a506b]">Precio:</span>
                 <span className="font-bold text-red-400"><GreenCoin/> {moneyNeeded.toLocaleString()}</span>
               </div>
             </div>
             <button onClick={() => setShowNoMoneyModal(false)} className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl transition-all uppercase tracking-widest shadow-lg">
-              Got it, sorry ;-;
+              Entendido
             </button>
           </div>
         </div>
@@ -172,48 +170,43 @@ export default function CasesPage() {
 
       <div className="max-w-[1200px] mx-auto relative z-10">
 
-        {/* =========================================
-            VISTA 1: TIENDA
-        ========================================= */}
         {view === 'store' && (
           <div className="animate-fade-in">
             <div className="text-center mb-10 mt-4">
               <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e0e5ff] to-[#8f9ac6] uppercase tracking-widest drop-shadow-[0_0_15px_rgba(108,99,255,0.4)] mb-3">
                 Premium Cases
               </h1>
-              <p className="text-[#8f9ac6] font-bold text-lg md:text-xl tracking-wide">Unbox the rarest and most exclusive items.</p>
+              <p className="text-[#8f9ac6] font-bold text-lg md:text-xl tracking-wide">Abre las cajas y consigue los items más raros.</p>
             </div>
 
-            {/* --- BARRA DE FILTROS --- */}
             <div className="flex flex-col md:flex-row justify-between items-center bg-[#14151f]/80 backdrop-blur-md border border-[#252839] rounded-2xl p-4 mb-10 gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
               <div className="relative w-full md:w-1/3">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8f9ac6]">🔍</span>
                 <input 
                   type="text" 
-                  placeholder="Search a case..." 
+                  placeholder="Buscar caja..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-[#6C63FF] focus:shadow-[0_0_15px_rgba(108,99,255,0.3)] transition-all font-semibold placeholder:text-[#4a506b]"
                 />
               </div>
               <div className="flex items-center gap-3 w-full md:w-auto">
-                <span className="text-[#8f9ac6] font-bold uppercase text-sm tracking-wider">Sort By:</span>
+                <span className="text-[#8f9ac6] font-bold uppercase text-sm tracking-wider">Ordenar:</span>
                 <select 
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#6C63FF] font-semibold cursor-pointer outline-none w-full md:w-auto hover:bg-[#1a1e29] transition-colors"
                 >
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                  <option value="name_asc">Name: A to Z</option>
+                  <option value="price_asc">Precio: Menor a Mayor</option>
+                  <option value="price_desc">Precio: Mayor a Menor</option>
+                  <option value="name_asc">Nombre: A - Z</option>
                 </select>
               </div>
             </div>
 
-            {/* --- GRID DE CAJAS --- */}
             {filteredAndSortedCases.length === 0 ? (
               <div className="text-center py-20 text-[#8f9ac6] text-xl font-bold bg-[#14151f]/50 rounded-3xl border border-[#252839] border-dashed">
-                😔 No cases found matching your search.
+                😔 No se encontraron cajas.
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
@@ -224,18 +217,11 @@ export default function CasesPage() {
                     style={{ boxShadow: `0 10px 40px ${caja.shadow}`}}
                   >
                     <div className="absolute inset-0 opacity-10 transition-opacity duration-500 group-hover:opacity-30" style={{ background: `radial-gradient(circle at top, ${caja.color} 0%, transparent 70%)` }}></div>
-                    
                     <div className="relative mb-6 mt-4 w-40 h-40 flex items-center justify-center">
                       <div className="absolute inset-0 rounded-full blur-2xl opacity-20 group-hover:opacity-60 group-hover:scale-110 transition-all duration-500" style={{ backgroundColor: caja.color }}></div>
-                      <img 
-                        src={caja.img} 
-                        alt={caja.name} 
-                        className="w-full h-full object-contain relative z-10 drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500" 
-                      />
+                      <img src={caja.img} alt={caja.name} className="w-full h-full object-contain relative z-10 drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500" />
                     </div>
-                    
                     <h3 className="text-xl font-black text-white uppercase tracking-widest z-10 mb-4 text-center line-clamp-1 w-full">{caja.name}</h3>
-                    
                     <button className="bg-[#0b0e14] border border-[#2F3347] group-hover:border-[#22c55e]/50 text-[#22c55e] px-6 py-3 rounded-xl text-lg font-black flex items-center justify-center gap-2 transition-all duration-300 z-10 w-full shadow-inner group-hover:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
                       <GreenCoin cls="w-5 h-5"/> {formatValue(caja.price)}
                     </button>
@@ -246,30 +232,25 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* =========================================
-            VISTA 2: INSPECCIONAR CAJA
-        ========================================= */}
         {view === 'inspect' && selectedCase && (
           <div className="animate-fade-in">
             <button onClick={() => setView('store')} className="text-[#8f9ac6] hover:text-white font-bold text-sm flex items-center gap-2 transition-colors mb-8 bg-[#1c1f2e] px-5 py-2.5 rounded-xl border border-[#252839] w-max shadow-md">
-               &lsaquo; Back to Store
+               &lsaquo; Volver a la tienda
             </button>
             <div className="flex flex-col lg:flex-row gap-10 items-start">
               
               <div className="w-full lg:w-1/3 bg-[#14151f]/80 backdrop-blur-md border border-[#252839] rounded-3xl p-8 flex flex-col items-center relative overflow-hidden shadow-2xl">
                 <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${selectedCase.color} 0%, transparent 80%)` }}></div>
-                
                 <img src={selectedCase.img} className="w-48 h-48 object-contain mb-8 z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)] animate-pulse-slow" alt={selectedCase.name} style={{filter: `drop-shadow(0 0 30px ${selectedCase.color}60)`}} />
-                
                 <h2 className="text-3xl font-black text-white uppercase tracking-widest z-10 mb-8 text-center">{selectedCase.name}</h2>
-                <button onClick={openCase} className="w-full py-4 rounded-2xl font-black text-xl text-[#0b0e14] uppercase tracking-widest shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all hover:-translate-y-1 bg-gradient-to-r from-[#22c55e] to-[#16a34a] flex items-center justify-center gap-3 z-10">
-                  OPEN FOR <GreenCoin cls="w-6 h-6"/> {formatValue(selectedCase.price)}
+                <button onClick={openCase} disabled={spinning} className="w-full py-4 rounded-2xl font-black text-xl text-[#0b0e14] uppercase tracking-widest shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all hover:-translate-y-1 bg-gradient-to-r from-[#22c55e] to-[#16a34a] flex items-center justify-center gap-3 z-10">
+                  ABRIR POR <GreenCoin cls="w-6 h-6"/> {formatValue(selectedCase.price)}
                 </button>
               </div>
 
               <div className="w-full lg:w-2/3 bg-[#14151f]/80 backdrop-blur-md border border-[#252839] rounded-3xl p-8 shadow-2xl">
                 <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] uppercase tracking-widest mb-6 border-b border-[#252839] pb-4">
-                  Case Contents
+                  Contenido de la Caja
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {selectedCase.items.map((item, idx) => (
@@ -292,9 +273,7 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* =========================================
-            VISTA 3: RULETA (EL DISEÑO QUE QUERÍAS CABRÓN)
-        ========================================= */}
+        {/* RULETA PERFECCIONADA CON CSS DIRECTO */}
         {view === 'opening' && (
           <div className="animate-fade-in flex flex-col items-center justify-center min-h-[60vh] relative">
             <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-12 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] z-10">
@@ -303,68 +282,53 @@ export default function CasesPage() {
             
             <div className="relative w-full max-w-[1000px] h-[240px] bg-[#0b0e14]/90 backdrop-blur-xl border-y-4 border-[#252839] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.8)] rounded-2xl z-10 flex items-center">
               
-              {/* LA TETO AQUÍ MERO */}
               <img 
                 src="/teto.png" 
-                alt="Teto Decoración" 
+                alt="Teto" 
                 className="absolute -right-8 -bottom-8 w-64 opacity-25 pointer-events-none drop-shadow-[0_0_20px_rgba(108,99,255,0.5)] z-0"
                 onError={(e) => e.target.style.display = 'none'}
               />
 
-              {/* Sombras laterales mamalonas para profundidad */}
               <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
               <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
 
-              {/* El rayo láser del centro */}
+              {/* Láser central */}
               <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-[#22c55e] z-30 shadow-[0_0_25px_rgba(34,197,94,1)] -translate-x-1/2"></div>
-              
-              {/* Brillo detrás del rayo para resaltar el item ganador */}
               <div className="absolute left-1/2 top-0 bottom-0 w-[200px] -translate-x-1/2 bg-gradient-to-r from-transparent via-[#22c55e]/10 to-transparent z-10 pointer-events-none"></div>
 
-              {/* El slider que gira */}
-              <div 
-                className="absolute h-full flex items-center transition-transform"
-                style={{ 
-                  transform: `translateX(calc(50% ${offset ? `+ ${offset}px` : ''}))`, 
-                  transitionDuration: spinning ? '5.5s' : '0s', 
-                  transitionTimingFunction: 'cubic-bezier(0.1, 0.85, 0.15, 1)' 
-                }}
-              >
-                {spinnerItems.map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    className="w-[180px] h-[190px] shrink-0 border border-[#252839]/40 bg-[#14151f]/60 rounded-xl mx-1 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300" 
-                    style={{
-                      boxShadow: `inset 0 0 30px ${item.color}05`
-                    }}
-                  >
-                    {/* Aura de fondo para la cartita */}
-                    <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${item.color} 0%, transparent 60%)`}}></div>
-                    
-                    <img src={item.img} className="w-24 h-24 object-contain mb-3 drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] relative z-10" alt={item.name} />
-                    
-                    <div className="w-full text-center border-t border-[#252839]/50 pt-2 pb-1 relative z-10 bg-[#0b0e14]/40">
-                      <p className="font-black text-sm uppercase tracking-wide w-full px-2 truncate" style={{color: item.color}}>{item.name}</p>
+              {/* Track absoluto para la animación */}
+              <div className="absolute top-0 bottom-0 left-1/2 flex items-center w-max z-10">
+                <div 
+                  ref={sliderRef}
+                  className="flex items-center h-full will-change-transform"
+                >
+                  {spinnerItems.length > 0 && spinnerItems.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className="w-[180px] h-[190px] shrink-0 border border-[#252839]/40 bg-[#14151f]/60 rounded-xl mx-1 flex flex-col items-center justify-center relative overflow-hidden" 
+                      style={{ boxShadow: `inset 0 0 30px ${item.color}05` }}
+                    >
+                      <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${item.color} 0%, transparent 60%)`}}></div>
+                      <img src={item.img} className="w-24 h-24 object-contain mb-3 drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] relative z-10" alt={item.name} />
+                      <div className="w-full text-center border-t border-[#252839]/50 pt-2 pb-1 relative z-10 bg-[#0b0e14]/40">
+                        <p className="font-black text-sm uppercase tracking-wide w-full px-2 truncate" style={{color: item.color}}>{item.name}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* =========================================
-            VISTA 4: PANTALLA DE VICTORIA
-        ========================================= */}
         {view === 'result' && winningItem && (
           <div className="w-full flex flex-col items-center justify-center min-h-[70vh] animate-bounce-in relative">
             <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${winningItem.color} 0%, transparent 60%)`}}></div>
-            
             <h2 className="text-5xl font-black text-white uppercase tracking-widest mb-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] z-10">Item Unboxed!</h2>
             
             <div className="bg-[#14151f]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative" style={{ borderColor: winningItem.color, boxShadow: `0 0 50px ${winningItem.color}40` }}>
               <div className="absolute -top-6 bg-[#0b0e14] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg" style={{ borderColor: winningItem.color, color: winningItem.color }}>
-                NEW ADDITION
+                NUEVO ITEM
               </div>
               <img src={winningItem.img} className="w-56 h-56 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] mb-8 animate-pulse-slow" alt={winningItem.name} />
               
@@ -372,14 +336,14 @@ export default function CasesPage() {
                 {winningItem.name}
               </h3>
               <p className="text-[#8f9ac6] font-bold text-lg flex items-center gap-2 mb-10 bg-[#0b0e14] px-4 py-2 rounded-lg border border-[#252839]">
-                Value: <GreenCoin cls="w-5 h-5"/> {formatValue(winningItem.valor || 0)}
+                Valor: <GreenCoin cls="w-5 h-5"/> {formatValue(winningItem.valor || 0)}
               </p>
               <div className="flex gap-4 w-full">
                 <button onClick={() => setView('store')} className="flex-1 bg-[#1c1f2e] hover:bg-[#252839] border border-[#2F3347] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md">
-                  Store
+                  Tienda
                 </button>
                 <button onClick={() => openCase()} className="flex-1 bg-[#22c55e] hover:bg-[#16a34a] text-[#0b0e14] border border-[#16a34a] px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)]">
-                  Spin Again
+                  Girar Otra Vez
                 </button>
               </div>
             </div>
