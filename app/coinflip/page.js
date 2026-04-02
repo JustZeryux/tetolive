@@ -1,20 +1,8 @@
 "use client";
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { supabase } from '@/utils/Supabase'; 
-import PETS_DATABASE_RAW from '../data/pets_bgsi.json';
+import { supabase } from '@/utils/Supabase';
 
-// --- LIMPIEZA DE DATOS ---
-const PETS_DATABASE = PETS_DATABASE_RAW
-  .filter(pet => pet && pet.valor !== 0 && pet.valor !== "0" && pet.valor !== null)
-  .map(pet => {
-    let valorCorregido = pet.valor;
-    if (typeof valorCorregido === 'number') {
-      if (valorCorregido < 10) valorCorregido = Math.round(valorCorregido * 1000000); 
-      else if (valorCorregido < 1000) valorCorregido = Math.round(valorCorregido * 1000); 
-    }
-    return { ...pet, valor: valorCorregido };
-  });
-
+// --- HELPERS Y UI ---
 const formatValue = (val) => {
   if (val === "O/C") return "O/C";
   if (typeof val !== 'number') return val;
@@ -23,7 +11,7 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
-const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" className={`${cls} inline-block`} alt="R" onError={e=>e.target.style.display='none'}/>;
+const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
 
 const imgMonedaHeads = '/heads.png';
 const imgMonedaTails = '/tails.png';
@@ -44,7 +32,7 @@ const formatGameToUI = (dbGame) => {
         petsChallenger: dbGame.apuesta_retador || [],
         resultado: dbGame.resultado || null,
         creado_en: dbGame.creado_en,
-        datos_partida_raw: dbGame.datos_partida || {} // Necesario para no borrar datos al hacer UPDATE
+        datos_partida_raw: dbGame.datos_partida || {}
     };
 };
 
@@ -65,22 +53,22 @@ export default function BloxypotCoinflip() {
   const [creatorSelectedPets, setCreatorSelectedPets] = useState([]);
   const [creatorSide, setCreatorSide] = useState(null); 
   const [creatorSearch, setCreatorSearch] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
   // Estados Join/Arena
   const [partidaSeleccionada, setPartidaSeleccionada] = useState(null); 
   const [selectedPetsToJoin, setSelectedPetsToJoin] = useState([]);
   const [modalJoinAbierto, setModalJoinAbierto] = useState(false);
 
-  // Lobby Conectado a Supabase
+  // Lobby
   const [lobbyGames, setLobbyGames] = useState([]);
 
-useEffect(() => {
-    // 1. OBTENER USUARIO ACTUAL Y CARGAR INVENTARIO REAL
+  useEffect(() => {
+    // 1. INICIALIZAR USUARIO Y MASCOTAS (SOLUCIÓN IMÁGENES ROTAS)
     const initUserAndInventory = async () => {
         const { data: authData } = await supabase.auth.getUser();
         
         if (authData?.user) {
-            // 1. Obtener datos del perfil
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('username, avatar_url')
@@ -93,7 +81,7 @@ useEffect(() => {
                 avatar_url: profile?.avatar_url || '/default-avatar.png'
             });
 
-            // 2. Cargar inventario real con JOIN a la tabla items
+            // Pedimos el inventario asegurando que la imagen se llame image_url
             const { data: inventoryData, error } = await supabase
                 .from('inventory')
                 .select(`
@@ -110,32 +98,19 @@ useEffect(() => {
                     item_id: inv.items.id,
                     nombre: inv.items.name,
                     valor: inv.items.value,
-                    image_url: inv.items.image_url,
+                    image_url: inv.items.image_url, // Unificamos el nombre de la variable
                     color: inv.items.color
                 }));
                 setMisPets(mascotasReales.sort((a, b) => b.valor - a.valor));
             } else {
                 setMisPets([]); 
             }
-
-        } else {
-            // 3. Fallback si no está logueado
-            let tempId = localStorage.getItem('temp_user_id');
-            if (!tempId) { 
-                tempId = crypto.randomUUID(); 
-                localStorage.setItem('temp_user_id', tempId); 
-            }
-            setCurrentUser({ 
-                id: tempId, 
-                username: 'Guest_' + tempId.substring(0,4), 
-                avatar_url: '/default-avatar.png' 
-            });
         }
     };
 
     initUserAndInventory();
 
-    // 2. Cargar partidas reales (Waiting, In_progress y Completed para el historial)
+    // 2. CARGAR PARTIDAS
     const cargarPartidas = async () => {
       const { data, error } = await supabase
         .from('partidas')
@@ -152,7 +127,7 @@ useEffect(() => {
 
     cargarPartidas();
 
-    // 3. Suscripción a Realtime
+    // 3. REALTIME LOBBY
     const channel = supabase.channel('lobby_coinflip')
       .on('postgres_changes', { 
           event: '*', 
@@ -167,7 +142,6 @@ useEffect(() => {
           } else if (payload.eventType === 'UPDATE') {
             const formatted = formatGameToUI(payload.new);
             
-            // Actualizar en el lobby
             setLobbyGames(prev => {
                 const index = prev.findIndex(g => g.id === formatted.id);
                 if (index !== -1) {
@@ -178,23 +152,18 @@ useEffect(() => {
                 return [formatted, ...prev];
             });
 
-            // Si ALGUIEN está viendo la partida O si tú eres el creador esperando
             setPartidaSeleccionada((prevPartida) => {
                 if (prevPartida && prevPartida.id === formatted.id) {
-                    // Si pasó a in_progress y tú estabas esperando (o viendo)
                     if (prevPartida.estado === 'waiting' && formatted.estado === 'in_progress') {
-                        setVistaActual('arena'); // Quita la ventana negra de espera
+                        setVistaActual('arena'); 
                         iniciarCinematicaMoneda(formatted);
                     }
                     return formatted;
                 }
                 return prevPartida;
             });
-
           } else if (payload.eventType === 'DELETE') {
             setLobbyGames(prev => prev.filter(game => game.id !== payload.old.id));
-            
-            // Si te borraron la partida mientras esperabas (o la cancelaste tú)
             setPartidaSeleccionada((prev) => {
                if(prev && prev.id === payload.old.id) {
                    setVistaActual('lobby');
@@ -205,12 +174,10 @@ useEffect(() => {
           }
       }).subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // --- LÓGICA DEL CREADOR ---
+  // --- LÓGICA DE CREACIÓN ---
   const creatorFilteredPets = useMemo(() => {
     let items = [...misPets];
     if (creatorSearch) items = items.filter(i => i.nombre.toLowerCase().includes(creatorSearch.toLowerCase()));
@@ -232,29 +199,44 @@ useEffect(() => {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
-const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
-    if (!currentUser || petsSeleccionadas.length === 0) return alert("Selecciona pets");
+  // CREAR JUEGO (CORREGIDO Y BLINDADO)
+  const handleCreateGame = async () => {
+    if (!currentUser) return alert("Debes iniciar sesión.");
+    if (creatorSelectedPets.length === 0) return alert("Debes seleccionar al menos una pet.");
+    if (!creatorSide) return alert("Debes elegir Heads o Tails.");
+    if (isCreating) return;
 
-    const valorTotal = petsSeleccionadas.reduce((sum, pet) => sum + pet.valor, 0);
+    setIsCreating(true);
+
+    const valorTotal = creatorSelectedPets.reduce((sum, pet) => sum + pet.valor, 0);
+
+    const datosPartidaIniciales = {
+        lado_creador: creatorSide,
+        valor_total: valorTotal,
+        host_name: currentUser.username,
+        avatar_creador: currentUser.avatar_url
+    };
 
     const { data: nuevaPartida, error } = await supabase
         .from('partidas')
         .insert({
             modo_juego: 'coinflip',
             creador_id: currentUser.id,
-            apuesta_creador: petsSeleccionadas, 
-            datos_partida: { lado: ladoElegido, valor_total: valorTotal },
+            apuesta_creador: creatorSelectedPets, 
+            datos_partida: datosPartidaIniciales,
             estado: 'waiting'
         })
         .select()
         .single();
 
-    if (!error) {
-        // Bloqueamos las mascotas
-        const idsA_Bloquear = petsSeleccionadas.map(p => p.inventarioId);
+    if (!error && nuevaPartida) {
+        // Bloqueamos las mascotas en la BD
+        const idsA_Bloquear = creatorSelectedPets.map(p => p.inventarioId);
         await supabase.from('inventory').update({ is_locked: true }).in('id', idsA_Bloquear);
             
-        // Lanzar la ventanita negra de espera
+        // Quitamos las mascotas bloqueadas de nuestro inventario local temporalmente
+        setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
+
         const uiData = formatGameToUI(nuevaPartida);
         setPartidaSeleccionada(uiData);
         setVistaActual('esperando'); 
@@ -262,19 +244,39 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
         setCreatorSide(null);
     } else {
         console.error("Error al crear partida:", error);
-        alert("Error connecting to database.");
+        alert("Hubo un error al crear la partida. Revisa la consola.");
     }
+    
+    setIsCreating(false);
   };
 
   const cancelarPartida = async () => {
       if (!partidaSeleccionada) return;
-      // Borramos de la DB
+      // 1. Borramos de la DB
       await supabase.from('partidas').delete().eq('id', partidaSeleccionada.id);
+      
+      // 2. Desbloqueamos las mascotas en la BD
+      const idsA_Desbloquear = partidaSeleccionada.petsHost.map(p => p.inventarioId);
+      await supabase.from('inventory').update({ is_locked: false }).in('id', idsA_Desbloquear);
+
+      // 3. Regresamos las pets al inventario local
+      setMisPets(prev => {
+          const recuperadas = partidaSeleccionada.petsHost;
+          const merged = [...prev, ...recuperadas];
+          // Eliminar duplicados por si acaso
+          const uniqueIds = new Set();
+          return merged.filter(pet => {
+              const isDuplicate = uniqueIds.has(pet.inventarioId);
+              uniqueIds.add(pet.inventarioId);
+              return !isDuplicate;
+          }).sort((a,b) => b.valor - a.valor);
+      });
+
       setVistaActual('lobby');
       setPartidaSeleccionada(null);
   };
 
-  // --- LÓGICA DE JOIN / ARENA ---
+  // --- LÓGICA JOIN ---
   const abrirModalJoin = (juego) => { 
       setSelectedPetsToJoin([]); 
       setPartidaSeleccionada(juego); 
@@ -287,7 +289,6 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
       animacionIniciada.current = false;
       setCuentaRegresiva(null);
       
-      // Si la partida ya estaba terminada, mostrar el resultado final directamente
       if (juego.estado === 'completed' && juego.resultado) {
           setGirando(false);
           setGanador(juego.resultado.lado_ganador);
@@ -339,9 +340,8 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
   };
 
   const confirmarUnionYJugar = async () => {
-    if (!dataJoinValidacion.valida) return alert("Pets are outside the 2% range!");
+    if (!dataJoinValidacion.valida) return alert("Las mascotas no están en el rango del 2% permitido.");
     
-    // Inyectamos nuestros datos de perfil reales en el JSONB
     const nuevosDatosPartida = {
         ...partidaSeleccionada.datos_partida_raw,
         challenger_name: currentUser.username,
@@ -362,18 +362,23 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
 
     if (error) {
       console.error("Error uniendo:", error);
-      return alert("Partida ya no está disponible.");
+      return alert("Esta partida ya no está disponible o hubo un error.");
     }
+
+    // Bloquear las pets que usó el retador
+    const idsA_Bloquear = selectedPetsToJoin.map(p => p.inventarioId);
+    await supabase.from('inventory').update({ is_locked: true }).in('id', idsA_Bloquear);
+    setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
     
     const uiData = formatGameToUI(data);
     setPartidaSeleccionada(uiData);
     setModalJoinAbierto(false); 
     setVistaActual('arena'); 
 
-    // Iniciamos la animación localmente para el que se une
     iniciarCinematicaMoneda(uiData);
   };
 
+  // --- ANIMACIONES ARENA ---
   const iniciarCinematicaMoneda = (datosPartida) => {
     if (animacionIniciada.current) return; 
     animacionIniciada.current = true;
@@ -382,7 +387,6 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
     setGanador(null);
     setMostrarImpacto(false);
     
-    // 1. Iniciar Cuenta Regresiva de 3 Segundos
     setCuentaRegresiva(3);
     let contador = 3;
     
@@ -393,7 +397,6 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
         } else {
             clearInterval(intervalo);
             setCuentaRegresiva(null);
-            // 2. Al terminar el contador, hacer el tiro real
             ejecutarTiroRPC(datosPartida);
         }
     }, 1000);
@@ -405,22 +408,20 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
     const { data: resultado, error } = await supabase
       .rpc('resolver_partida_coinflip', { p_partida_id: datosPartida.id });
 
-    // Fallback por si la RPC no existe aún
-    let ganaHeads = true;
     let servidorLadoGanador = 'Heads';
     
     if (error) {
-        console.warn("Usando Random simulado por error RPC.", error);
-        ganaHeads = Math.random() < 0.5;
-        servidorLadoGanador = ganaHeads ? 'Heads' : 'Tails';
+        console.warn("Fallo RPC, usando RNG local.", error);
+        const ganaHeadsLocal = Math.random() < 0.5;
+        servidorLadoGanador = ganaHeadsLocal ? 'Heads' : 'Tails';
         await supabase.from('partidas').update({ estado: 'completed', resultado: { lado_ganador: servidorLadoGanador } }).eq('id', datosPartida.id);
     } else {
         servidorLadoGanador = resultado.lado_ganador;
-        ganaHeads = servidorLadoGanador === 'Heads';
     }
 
     setTimeout(() => {
       setRotacion(prevRotacion => {
+        const ganaHeads = servidorLadoGanador === 'Heads';
         const vueltasBase = prevRotacion + 3600; 
         const nuevaRot = ganaHeads ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
         
@@ -437,77 +438,77 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
 
   // --- COMPONENTES VISUALES ---
   const AvatarVS = ({ img, side, isWaiting = false }) => (
-    <div className={`relative box-border h-12 w-12 md:h-14 md:w-14 rounded-full border-2 md:border-[3px] border-solid bg-[#1C1F2E] transition-colors shrink-0 ${isWaiting ? 'border-[#2F3347] border-dashed opacity-60' : side === 'Heads' ? 'border-[#facc15]' : 'border-[#a855f7]'}`}>
+    <div className={`relative box-border h-12 w-12 md:h-14 md:w-14 rounded-full border-2 md:border-[3px] border-solid bg-[#1C1F2E] transition-colors shrink-0 ${isWaiting ? 'border-[#2F3347] border-dashed opacity-60' : side === 'Heads' ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.3)]' : 'border-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,0.3)]'}`}>
       <div className="block h-full w-full overflow-hidden rounded-full bg-[#141323] flex items-center justify-center text-xl">
         {isWaiting ? '?' : <img src={img} className="block w-full h-full object-cover" alt="avatar"/>}
       </div>
       {!isWaiting && (
         <div className="absolute right-0 top-0 h-5 w-5 md:h-6 md:w-6 overflow-hidden rounded-full translate-x-1/4 -translate-y-1/4 shadow-md bg-[#0b0e14]">
-          <img className="block w-full h-full object-contain" src={side === 'Heads' ? imgMonedaHeads : imgMonedaTails} alt={side} />
+          <img className="block w-full h-full object-contain p-0.5" src={side === 'Heads' ? imgMonedaHeads : imgMonedaTails} alt={side} />
         </div>
       )}
     </div>
   );
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1d202f] via-[#0b0e14] to-[#0b0e14] text-white font-sans p-4 md:p-8 relative">
-      <div className="max-w-[1200px] mx-auto">
+    <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white font-sans p-4 md:p-8 relative overflow-hidden">
+      
+      {/* Background FX Fijo */}
+      <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#6C63FF] opacity-10 blur-[150px] pointer-events-none z-0"></div>
+      <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#ef4444] opacity-5 blur-[150px] pointer-events-none z-0"></div>
+
+      <div className="max-w-[1200px] mx-auto relative z-10">
         
         {/* =========================================
             VISTA 1: LOBBY
         ========================================= */}
         {vistaActual === 'lobby' && (
           <div className="w-full animate-fade-in">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 mb-6">
-              <div className="flex items-center gap-3 rounded-lg p-4 border border-[#252839]" style={{background: 'radial-gradient(circle at 100% 100%, rgba(108, 99, 255, 0.15) 0%, transparent 80%), #1c1f2e'}}>
-                <div className="flex flex-col">
-                  <span className="text-white text-2xl font-black">{lobbyGames.filter(g => g.estado === 'waiting').length}</span>
-                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Active Rooms</span>
+            {/* Header / Stats */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
+              <div className="flex items-center gap-4 rounded-2xl p-6 border border-[#252839] bg-[#14151f] shadow-lg relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#6C63FF]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="flex flex-col relative z-10">
+                  <span className="text-white text-3xl font-black">{lobbyGames.filter(g => g.estado === 'waiting').length}</span>
+                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mt-1">Active Rooms</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg p-4 border border-[#252839]" style={{background: 'radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.15) 0%, transparent 80%), #1c1f2e'}}>
-                <div className="flex flex-col">
-                  <span className="text-white text-2xl font-black flex items-center gap-2"><RedCoin cls="w-6 h-6"/> {formatValue(lobbyGames.filter(g => g.estado === 'waiting').reduce((acc, g) => acc + g.valorTotalHost, 0))}</span>
-                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Total Value</span>
+              <div className="flex items-center gap-4 rounded-2xl p-6 border border-[#252839] bg-[#14151f] shadow-lg relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#ef4444]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="flex flex-col relative z-10">
+                  <span className="text-white text-3xl font-black flex items-center gap-2"><RedCoin cls="w-7 h-7"/> {formatValue(lobbyGames.filter(g => g.estado === 'waiting').reduce((acc, g) => acc + g.valorTotalHost, 0))}</span>
+                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mt-1">Total Value</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg p-4 border border-[#252839]" style={{background: 'radial-gradient(circle at 100% 100%, rgba(108, 99, 255, 0.15) 0%, transparent 80%), #1c1f2e'}}>
-                <div className="flex flex-col">
-                  <span className="text-white text-2xl font-black">History</span>
-                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Live Updates</span>
+              <div className="flex items-center gap-4 rounded-2xl p-6 border border-[#252839] bg-[#14151f] shadow-lg relative overflow-hidden group">
+                 <div className="absolute inset-0 bg-gradient-to-r from-[#22c55e]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="flex flex-col relative z-10">
+                  <span className="text-white text-3xl font-black">{lobbyGames.length}</span>
+                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mt-1">Total Games</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-              <div className="flex gap-2 w-full md:w-auto">
-                <button onClick={() => setVistaActual('crear')} className="flex-1 md:flex-none cursor-pointer h-[38px] px-6 text-sm font-bold rounded-md border border-[#5E55D9]/40 bg-[linear-gradient(135deg,#6C63FF_0%,#5147D9_100%)] text-white shadow-[0_2px_15px_rgba(108,99,255,0.3)] hover:opacity-90 transition-all uppercase tracking-wider hover:scale-105">
-                  Create Game
-                </button>
-              </div>
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-[#14151f] p-4 rounded-2xl border border-[#252839]">
+               <h2 className="text-xl font-black uppercase tracking-widest text-white ml-2">Live Coinflip</h2>
+               <button onClick={() => setVistaActual('crear')} className="w-full md:w-auto cursor-pointer py-3 px-8 text-sm font-black rounded-xl border border-[#5E55D9]/50 bg-gradient-to-r from-[#6C63FF] to-[#5147D9] text-white shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:shadow-[0_0_30px_rgba(108,99,255,0.6)] transition-all uppercase tracking-widest hover:scale-105 active:scale-95">
+                 CREATE GAME
+               </button>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {lobbyGames.length === 0 && (
-                  <div className="text-center text-[#8f9ac6] py-10">No games right now. Create one!</div>
+                  <div className="text-center text-[#555b82] py-20 font-black uppercase tracking-widest text-sm bg-[#14151f] rounded-2xl border border-[#252839] border-dashed">No games available. Be the first to create one!</div>
               )}
               {lobbyGames.map((game, idx) => (
-                <div key={game.id} className={`relative grid grid-cols-1 xl:grid-cols-[auto_1fr_auto_auto] items-center gap-4 md:gap-6 rounded-lg border py-3 px-4 md:pl-6 md:pr-4 transition-all animate-fade-in ${game.estado === 'completed' ? 'border-[#252839] bg-[#141323] opacity-80' : 'border-[#252839] bg-[#1c1f2e] hover:border-[#3f4354]'}`} style={{animationDelay: `${idx * 0.05}s`}}>
+                <div key={game.id} className={`relative grid grid-cols-1 xl:grid-cols-[auto_1fr_auto_auto] items-center gap-4 md:gap-6 rounded-2xl border py-4 px-6 transition-all animate-fade-in ${game.estado === 'completed' ? 'border-[#252839] bg-[#0b0e14] opacity-70 grayscale-[30%]' : 'border-[#252839] bg-[#14151f] hover:border-[#3f4354] shadow-lg hover:shadow-xl'}`} style={{animationDelay: `${idx * 0.05}s`}}>
                   
-                  {/* Etiqueta de Estado Visual */}
-                  {game.estado === 'completed' && (
-                     <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-lg rounded-br-lg tracking-widest">Finished</div>
-                  )}
-                  {game.estado === 'in_progress' && (
-                     <div className="absolute top-0 left-0 bg-[#6C63FF] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-lg rounded-br-lg tracking-widest shadow-[0_0_10px_rgba(108,99,255,0.5)]">Rolling...</div>
-                  )}
+                  {game.estado === 'completed' && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-3 py-1 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
+                  {game.estado === 'in_progress' && <div className="absolute top-0 left-0 bg-[#6C63FF] text-white text-[9px] font-black uppercase px-3 py-1 rounded-tl-2xl rounded-br-lg tracking-widest shadow-[0_0_10px_rgba(108,99,255,0.5)]">Rolling...</div>}
 
-                  <div className="flex items-center gap-3 justify-center xl:justify-start mt-2 xl:mt-0">
-                    {/* AVATAR REAL DEL CREADOR */}
+                  <div className="flex items-center gap-4 justify-center xl:justify-start mt-2 xl:mt-0">
                     <AvatarVS img={game.avatar} side={game.lado} />
-                    <strong className="text-lg font-black text-[#555b82] italic">VS</strong>
-                    
-                    {/* AVATAR REAL DEL RETADOR (SI EXISTE) */}
+                    <strong className="text-xl font-black text-[#555b82] italic px-2">VS</strong>
                     {game.estado === 'waiting' ? (
                         <AvatarVS isWaiting={true} />
                     ) : (
@@ -518,41 +519,40 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
                   <div className="flex justify-center xl:justify-start py-2">
                     <div className="flex items-center ml-2">
                       {game.petsHost.slice(0, 5).map((pet, i) => (
-                        <div key={i} className="relative box-border block h-12 w-12 md:h-14 md:w-14 rounded-md border-2 border-[#2F3347] bg-[#141323] overflow-hidden -ml-4 shadow-lg group" style={{zIndex: 10 - i}}>
-                          <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at 50% 50%, ${pet.color || '#9ca3af'} 0%, transparent 70%)` }}></div>
-                          <img src={pet.img} className="block w-full h-full object-contain scale-110 drop-shadow-md" alt="pet"/>
+                        <div key={i} className="relative box-border block h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 shadow-[0_0_10px_rgba(0,0,0,0.5)] group hover:-translate-y-2 hover:z-50 transition-transform" style={{zIndex: 10 - i}}>
+                          {/* SE USÓ image_url EN LUGAR DE img */}
+                          <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: `radial-gradient(circle at 50% 50%, ${pet.color || '#9ca3af'} 0%, transparent 70%)` }}></div>
+                          <img src={pet.image_url} className="block w-full h-full object-contain scale-110 drop-shadow-md relative z-10" alt="pet"/>
                         </div>
                       ))}
                       {game.petsHost.length > 5 && (
-                        <div className="relative box-border flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-md border-2 border-[#2F3347] bg-[#141323] overflow-hidden -ml-4 z-[5]">
-                          <img src={game.petsHost[5].img} className="block w-full h-full object-contain blur-[2px] opacity-40" alt="pet"/>
-                          <span className="absolute inset-0 flex items-center justify-center text-white font-black text-sm drop-shadow-md bg-black/40">+{game.petsHost.length - 5}</span>
+                        <div className="relative box-border flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 z-[5]">
+                          <img src={game.petsHost[5].image_url} className="block w-full h-full object-contain blur-[3px] opacity-30" alt="pet"/>
+                          <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md bg-black/50 backdrop-blur-[1px]">+{game.petsHost.length - 5}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-center w-full xl:w-32 justify-self-center">
+                  <div className="text-center w-full xl:w-40 justify-self-center bg-[#0b0e14] py-2 rounded-xl border border-[#252839]">
                     <p className={`inline-flex items-center gap-2 text-xl font-black drop-shadow-md ${game.estado === 'completed' ? 'text-[#8f9ac6]' : 'text-white'}`}>
-                      <RedCoin cls="w-5 h-5 md:w-6 md:h-6"/> <span>{formatValue(game.valorTotalHost * (game.estado === 'completed' ? 2 : 1))}</span>
+                      <RedCoin cls="w-5 h-5"/> <span>{formatValue(game.valorTotalHost * (game.estado === 'completed' ? 2 : 1))}</span>
                     </p>
                     {game.estado === 'waiting' && (
-                        <p className="text-xs font-bold text-[#8f9ac6] mt-0.5">
-                        {formatValue(game.valorTotalHost * 0.98)} - {formatValue(game.valorTotalHost * 1.02)}
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#555b82] mt-1">
+                        Range: {formatValue(game.valorTotalHost * 0.98)} - {formatValue(game.valorTotalHost * 1.02)}
                         </p>
                     )}
                   </div>
 
-                  <div className="flex justify-center xl:justify-end gap-2 w-full mt-2 xl:mt-0">
-                    {/* Solo muestra JOIN si está en waiting Y el creador NO es el usuario actual */}
+                  <div className="flex justify-center xl:justify-end gap-3 w-full mt-2 xl:mt-0">
                     {game.estado === 'waiting' && currentUser && game.creador_id !== currentUser.id && (
-                        <button onClick={() => abrirModalJoin(game)} className="w-full xl:w-24 cursor-pointer h-[34px] px-5 text-sm font-bold rounded-md border border-[#5E55D9]/40 bg-[linear-gradient(135deg,#6C63FF_0%,#5147D9_100%)] text-white shadow-[0_2px_10px_rgba(108,99,255,0.25)] hover:shadow-[0_4px_15px_rgba(108,99,255,0.4)] transition-all uppercase tracking-widest hover:-translate-y-0.5">
-                        JOIN
+                        <button onClick={() => abrirModalJoin(game)} className="w-full xl:w-28 cursor-pointer py-3 text-xs font-black rounded-xl border border-[#22c55e]/50 bg-[#22c55e]/10 text-[#4ade80] hover:bg-[#22c55e] hover:text-[#0b0e14] shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all uppercase tracking-widest">
+                          JOIN
                         </button>
                     )}
                     
-                    {/* El botón VIEW siempre está visible para todas las partidas */}
-                    <button onClick={() => verPartida(game)} className="w-full xl:w-24 cursor-pointer h-[34px] px-5 text-sm font-bold rounded-md border border-[#2D314A] bg-[#2a2e44] text-[#E1E4F2] hover:bg-[#32364f] transition-all uppercase tracking-widest hover:-translate-y-0.5">
+                    <button onClick={() => verPartida(game)} className="w-full xl:w-28 cursor-pointer py-3 text-xs font-black rounded-xl border border-[#252839] bg-[#0b0e14] text-[#8f9ac6] hover:bg-[#252839] hover:text-white transition-all uppercase tracking-widest">
                       VIEW
                     </button>
                   </div>
@@ -567,57 +567,68 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
         ========================================= */}
         {vistaActual === 'crear' && (
            <div className="w-full animate-fade-in">
-             <button onClick={() => {setVistaActual('lobby'); setCreatorSelectedPets([]);}} className="text-[#8f9ac6] hover:text-[#6C63FF] font-bold text-sm flex items-center gap-1 transition-colors mb-6 bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839]">
-               &lsaquo; Back to Lobby
+             <button onClick={() => {setVistaActual('lobby'); setCreatorSelectedPets([]);}} className="text-[#8f9ac6] hover:text-white font-black text-xs tracking-widest uppercase flex items-center gap-2 transition-colors mb-6 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b]">
+               ← Return to Lobby
              </button>
              
-             <div className="flex flex-col md:flex-row gap-6">
+             <div className="flex flex-col md:flex-row gap-8">
+                {/* Lado Izquierdo: Inventario */}
                 <div className="w-full md:w-2/3 flex flex-col gap-4">
-                    <div className="bg-[#1c1f2e] border border-[#252839] rounded-xl p-6 shadow-lg h-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest border-b border-[#252839] pb-2 flex-1">Choose your Pets</h3>
-                            <button onClick={handleAutoSelectCreate} className="text-xs bg-[#2a2e44] hover:bg-[#32364f] text-[#E1E4F2] px-3 py-1 rounded border border-[#2D314A] transition-colors">
-                                Auto Select
+                    <div className="bg-[#14151f] border border-[#252839] rounded-2xl p-6 shadow-xl h-full flex flex-col">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-white text-lg font-black uppercase tracking-widest">Your Inventory</h3>
+                            <button onClick={handleAutoSelectCreate} className="text-[10px] font-black uppercase tracking-widest bg-[#0b0e14] hover:bg-[#252839] text-[#8f9ac6] hover:text-white px-4 py-2 rounded-lg border border-[#252839] transition-colors">
+                                Auto Select Top 3
                             </button>
                         </div>
-                        <input type="text" placeholder="Search pets..." value={creatorSearch} onChange={e => setCreatorSearch(e.target.value)} className="w-full bg-[#141323] border border-[#2F3347] rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#6C63FF] mb-4" />
+                        <input type="text" placeholder="Search items..." value={creatorSearch} onChange={e => setCreatorSearch(e.target.value)} className="w-full bg-[#0b0e14] border border-[#252839] rounded-xl px-5 py-3 text-sm text-white focus:outline-none focus:border-[#6C63FF] mb-6 transition-colors" />
                         
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2 flex-1 content-start">
                             {creatorFilteredPets.map(pet => {
                                 const isSelected = creatorSelectedPets.some(p => p.inventarioId === pet.inventarioId);
                                 return (
-                                    <div key={pet.inventarioId} onClick={() => toggleCreatorPet(pet)} className={`relative bg-[#141323] border-2 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected ? 'border-[#6C63FF] shadow-[0_0_15px_rgba(108,99,255,0.3)]' : 'border-[#2F3347] hover:border-[#4f567a]'}`}>
-                                        <img src={pet.img} className="w-12 h-12 object-contain mb-2" alt="pet"/>
-                                        <div className="text-[10px] text-center w-full truncate text-[#8f9ac6] font-bold">{pet.nombre}</div>
-                                        <div className="text-xs font-black text-white flex items-center gap-1 mt-1"><RedCoin cls="w-3 h-3"/> {formatValue(pet.valor)}</div>
+                                    <div key={pet.inventarioId} onClick={() => toggleCreatorPet(pet)} className={`relative bg-[#0b0e14] border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all hover:-translate-y-1 ${isSelected ? 'border-[#6C63FF] shadow-[0_0_20px_rgba(108,99,255,0.3)] bg-gradient-to-b from-[#6C63FF]/10 to-transparent' : 'border-[#252839] hover:border-[#4a506b]'}`}>
+                                        {isSelected && <div className="absolute top-2 right-2 w-3 h-3 bg-[#6C63FF] rounded-full shadow-[0_0_10px_#6C63FF]"></div>}
+                                        {/* USO CORRECTO DE IMAGE_URL */}
+                                        <img src={pet.image_url} className="w-14 h-14 object-contain mb-3 drop-shadow-lg" alt="pet"/>
+                                        <div className="text-[9px] text-center w-full truncate font-black uppercase" style={{color: pet.color || '#8f9ac6'}}>{pet.nombre}</div>
+                                        <div className="text-[10px] font-black text-white flex items-center justify-center gap-1 mt-1"><RedCoin cls="w-3 h-3"/> {formatValue(pet.valor)}</div>
                                     </div>
                                 )
                             })}
+                            {creatorFilteredPets.length === 0 && (
+                                <div className="col-span-full text-center text-[#555b82] py-10 font-bold text-sm">No pets found in your inventory.</div>
+                            )}
                         </div>
                     </div>
                 </div>
 
+                {/* Lado Derecho: Controles */}
                 <div className="w-full md:w-1/3 flex flex-col gap-4">
-                    <div className="bg-[#1c1f2e] border border-[#252839] rounded-xl p-6 shadow-lg">
-                        <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mb-4 border-b border-[#252839] pb-2">Selected Value</h3>
-                        <div className="text-3xl font-black text-white flex items-center justify-center gap-2 py-4 bg-[#141323] rounded-lg border border-[#2F3347]">
+                    <div className="bg-[#14151f] border border-[#252839] rounded-2xl p-6 shadow-xl sticky top-4">
+                        <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2">Total Bet Value</h3>
+                        <div className="text-4xl font-black text-white flex items-center gap-3 py-6 bg-[#0b0e14] rounded-xl border border-[#252839] mb-8 justify-center shadow-inner">
                             <RedCoin cls="w-8 h-8"/> {formatValue(totalCreatorValue)}
                         </div>
 
-                        <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mt-6 mb-4 border-b border-[#252839] pb-2">Choose Side</h3>
-                        <div className="flex gap-4">
-                            <button onClick={() => setCreatorSide('Heads')} className={`flex-1 flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${creatorSide === 'Heads' ? 'border-[#facc15] bg-[#facc15]/10 shadow-[0_0_20px_rgba(250,204,21,0.2)]' : 'border-[#2F3347] bg-[#141323] hover:border-[#4f567a]'}`}>
-                                <img src={imgMonedaHeads} className="w-16 h-16 object-contain mb-2" alt="Heads" />
-                                <span className="font-black text-white">HEADS</span>
+                        <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-3">Choose Your Side</h3>
+                        <div className="flex gap-4 mb-8">
+                            <button onClick={() => setCreatorSide('Heads')} className={`flex-1 flex flex-col items-center justify-center py-6 rounded-xl border-2 transition-all group ${creatorSide === 'Heads' ? 'border-[#facc15] bg-gradient-to-b from-[#facc15]/20 to-transparent shadow-[0_0_20px_rgba(250,204,21,0.2)] scale-105' : 'border-[#252839] bg-[#0b0e14] hover:border-[#facc15]/50'}`}>
+                                <img src={imgMonedaHeads} className="w-16 h-16 object-contain mb-3 drop-shadow-xl group-hover:scale-110 transition-transform" alt="Heads" />
+                                <span className={`font-black tracking-widest uppercase text-xs ${creatorSide === 'Heads' ? 'text-[#facc15]' : 'text-[#8f9ac6]'}`}>Heads</span>
                             </button>
-                            <button onClick={() => setCreatorSide('Tails')} className={`flex-1 flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${creatorSide === 'Tails' ? 'border-[#a855f7] bg-[#a855f7]/10 shadow-[0_0_20px_rgba(168,85,247,0.2)]' : 'border-[#2F3347] bg-[#141323] hover:border-[#4f567a]'}`}>
-                                <img src={imgMonedaTails} className="w-16 h-16 object-contain mb-2" alt="Tails" />
-                                <span className="font-black text-white">TAILS</span>
+                            <button onClick={() => setCreatorSide('Tails')} className={`flex-1 flex flex-col items-center justify-center py-6 rounded-xl border-2 transition-all group ${creatorSide === 'Tails' ? 'border-[#a855f7] bg-gradient-to-b from-[#a855f7]/20 to-transparent shadow-[0_0_20px_rgba(168,85,247,0.2)] scale-105' : 'border-[#252839] bg-[#0b0e14] hover:border-[#a855f7]/50'}`}>
+                                <img src={imgMonedaTails} className="w-16 h-16 object-contain mb-3 drop-shadow-xl group-hover:scale-110 transition-transform" alt="Tails" />
+                                <span className={`font-black tracking-widest uppercase text-xs ${creatorSide === 'Tails' ? 'text-[#a855f7]' : 'text-[#8f9ac6]'}`}>Tails</span>
                             </button>
                         </div>
 
-                        <button onClick={handleCreateGame} className="w-full mt-6 h-12 rounded-lg font-black text-white uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(108,99,255,0.4)] hover:scale-[1.02] bg-[linear-gradient(135deg,#6C63FF_0%,#5147D9_100%)]">
-                            CREATE GAME
+                        <button 
+                          onClick={handleCreateGame} 
+                          disabled={isCreating || creatorSelectedPets.length === 0 || !creatorSide}
+                          className="w-full py-4 rounded-xl font-black text-white uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:shadow-[0_0_30px_rgba(108,99,255,0.6)] hover:scale-[1.02] bg-gradient-to-r from-[#6C63FF] to-[#5147D9] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                            {isCreating ? 'Creating...' : 'CREATE MATCH'}
                         </button>
                     </div>
                 </div>
@@ -626,26 +637,28 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
         )}
 
         {/* =========================================
-            VISTA DE ESPERA (LA VENTANITA NEGRA P/ EL CREADOR)
+            VISTA DE ESPERA (MODAL CREATOR)
         ========================================= */}
         {vistaActual === 'esperando' && partidaSeleccionada && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4">
-                <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-8 max-w-sm w-full flex flex-col items-center text-center">
+                <div className="bg-[#14151f] border-2 border-[#252839] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-10 max-w-sm w-full flex flex-col items-center text-center">
                     
-                    {/* Loader con el avatar real */}
-                    <div className="relative w-24 h-24 mb-6">
-                        <div className="absolute inset-0 rounded-full border-4 border-[#252839] border-t-[#6C63FF] animate-spin"></div>
-                        <img src={partidaSeleccionada.avatar} className="w-full h-full rounded-full object-cover p-1.5" alt="Tú" />
+                    <div className="relative w-32 h-32 mb-8">
+                        <div className="absolute inset-0 rounded-full border-4 border-[#252839] border-t-[#6C63FF] animate-spin shadow-[0_0_20px_#6C63FF]"></div>
+                        <img src={partidaSeleccionada.avatar} className="w-full h-full rounded-full object-cover p-2" alt="Tú" />
+                        <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#0b0e14] shadow-lg overflow-hidden border-2 border-[#252839]">
+                            <img src={partidaSeleccionada.lado === 'Heads' ? imgMonedaHeads : imgMonedaTails} className="w-full h-full object-contain p-1" alt="Side" />
+                        </div>
                     </div>
 
-                    <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Waiting...</h2>
-                    <p className="text-[#8f9ac6] mb-8 font-bold text-sm">Your game is live. Waiting for a challenger to join.</p>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-widest mb-2 drop-shadow-md">Waiting</h2>
+                    <p className="text-[#8f9ac6] mb-10 font-bold text-sm">Waiting for a challenger to match your bet of <span className="text-white"><RedCoin/> {formatValue(partidaSeleccionada.valorTotalHost)}</span></p>
                     
                     <button 
                         onClick={cancelarPartida} 
-                        className="w-full h-12 rounded-lg font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500/20 text-red-500 hover:text-red-400"
+                        className="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500 hover:text-black text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
                     >
-                        CANCEL GAME
+                        Cancel Match
                     </button>
                 </div>
             </div>
@@ -655,52 +668,61 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
             VISTA 3: ARENA (LA MONEDA EN 3D)
         ========================================= */}
         {vistaActual === 'arena' && partidaSeleccionada && (
-          <div className="w-full flex flex-col items-center animate-fade-in mt-10">
-            <button onClick={() => {setVistaActual('lobby'); animacionIniciada.current = false;}} className="self-start text-[#8f9ac6] hover:text-[#6C63FF] font-bold text-sm flex items-center gap-1 transition-colors mb-6 bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839]">
-              &lsaquo; Back to Lobby
+          <div className="w-full flex flex-col items-center animate-fade-in mt-4">
+            <button onClick={() => {setVistaActual('lobby'); animacionIniciada.current = false;}} className="self-start text-[#8f9ac6] hover:text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors mb-8 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b]">
+              ← Exit Arena
             </button>
             
-            <div className="flex items-center gap-10 bg-[#1c1f2e] p-6 rounded-2xl border border-[#252839] shadow-2xl mb-12">
-                <div className="flex flex-col items-center gap-2">
+            {/* Cabecera de Versus */}
+            <div className="flex items-center justify-between w-full max-w-3xl bg-[#14151f] p-8 rounded-[2rem] border border-[#252839] shadow-2xl mb-16 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#facc15]/5 via-transparent to-[#a855f7]/5"></div>
+                
+                <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
                     <AvatarVS img={partidaSeleccionada.avatar} side={partidaSeleccionada.lado} />
-                    <span className="text-white font-bold">{partidaSeleccionada.host}</span>
+                    <span className="text-white font-black text-lg text-center truncate w-full">{partidaSeleccionada.host}</span>
+                    <span className="text-[#facc15] font-black text-xs uppercase tracking-widest">Host</span>
                 </div>
-                <div className="text-3xl font-black text-[#555b82] italic">VS</div>
-                <div className="flex flex-col items-center gap-2">
+                
+                <div className="flex flex-col items-center w-1/3 relative z-10">
+                    <div className="text-4xl font-black text-[#252839] italic">VS</div>
+                    <div className="mt-4 flex items-center gap-2 text-2xl font-black text-white bg-[#0b0e14] px-4 py-2 rounded-xl border border-[#252839]">
+                       <RedCoin cls="w-6 h-6"/> {formatValue(partidaSeleccionada.valorTotalHost * 2)}
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
                     {partidaSeleccionada.estado === 'in_progress' || partidaSeleccionada.estado === 'completed' ? (
                         <>
                            <AvatarVS img={partidaSeleccionada.avatarChallenger} side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} />
-                           <span className="text-white font-bold">{partidaSeleccionada.challenger}</span>
+                           <span className="text-white font-black text-lg text-center truncate w-full">{partidaSeleccionada.challenger}</span>
+                           <span className="text-[#a855f7] font-black text-xs uppercase tracking-widest">Challenger</span>
                         </>
                     ) : (
                         <>
                            <AvatarVS isWaiting={true} />
-                           <span className="text-[#8f9ac6] font-bold">Waiting...</span>
+                           <span className="text-[#8f9ac6] font-bold text-lg">Waiting...</span>
                         </>
                     )}
                 </div>
             </div>
 
             {/* CONTENEDOR PRINCIPAL DE ANIMACIÓN Y FÍSICAS */}
-            <div className="relative flex justify-center items-center h-64 mb-10 w-full">
+            <div className="relative flex justify-center items-center h-64 mb-16 w-full">
               
-              {/* --- OVERLAY CONTADOR --- */}
               {cuentaRegresiva !== null && (
                   <div className="absolute inset-0 flex items-center justify-center z-50 animate-pulse">
-                      <span className="text-8xl md:text-[150px] font-black text-white drop-shadow-[0_0_30px_rgba(108,99,255,0.8)] opacity-90">
+                      <span className="text-[150px] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.5)] opacity-90">
                           {cuentaRegresiva}
                       </span>
                   </div>
               )}
 
-              {/* Efecto de Impacto Expansivo */}
-              <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[80px] rounded-full transition-all duration-700 ease-out z-0 ${mostrarImpacto ? 'opacity-60 scale-150' : 'opacity-0 scale-50'}`}></div>
+              <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[100px] rounded-full transition-all duration-700 ease-out z-0 ${mostrarImpacto ? 'opacity-40 scale-[2]' : 'opacity-0 scale-50'}`}></div>
 
-              {/* La Moneda con físicas de salto y gravedad */}
-              <div className={`relative w-40 h-40 md:w-56 md:h-56 perspective-1000 z-10 ${cuentaRegresiva !== null ? 'opacity-20 blur-sm' : 'opacity-100'}`}
+              <div className={`relative w-48 h-48 md:w-64 md:h-64 perspective-[1200px] z-10 ${cuentaRegresiva !== null ? 'opacity-20 blur-sm' : 'opacity-100'}`}
                    style={{
-                     transform: girando ? 'translateY(-60px) scale(1.1)' : 'translateY(0px) scale(1)',
-                     transition: girando ? 'transform 2s cubic-bezier(0.25, 1, 0.5, 1)' : 'transform 1s cubic-bezier(0.5, 0, 0.2, 1)'
+                     transform: girando ? 'translateY(-100px) scale(1.2)' : 'translateY(0px) scale(1)',
+                     transition: girando ? 'transform 2s cubic-bezier(0.25, 1, 0.5, 1)' : 'transform 0.8s cubic-bezier(0.5, 0, 0.2, 1)'
                    }}
               >
                 <div className="w-full h-full relative preserve-3d"
@@ -710,20 +732,22 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
                     transform: `rotateY(${rotacion}deg)`
                   }}
                 >
-                  <div className={`absolute w-full h-full backface-hidden rounded-full border-4 bg-[#0b0e14] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_60px_rgba(250,204,21,1)]' : 'border-[#3f4354] shadow-none'}`}>
-                    <img src={imgMonedaHeads} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Heads" />
+                  {/* Cara Heads */}
+                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] bg-[#14151f] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_80px_rgba(250,204,21,1)]' : 'border-[#252839] shadow-2xl'}`}>
+                    <img src={imgMonedaHeads} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Heads" />
                   </div>
                   
-                  <div className={`absolute w-full h-full backface-hidden rounded-full border-4 bg-[#0b0e14] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_60px_rgba(168,85,247,1)]' : 'border-[#3f4354] shadow-none'}`}
+                  {/* Cara Tails */}
+                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] bg-[#14151f] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_80px_rgba(168,85,247,1)]' : 'border-[#252839] shadow-2xl'}`}
                        style={{ transform: 'rotateY(180deg)' }}>
-                    <img src={imgMonedaTails} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Tails" />
+                    <img src={imgMonedaTails} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Tails" />
                   </div>
                 </div>
               </div>
             </div>
 
-            <h2 className="text-3xl font-black text-white uppercase tracking-widest mt-4 min-h-[40px]">
-              {cuentaRegresiva !== null ? 'PREPARING...' : (ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING...' : (partidaSeleccionada.estado === 'waiting' ? 'WAITING FOR CHALLENGER' : 'READY')))}
+            <h2 className={`text-4xl font-black uppercase tracking-[0.3em] min-h-[50px] transition-all duration-500 ${mostrarImpacto ? (ganador === 'Heads' ? 'text-[#facc15] drop-shadow-[0_0_20px_#facc15]' : 'text-[#a855f7] drop-shadow-[0_0_20px_#a855f7]') : 'text-white'}`}>
+              {cuentaRegresiva !== null ? 'PREPARING' : (ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING' : (partidaSeleccionada.estado === 'waiting' ? 'WAITING' : 'READY')))}
             </h2>
           </div>
         )}
@@ -735,50 +759,64 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
       ========================================= */}
       {modalJoinAbierto && partidaSeleccionada && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center p-6 border-b border-[#252839]">
-              <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-2">
-                JOIN GAME <span className="text-[#8f9ac6] text-sm">#{partidaSeleccionada.id.toString().substring(0,6)}</span>
+          <div className="bg-[#14151f] border border-[#252839] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+            
+            <div className="flex justify-between items-center p-6 border-b border-[#252839] bg-[#0b0e14]">
+              <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
+                ⚔️ JOIN MATCH <span className="text-[#555b82] text-xs">#{partidaSeleccionada.id.toString().substring(0,6)}</span>
               </h2>
-              <button onClick={() => setModalJoinAbierto(false)} className="text-[#8f9ac6] hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <button onClick={() => setModalJoinAbierto(false)} className="text-[#555b82] hover:text-white transition-colors text-2xl">
+                &times;
               </button>
             </div>
             
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-                <div className="w-full md:w-2/3 p-6 overflow-y-auto custom-scrollbar border-r border-[#252839]">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Your Inventory</h3>
-                        <button onClick={handleAutoSelectJoin} className="text-xs bg-[#2a2e44] hover:bg-[#32364f] text-[#E1E4F2] px-3 py-1 rounded border border-[#2D314A] transition-colors">
-                            Auto Match
+                {/* Inventario para Unirse */}
+                <div className="w-full md:w-2/3 p-6 overflow-y-auto custom-scrollbar border-r border-[#252839] bg-[#14151f]">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-[#8f9ac6] text-sm font-black uppercase tracking-widest">Your Inventory</h3>
+                        <button onClick={handleAutoSelectJoin} className="text-[10px] bg-[#0b0e14] hover:bg-[#252839] text-[#8f9ac6] hover:text-white px-4 py-2 rounded-lg border border-[#252839] transition-colors font-black uppercase tracking-widest">
+                            Auto Match Value
                         </button>
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                         {misPets.map(pet => {
                             const isSelected = selectedPetsToJoin.some(p => p.inventarioId === pet.inventarioId);
                             return (
-                                <div key={pet.inventarioId} onClick={() => toggleSelectPetJoin(pet)} className={`relative bg-[#141323] border-2 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected ? 'border-[#6C63FF] shadow-[0_0_15px_rgba(108,99,255,0.3)]' : 'border-[#2F3347] hover:border-[#4f567a]'}`}>
-                                    <img src={pet.img} className="w-12 h-12 object-contain mb-2" alt="pet"/>
-                                    <div className="text-[10px] text-center w-full truncate text-[#8f9ac6] font-bold">{pet.nombre}</div>
-                                    <div className="text-xs font-black text-white flex items-center gap-1 mt-1"><RedCoin cls="w-3 h-3"/> {formatValue(pet.valor)}</div>
+                                <div key={pet.inventarioId} onClick={() => toggleSelectPetJoin(pet)} className={`relative bg-[#0b0e14] border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all hover:-translate-y-1 ${isSelected ? 'border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)] bg-gradient-to-b from-[#22c55e]/10 to-transparent' : 'border-[#252839] hover:border-[#4a506b]'}`}>
+                                    {isSelected && <div className="absolute top-2 right-2 w-3 h-3 bg-[#22c55e] rounded-full shadow-[0_0_10px_#22c55e]"></div>}
+                                    {/* USO CORRECTO DE IMAGE_URL */}
+                                    <img src={pet.image_url} className="w-12 h-12 object-contain mb-2 drop-shadow-md" alt="pet"/>
+                                    <div className="text-[9px] text-center w-full truncate text-[#8f9ac6] font-black uppercase">{pet.nombre}</div>
+                                    <div className="text-[10px] font-black text-white flex items-center gap-1 mt-1"><RedCoin cls="w-3 h-3"/> {formatValue(pet.valor)}</div>
                                 </div>
                             )
                         })}
+                        {misPets.length === 0 && (
+                            <div className="col-span-full text-center text-[#555b82] py-10 font-bold text-sm">You don't have available pets.</div>
+                        )}
                     </div>
                 </div>
 
-                <div className="w-full md:w-1/3 p-6 bg-[#141323] flex flex-col justify-between">
+                {/* Panel lateral de confirmación */}
+                <div className="w-full md:w-1/3 p-8 bg-[#0b0e14] flex flex-col justify-between">
                     <div>
-                        <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mb-4">Target Value</h3>
-                        <div className="text-2xl font-black text-white flex items-center justify-center gap-2 py-3 bg-[#1c1f2e] rounded-lg border border-[#252839] mb-6">
+                        <div className="text-center mb-8">
+                            <img src={partidaSeleccionada.avatar} className="w-20 h-20 rounded-full border-4 border-[#252839] mx-auto mb-4 object-cover" alt="Host"/>
+                            <p className="text-white font-black text-lg">{partidaSeleccionada.host}</p>
+                            <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mt-1">is waiting with <span className="text-white">{partidaSeleccionada.lado}</span></p>
+                        </div>
+
+                        <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2">Target Value to Match</h3>
+                        <div className="text-2xl font-black text-white flex items-center justify-center gap-2 py-4 bg-[#14151f] rounded-xl border border-[#252839] mb-8 shadow-inner">
                             <RedCoin cls="w-6 h-6"/> {formatValue(partidaSeleccionada.valorTotalHost)}
                         </div>
 
-                        <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mb-4">Your Value</h3>
-                        <div className={`text-2xl font-black flex items-center justify-center gap-2 py-3 rounded-lg border border-[#252839] mb-2 ${dataJoinValidacion.valida ? 'text-[#facc15] bg-[#facc15]/10 border-[#facc15]' : 'text-white bg-[#1c1f2e]'}`}>
-                            <RedCoin cls="w-6 h-6"/> {formatValue(totalSeleccionadoToJoin)}
+                        <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2">Your Selected Value</h3>
+                        <div className={`text-3xl font-black flex items-center justify-center gap-2 py-5 rounded-xl border-2 transition-colors mb-2 ${dataJoinValidacion.valida ? 'text-[#22c55e] bg-[#22c55e]/10 border-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.2)]' : 'text-white bg-[#14151f] border-[#252839]'}`}>
+                            <RedCoin cls="w-8 h-8"/> {formatValue(totalSeleccionadoToJoin)}
                         </div>
-                        <div className={`text-center text-xs font-bold mb-6 ${dataJoinValidacion.valida ? 'text-[#facc15]' : 'text-red-400'}`}>
+                        <div className={`text-center text-xs font-black uppercase tracking-widest mb-6 ${dataJoinValidacion.valida ? 'text-[#22c55e]' : 'text-red-500'}`}>
                             {dataJoinValidacion.diferenciaPrc > 0 ? '+' : ''}{dataJoinValidacion.diferenciaPrc}% Difference
                         </div>
                     </div>
@@ -786,9 +824,9 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
                     <button 
                         onClick={confirmarUnionYJugar} 
                         disabled={!dataJoinValidacion.valida}
-                        className={`w-full h-12 rounded-lg font-black text-white uppercase tracking-widest transition-all ${dataJoinValidacion.valida ? 'bg-[linear-gradient(135deg,#6C63FF_0%,#5147D9_100%)] shadow-[0_4px_15px_rgba(108,99,255,0.4)] hover:scale-[1.02]' : 'bg-[#2a2e44] text-[#8f9ac6] cursor-not-allowed opacity-50'}`}
+                        className={`w-full py-4 rounded-xl font-black text-white uppercase tracking-widest transition-all ${dataJoinValidacion.valida ? 'bg-[#22c55e] hover:bg-[#16a34a] text-black shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-105' : 'bg-[#14151f] text-[#555b82] border border-[#252839] cursor-not-allowed'}`}
                     >
-                        CONFIRM JOIN
+                        CONFIRM & PLAY
                     </button>
                 </div>
             </div>
@@ -796,6 +834,17 @@ const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
         </div>
       )}
 
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #252839; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4a506b; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .perspective-[1200px] { perspective: 1200px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}} />
     </div>
   );
 }
