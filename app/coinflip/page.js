@@ -76,57 +76,32 @@ export default function BloxypotCoinflip() {
 
 useEffect(() => {
     // 0. Obtener Usuario Actual y su PERFIL REAL
-    const initUserAndInventory = async () => {
-        const { data: authData } = await supabase.auth.getUser();
-        if (authData?.user) {
-            // Ir a la tabla REAL
-            const { data: profile } = await supabase
-                .from('profiles') // <--- CORREGIDO A PROFILES
-                .select('username, avatar_url')
-                .eq('id', authData.user.id)
-                .single();
+// 1. CARGAR INVENTARIO REAL CON JOIN A LA TABLA ITEMS
+            const { data: inventoryData, error } = await supabase
+                .from('inventory')
+                .select(`
+                    id,
+                    is_locked,
+                    items ( id, name, value, image_url, color )
+                `)
+                .eq('user_id', authData.user.id)
+                .eq('is_locked', false); // No mostrar las que ya están apostadas
 
-            setCurrentUser({ 
-                id: authData.user.id, 
-                username: profile?.username || 'Player',
-                avatar_url: profile?.avatar_url || '/default-avatar.png'
-            });
-
-            // 1. CARGAR INVENTARIO REAL
-            // Asegúrate de que el nombre de la tabla de inventario en tu BD sea 'inventarios' o ajusta el nombre.
-// Así se hace un JOIN en Supabase para traer tu mascota Y su valor
-const { data: inventoryData, error } = await supabase
-  .from('inventory')
-  .select(`
-    id,
-    is_locked,
-    items (
-      id,
-      name,
-      value,
-      image_url,
-      color
-    )
-  `)
-  .eq('user_id', currentUser.id);
-
-if (inventoryData) {
-  // Supabase te devuelve la pet anidada en la propiedad "items". 
-  // Lo mapeamos para que sea más fácil de usar en tu frontend:
-  const misPetsReales = inventoryData.map(inv => ({
-    inventory_id: inv.id, // El ID único de ese item en TU inventario
-    item_id: inv.items.id,
-    name: inv.items.name,
-    value: inv.items.value,
-    image: inv.items.image_url,
-    color: inv.items.color,
-    is_locked: inv.is_locked
-  }));
-  
-  setInventoryPets(misPetsReales);
-}
+            if (inventoryData && !error) {
+               // Traducimos los nombres para que no se rompan tus botones del frontend (que usan .valor y .nombre)
+               const mascotasReales = inventoryData.map(inv => ({
+                   inventarioId: inv.id,
+                   item_id: inv.items.id,
+                   nombre: inv.items.name,
+                   valor: inv.items.value,
+                   image_url: inv.items.image_url,
+                   color: inv.items.color
+               }));
+               
+               // Ordenamos de mayor valor a menor valor
+               setMisPets(mascotasReales.sort((a, b) => b.valor - a.valor));
             } else {
-               setMisPets([]); // Si no tienes mascotas o falla, se queda vacío.
+               setMisPets([]); 
             }
             
         } else {
@@ -136,17 +111,6 @@ if (inventoryData) {
         }
     };
     initUserAndInventory();
-
-    // 2. Cargar partidas de Supabase...
-    // (MANTÉN TU CÓDIGO DE CARGAR PARTIDAS QUE YA TIENES ABAJO)
-
-    // 1. Cargar inventario (Mantenemos generación por ahora)
-    const iniciales = [];
-    for(let i = 0; i < 25; i++) {
-      const p = PETS_DATABASE[Math.floor(Math.random() * PETS_DATABASE.length)];
-      if(p) iniciales.push({ ...p, inventarioId: Date.now() + i });
-    }
-    setMisPets(iniciales.sort((a, b) => b.valor - a.valor));
 
     // 2. Cargar partidas reales (Waiting, In_progress y Completed para el historial)
     const cargarPartidas = async () => {
