@@ -232,7 +232,7 @@ useEffect(() => {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
-  const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
+const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
 if (!currentUser || petsSeleccionadas.length === 0) return alert("Selecciona pets");
 
     // 1. Sumamos el valor real de las pets
@@ -264,7 +264,7 @@ if (!currentUser || petsSeleccionadas.length === 0) return alert("Selecciona pet
     }
 };
 
-    const { data, error } = await supabase.from('partidas').insert([newGameData]).select().single();
+  const { data, error } = await supabase.from('partidas').insert([newGameData]).select().single();
 
     if (error) {
         console.error("Error al crear partida:", error);
