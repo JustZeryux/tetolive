@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import LoginButton from './LoginButton'; // Ajusta la ruta si está en otra carpeta
+import { supabase } from '@/utils/Supabase'; // Conexión a DB
+import LoginButton from './LoginButton'; 
 
 // Importa las bellezas que creamos
 import EpicToasts from '@/components/EpicToasts';
@@ -19,8 +20,6 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
-// Categorías del Menú Lateral
-// Categorías del Menú Lateral (Cambiamos 'icon' por 'iconImg')
 const menuSections = [
   {
     title: "Games",
@@ -53,19 +52,113 @@ const menuSections = [
 export default function CasinoLayout({ children }) {
   const pathname = usePathname();
   
-  // ESTADOS (Hooks) -> Tienen que ir obligatoriamente aquí adentro
+  // ESTADOS UI
   const [chatAbierto, setChatAbierto] = useState(false);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [cajeroAbierto, setCajeroAbierto] = useState(false);
-  const [settingsAbierto, setSettingsAbierto] = useState(false); // ¡AQUÍ VA EL DE LOS AJUSTES!
+  const [settingsAbierto, setSettingsAbierto] = useState(false); 
 
-  // Chat Mock Data
-  const [chatMessages, setChatMessages] = useState([
-    { id: 1, user: 'H2O_Brxre', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=H2', text: 'MARJA WE ARE TYPING', time: '17:23', level: 72, theme: 'pink' },
-    { id: 2, user: 'R3M1XBRO', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Remix', text: 'Post 400-460k bigs', time: '17:23', level: 69, theme: 'purple' },
-    { id: 3, user: 'steve1290p', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Steve', text: 'tip me pls', time: '17:23', level: 83, theme: 'orange' },
-    { id: 4, user: 'sigmaplayer067', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sigma', text: 'I lost everything', time: '17:23', level: 29, theme: 'green' },
-  ]);
+  // ESTADOS DATOS REALES (Supabase)
+  const [currentUser, setCurrentUser] = useState(null);
+  const [saldoVerde, setSaldoVerde] = useState(0);
+  const [saldoRojo, setSaldoRojo] = useState(0);
+  
+  // ESTADOS DEL CHAT
+  const [chatMessages, setChatMessages] = useState([]);
+  const [nuevoMensaje, setNuevoMensaje] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    const initData = async () => {
+      // 1. Obtener usuario actual y sus saldos reales
+      const { data: authData } = await supabase.auth.getUser();
+      let tempUser = null;
+
+      if (authData?.user) {
+        // Si hay login real, sacamos su perfil y saldo
+        const { data: profile } = await supabase.from('perfiles').select('*').eq('id', authData.user.id).single();
+        if (profile) {
+          tempUser = { 
+            id: authData.user.id, 
+            username: profile.username || 'Player', 
+            avatar: profile.avatar_url || '/default-avatar.png',
+            level: profile.level || 1,
+            theme: profile.theme || 'green'
+          };
+          setSaldoVerde(profile.saldo_verde || 0);
+          setSaldoRojo(profile.saldo_rojo || 0);
+        }
+      } else {
+        // Fallback simulado para pruebas
+        let tempId = localStorage.getItem('temp_user_id');
+        if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
+        tempUser = { id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + tempId, level: 1, theme: 'purple' };
+        setSaldoVerde(5000000); // Saldo de prueba
+        setSaldoRojo(200000);
+      }
+      setCurrentUser(tempUser);
+
+      // 2. Cargar historial del Chat (Últimos 50 mensajes)
+      const { data: mensajesHistorial } = await supabase
+        .from('chat_mensajes')
+        .select('*')
+        .order('creado_en', { ascending: false })
+        .limit(50);
+      
+      if (mensajesHistorial) setChatMessages(mensajesHistorial);
+
+      // 3. Suscribirse a nuevos mensajes de Chat en vivo
+      const chatChannel = supabase.channel('global_chat')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_mensajes' }, 
+          (payload) => {
+            setChatMessages((prev) => [payload.new, ...prev]);
+          }
+        ).subscribe();
+
+      // 4. Suscribirse a cambios en el saldo del usuario (si está logueado)
+      let saldoChannel = null;
+      if (authData?.user) {
+         saldoChannel = supabase.channel('user_balance')
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'perfiles', filter: `id=eq.${authData.user.id}` }, 
+            (payload) => {
+              setSaldoVerde(payload.new.saldo_verde || 0);
+              setSaldoRojo(payload.new.saldo_rojo || 0);
+            }
+          ).subscribe();
+      }
+
+      return () => {
+        supabase.removeChannel(chatChannel);
+        if(saldoChannel) supabase.removeChannel(saldoChannel);
+      };
+    };
+
+    initData();
+  }, []);
+
+  // Función para enviar mensaje a Supabase
+  const enviarMensaje = async (e) => {
+    e.preventDefault();
+    if (!nuevoMensaje.trim() || enviando || !currentUser) return;
+    
+    setEnviando(true);
+    
+    const { error } = await supabase.from('chat_mensajes').insert([{
+      user_id: currentUser.id,
+      username: currentUser.username,
+      avatar: currentUser.avatar,
+      level: currentUser.level,
+      theme: currentUser.theme,
+      texto: nuevoMensaje.trim()
+    }]);
+
+    if (!error) {
+      setNuevoMensaje("");
+    } else {
+      console.error("Error enviando mensaje:", error);
+    }
+    setEnviando(false);
+  };
 
   const getLevelStyle = (theme) => {
     switch(theme) {
@@ -75,6 +168,12 @@ export default function CasinoLayout({ children }) {
       case 'orange': return 'text-[#fb923c] border-[#fb923c] bg-gradient-to-tr from-[#fb923c]/20 to-[#fb923c]/10';
       default: return 'text-gray-400 border-gray-400 bg-gray-800';
     }
+  };
+
+  // Helper para formatear la hora (de timestamp a HH:MM)
+  const formatearHora = (timestamp) => {
+    const d = new Date(timestamp);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -87,23 +186,14 @@ export default function CasinoLayout({ children }) {
         className={`fixed top-0 left-0 h-full bg-[#14171f] border-r border-[#222630] flex flex-col z-50 transition-all duration-300 overflow-hidden group 
         ${menuMovilAbierto ? 'translate-x-0 w-[240px]' : '-translate-x-full md:translate-x-0 md:w-[70px] md:hover:w-[240px]'}`}
       >
-<div className="h-[80px] flex items-center px-4 border-b border-[#222630] shrink-0">
+        <div className="h-[80px] flex items-center px-4 border-b border-[#222630] shrink-0">
           <Link href="/" className="flex items-center gap-3">
-            
-            {/* 1. EL ÍCONO DE TETO (Se ve siempre, incluso minimizado) */}
             <div className="w-10 h-10 flex items-center justify-center shrink-0">
-              <img 
-                src="/favicon.ico" 
-                alt="Teto Logo" 
-                className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]" 
-              />
+              <img src="/favicon.ico" alt="Teto Logo" className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]" />
             </div>
-            
-            {/* 2. EL TEXTO "TETO!LIVE" (Se esconde y aparece al pasar el mouse) */}
             <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#f472b6] to-[#fb7185] tracking-widest opacity-0 md:group-hover:opacity-100 transition-opacity whitespace-nowrap">
               TETO!LIVE
             </span>
-            
           </Link>
           <button onClick={() => setMenuMovilAbierto(false)} className="md:hidden ml-auto text-[#7c8291] text-2xl">&times;</button>
         </div>
@@ -118,26 +208,17 @@ export default function CasinoLayout({ children }) {
                 {section.links.map((link) => {
                   const isActive = pathname === link.path;
                   return (
-// ... dentro del map() de las sections
-<Link 
+                    <Link 
                       key={link.name} 
                       href={link.path} 
                       onClick={() => setMenuMovilAbierto(false)}
                       className={`flex items-center px-4 py-2 mx-2 rounded-xl transition-all duration-300 font-bold text-sm overflow-hidden ${
-                        isActive 
-                          ? 'bg-[#222630] text-white shadow-inner border border-[#f472b6]/50' 
-                          : 'text-[#8f9ac6] hover:bg-[#1a1e29] hover:text-white group-hover:text-white'
+                        isActive ? 'bg-[#222630] text-white shadow-inner border border-[#f472b6]/50' : 'text-[#8f9ac6] hover:bg-[#1a1e29] hover:text-white group-hover:text-white'
                       }`}
                     >
-                      {/* ¡AQUÍ ESTÁ EL CAMBIO! Aumentamos a w-8 y h-8 para que la imagen se vea grande */}
                       <span className="w-8 h-8 shrink-0 flex items-center justify-center">
-                        <img 
-                          src={link.iconImg} 
-                          className={`w-full h-full object-contain transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(244,114,182,0.8)] scale-110' : 'opacity-70 grayscale group-hover:grayscale-0 group-hover:opacity-100'}`} 
-                          alt="icon" 
-                        />
+                        <img src={link.iconImg} className={`w-full h-full object-contain transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(244,114,182,0.8)] scale-110' : 'opacity-70 grayscale group-hover:grayscale-0 group-hover:opacity-100'}`} alt="icon" />
                       </span> 
-                      
                       <span className="ml-3 opacity-0 md:group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         {link.name}
                       </span>
@@ -162,12 +243,13 @@ export default function CasinoLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-3 md:gap-5">
+            {/* SALDOS REALES */}
             <div className="hidden sm:flex bg-[#0b0e14] border border-[#222630] rounded-xl p-1.5 shadow-inner">
-              <div className="px-4 py-1.5 flex items-center gap-2 border-r border-[#222630] hover:bg-[#14171f] transition-colors cursor-pointer rounded-l-lg">
-                <GreenCoin cls="w-4 h-4 floating"/> <span className="text-[#22c55e] font-black text-sm">15.0M</span>
+              <div className="px-4 py-1.5 flex items-center gap-2 border-r border-[#222630] hover:bg-[#14171f] transition-colors cursor-pointer rounded-l-lg" title="Green Balance">
+                <GreenCoin cls="w-4 h-4 floating"/> <span className="text-[#22c55e] font-black text-sm">{formatValue(saldoVerde)}</span>
               </div>
-              <div className="px-4 py-1.5 flex items-center gap-2 hover:bg-[#14171f] transition-colors cursor-pointer rounded-r-lg">
-                <RedCoin cls="w-4 h-4 floating"/> <span className="text-[#ef4444] font-black text-sm">25.5M</span>
+              <div className="px-4 py-1.5 flex items-center gap-2 hover:bg-[#14171f] transition-colors cursor-pointer rounded-r-lg" title="Red Balance">
+                <RedCoin cls="w-4 h-4 floating"/> <span className="text-[#ef4444] font-black text-sm">{formatValue(saldoRojo)}</span>
               </div>
             </div>
 
@@ -175,25 +257,18 @@ export default function CasinoLayout({ children }) {
               DEPOSIT
             </button>
 
-            {/* SECCIÓN DEL PERFIL DE USUARIO CONECTADO A SUPABASE */}
+            {/* SECCIÓN DEL PERFIL DE USUARIO */}
             <div className="flex items-center gap-3 pl-2 md:pl-4 border-l border-[#222630]">
               <LoginButton />
             </div>
 
-            {/* BOTÓN DE AJUSTES ⚙️ */}
-            <button 
-              onClick={() => setSettingsAbierto(true)} 
-              className="p-2 text-[#7c8291] hover:text-white hover:bg-[#1a1e29] transition-colors rounded-lg"
-              title="Settings"
-            >
+            {/* BOTÓN DE AJUSTES */}
+            <button onClick={() => setSettingsAbierto(true)} className="p-2 text-[#7c8291] hover:text-white hover:bg-[#1a1e29] transition-colors rounded-lg" title="Settings">
               ⚙️
             </button>
 
-            {/* BOTÓN DE CHAT 💬 */}
-            <button 
-              onClick={() => setChatAbierto(!chatAbierto)} 
-              className={`p-2 transition-colors rounded-lg ${chatAbierto ? 'text-white bg-[#222630]' : 'text-[#7c8291] hover:text-white hover:bg-[#1a1e29]'}`}
-            >
+            {/* BOTÓN DE CHAT */}
+            <button onClick={() => setChatAbierto(!chatAbierto)} className={`p-2 transition-colors rounded-lg ${chatAbierto ? 'text-white bg-[#222630]' : 'text-[#7c8291] hover:text-white hover:bg-[#1a1e29]'}`}>
               💬
             </button>
           </div>
@@ -214,8 +289,8 @@ export default function CasinoLayout({ children }) {
         {!chatAbierto && (
           <div className="hidden xl:flex flex-col items-center py-6 gap-4 overflow-y-auto custom-scrollbar opacity-100 h-full w-[70px]">
             <span className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2 border-b border-[#252839] pb-2 w-full text-center">Live</span>
-            {chatMessages.map((msg, idx) => (
-              <div key={idx} className="relative group cursor-pointer" title={msg.user}>
+            {chatMessages.slice(0, 15).map((msg) => (
+              <div key={msg.id} className="relative group cursor-pointer" title={msg.username}>
                 <div className="w-10 h-10 rounded-full border-2 border-[#22283F] group-hover:border-[#6C63FF] bg-[#1C1F2E] overflow-hidden transition-colors">
                   <img src={msg.avatar} alt="user" className="w-full h-full object-cover" />
                 </div>
@@ -249,9 +324,13 @@ export default function CasinoLayout({ children }) {
               </div>
             </div>
 
+            {/* ZONA DE MENSAJES (flex-col-reverse mantiene el scroll abajo) */}
             <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-3 custom-scrollbar flex flex-col-reverse">
               <div className="space-y-3">
-                {chatMessages.map((msg) => (
+                {chatMessages.length === 0 && <p className="text-center text-[#555b82] text-xs">No messages yet. Say hi!</p>}
+                
+                {/* Los mensajes se mapean al revés gracias al flex-col-reverse nativo, así que el más nuevo va abajo */}
+                {[...chatMessages].reverse().map((msg) => (
                   <div key={msg.id} className="group flex gap-3 px-3 py-2 bg-[#1c1f2e] border border-transparent hover:border-[#252839] rounded-xl transition-colors">
                     <div className="relative shrink-0">
                       <div className="w-10 h-10 rounded-full border-[3px] border-[#22283F] bg-[#1C1F2E] overflow-hidden cursor-pointer">
@@ -263,11 +342,11 @@ export default function CasinoLayout({ children }) {
                         <span className={`inline-flex items-center justify-center text-[9px] font-black border-l-2 rounded-[4px] px-1.5 py-[1px] ${getLevelStyle(msg.theme)}`}>
                           {msg.level}
                         </span>
-                        <span className="text-xs font-bold text-white truncate">{msg.user}</span>
-                        <span className="ml-auto text-[10px] font-medium text-[#555b82] shrink-0">{msg.time}</span>
+                        <span className="text-xs font-bold text-white truncate">{msg.username}</span>
+                        <span className="ml-auto text-[10px] font-medium text-[#555b82] shrink-0">{formatearHora(msg.creado_en)}</span>
                       </div>
                       <p className="text-[13px] font-medium leading-snug text-[#9793ba] break-words">
-                        {msg.text}
+                        {msg.texto}
                       </p>
                     </div>
                   </div>
@@ -275,19 +354,29 @@ export default function CasinoLayout({ children }) {
               </div>
             </div>
 
+            {/* INPUT CHAT FORMULARIO */}
             <div className="p-4 pt-2 shrink-0">
-              <div className="relative bg-[#141323] border border-[#252839] rounded-xl flex items-center p-1 focus-within:border-[#6C63FF] transition-colors shadow-inner">
+              <form onSubmit={enviarMensaje} className="relative bg-[#141323] border border-[#252839] rounded-xl flex items-center p-1 focus-within:border-[#6C63FF] transition-colors shadow-inner">
                 <input 
                   type="text" 
+                  value={nuevoMensaje}
+                  onChange={(e) => setNuevoMensaje(e.target.value)}
                   placeholder="Say something..." 
-                  className="w-full bg-transparent pl-3 pr-2 py-2.5 text-sm text-white outline-none placeholder-[#555b82]" 
+                  disabled={enviando || !currentUser}
+                  className="w-full bg-transparent pl-3 pr-2 py-2.5 text-sm text-white outline-none placeholder-[#555b82] disabled:opacity-50" 
                 />
-                <button className="p-2 text-[#555b82] hover:text-[#6C63FF] transition-colors cursor-pointer rounded-lg hover:bg-[#2a2e44] mr-1">🚀</button>
-              </div>
+                <button 
+                  type="submit" 
+                  disabled={enviando || !nuevoMensaje.trim() || !currentUser}
+                  className="p-2 text-[#555b82] hover:text-[#6C63FF] transition-colors cursor-pointer rounded-lg hover:bg-[#2a2e44] mr-1 disabled:opacity-50 disabled:cursor-default"
+                >
+                  🚀
+                </button>
+              </form>
               <div className="flex justify-between items-center mt-3 px-1">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#3AFF4E] shadow-[0_0_8px_#3AFF4E] animate-pulse"></span>
-                  <span className="text-xs font-bold text-[#8f9ac6]">1,204 Online</span>
+                  <span className="text-xs font-bold text-[#8f9ac6]">Live Chat</span>
                 </div>
                 <button className="text-xs font-bold text-[#555b82] hover:text-[#8f9ac6] transition-colors">Chat Rules</button>
               </div>
@@ -296,11 +385,7 @@ export default function CasinoLayout({ children }) {
         )}
       </aside>
 
-      {/* ==========================================
-          MODALES Y COMPONENTES GLOBALES INYECTADOS
-      ========================================== */}
-      
-      {/* 1. Modal del Cajero */}
+      {/* MODALES Y COMPONENTES GLOBALES */}
       {cajeroAbierto && (
         <div className="fixed inset-0 bg-[#0b0e14]/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md animate-fade-in">
           <div className="bg-[#14171f] border border-[#222630] rounded-2xl w-full max-w-lg p-6 flex flex-col items-center">
@@ -311,13 +396,8 @@ export default function CasinoLayout({ children }) {
         </div>
       )}
 
-      {/* 2. Modal de Ajustes (AQUÍ ESTÁ LA MAGIA DEL BOTÓN NUEVO) */}
       {settingsAbierto && <SettingsModal onClose={() => setSettingsAbierto(false)} />}
-
-      {/* 3. Notificaciones Flotantes Globales */}
       <EpicToasts />
-
-      {/* 4. Barra de navegación para celular */}
       <MobileBottomNav onOpenChat={() => setChatAbierto(!chatAbierto)} />
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -327,6 +407,8 @@ export default function CasinoLayout({ children }) {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f4354; }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .floating { animation: float 2.5s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-4px); } }
       `}} />
     </div>
   );
