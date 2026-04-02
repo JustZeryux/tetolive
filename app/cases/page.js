@@ -12,39 +12,11 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
-// --- DATA PARA LAS CAJAS ---
-// IMPORTANTE: PON LOS ID REALES DE TU TABLA ITEMS DONDE DICE 'PON-TU-UUID-AQUI'
-const CASES = [
-  {
-    id: 'starter', name: 'Starter Case', price: 50000, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#34d399', shadow: 'rgba(52,211,153,0.3)',
-    items: [
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Common Dog', img: 'https://cdn.bgsi.gg/items/giant-robot.png', valor: 10000, chance: 70, color: '#9ca3af' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Rare Cat', img: 'https://cdn.bgsi.gg/items/circus-monster.png', valor: 50000, chance: 25, color: '#3b82f6' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Epic Dragon', img: 'https://cdn.bgsi.gg/items/que-fofo-face-god.png', valor: 250000, chance: 4.5, color: '#a855f7' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Mythic Titan', img: 'https://cdn.bgsi.gg/items/mythic-stellar-acheron.png', valor: 5000000, chance: 0.5, color: '#facc15' },
-    ]
-  },
-  {
-    id: 'premium', name: 'Premium Case', price: 250000, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#a855f7', shadow: 'rgba(168,85,247,0.3)',
-    items: [
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Epic Dragon', img: 'https://cdn.bgsi.gg/items/que-fofo-face-god.png', valor: 250000, chance: 60, color: '#a855f7' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Legendary Phoenix', img: 'https://cdn.bgsi.gg/items/silly-doggy-tophat.png', valor: 750000, chance: 30, color: '#ef4444' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Mythic Titan', img: 'https://cdn.bgsi.gg/items/mythic-stellar-acheron.png', valor: 5000000, chance: 9, color: '#facc15' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Secret God', img: 'https://cdn.bgsi.gg/items/shiny-santa-slime.png', valor: 25000000, chance: 1, color: '#ec4899' },
-    ]
-  },
-  {
-    id: 'mythic', name: 'Mythic Case', price: 1000000, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#facc15', shadow: 'rgba(250,204,21,0.3)',
-    items: [
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Mythic Titan', img: 'https://cdn.bgsi.gg/items/mythic-stellar-acheron.png', valor: 5000000, chance: 80, color: '#facc15' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Secret God', img: 'https://cdn.bgsi.gg/items/shiny-santa-slime.png', valor: 25000000, chance: 15, color: '#ec4899' },
-      { item_id: 'PON-TU-UUID-AQUI', name: 'Ultimate Being', img: 'https://cdn.bgsi.gg/items/giant-robot.png', valor: 100000000, chance: 5, color: '#3AFF4E' },
-    ]
-  }
-];
-
 export default function CasesPage() {
   const [currentUser, setCurrentUser] = useState(null);
+  const [casesData, setCasesData] = useState([]); // <-- Nuevo estado para las cajas
+  const [cargando, setCargando] = useState(true);
+  
   const [view, setView] = useState('store'); 
   const [selectedCase, setSelectedCase] = useState(null);
   
@@ -58,11 +30,33 @@ export default function CasesPage() {
   const WINNING_INDEX = 40; 
 
   useEffect(() => {
-    const initUser = async () => {
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) setCurrentUser(data.user);
+    const fetchData = async () => {
+        // 1. Cargar usuario
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) setCurrentUser(userData.user);
+
+        // 2. Cargar cajas desde la Base de Datos
+        const { data: dbCases, error } = await supabase
+          .from('cases')
+          .select('*')
+          .order('price', { ascending: true }); // Ordenar de más barata a más cara
+
+        if (dbCases) {
+          // Adaptamos los nombres de columnas de la BD a lo que usa tu HTML
+          const formatCases = dbCases.map(c => ({
+            id: c.id,
+            name: c.name,
+            price: c.price,
+            img: c.image_url,
+            color: c.color,
+            shadow: c.shadow,
+            items: c.items
+          }));
+          setCasesData(formatCases);
+        }
+        setCargando(false);
     };
-    initUser();
+    fetchData();
   }, []);
 
   const getRandomVisualItem = (items) => {
@@ -83,12 +77,10 @@ export default function CasesPage() {
     setSpinning(false);
     setOffset(0);
 
-    // LLAMADA AL SERVIDOR (Descuenta verdes, guarda en inventario)
+    // LLAMADA AL SERVIDOR (Solo mandamos nuestro ID y qué caja queremos)
     const { data: winner, error } = await supabase.rpc('abrir_caja', { 
         p_usuario_id: currentUser.id,
-        p_case_id: selectedCase.id,
-        p_precio: selectedCase.price,
-        p_items: selectedCase.items
+        p_case_id: selectedCase.id
     });
 
     if (error || winner?.error) {
@@ -120,6 +112,7 @@ export default function CasesPage() {
     }, 100);
   };
 
+  if (cargando) return <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] flex items-center justify-center text-white">Loading cases...</div>;
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 relative overflow-hidden">
       
