@@ -1,6 +1,6 @@
 "use client";
-import { useState, useMemo, useEffect } from 'react';
-import { supabase } from '@/utils/Supabase'; // Conexión a Supabase
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { supabase } from '@/utils/Supabase'; 
 import PETS_DATABASE_RAW from '../data/pets_bgsi.json';
 
 // --- LIMPIEZA DE DATOS ---
@@ -28,10 +28,11 @@ const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" clas
 const imgMonedaHeads = '/heads.png';
 const imgMonedaTails = '/tails.png';
 
-// Función helper para adaptar los datos de Supabase a la UI sin romper el frontend
 const formatGameToUI = (dbGame) => {
     return {
         id: dbGame.id,
+        creador_id: dbGame.creador_id,
+        retador_id: dbGame.retador_id,
         host: dbGame.datos_partida?.host_name || 'Player',
         avatar: dbGame.datos_partida?.avatar_creador || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback',
         lado: dbGame.datos_partida?.lado_creador || 'Heads',
@@ -39,19 +40,24 @@ const formatGameToUI = (dbGame) => {
         valorTotalHost: dbGame.datos_partida?.valor_total || 0,
         estado: dbGame.estado,
         challenger: dbGame.retador_id ? 'Challenger' : null,
-        petsChallenger: dbGame.apuesta_retador || []
+        petsChallenger: dbGame.apuesta_retador || [],
+        resultado: dbGame.resultado || null,
+        creado_en: dbGame.creado_en
     };
 };
 
 export default function BloxypotCoinflip() {
+  const [currentUser, setCurrentUser] = useState(null);
   const [misPets, setMisPets] = useState([]);
   const [vistaActual, setVistaActual] = useState('lobby'); 
   
-  // Estados de Animación (Modificados para impacto real)
+  // Estados de Animación y Partida
+  const [cuentaRegresiva, setCuentaRegresiva] = useState(null);
   const [girando, setGirando] = useState(false);
   const [rotacion, setRotacion] = useState(0);
   const [ganador, setGanador] = useState(null);
   const [mostrarImpacto, setMostrarImpacto] = useState(false);
+  const animacionIniciada = useRef(false);
 
   // Estados Creador
   const [creatorSelectedPets, setCreatorSelectedPets] = useState([]);
@@ -67,7 +73,24 @@ export default function BloxypotCoinflip() {
   const [lobbyGames, setLobbyGames] = useState([]);
 
   useEffect(() => {
-    // 1. Cargar inventario (Mantenemos generación por ahora para pruebas)
+    // 0. Obtener Usuario Actual (Auth real o simulado para no chocar contigo mismo)
+    const initUser = async () => {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+            setCurrentUser(data.user);
+        } else {
+            // Si no hay login real, creamos un ID temporal en el navegador
+            let tempId = localStorage.getItem('temp_user_id');
+            if (!tempId) {
+                tempId = crypto.randomUUID();
+                localStorage.setItem('temp_user_id', tempId);
+            }
+            setCurrentUser({ id: tempId, email: 'invitado@local' });
+        }
+    };
+    initUser();
+
+    // 1. Cargar inventario (Mantenemos generación por ahora)
     const iniciales = [];
     for(let i = 0; i < 25; i++) {
       const p = PETS_DATABASE[Math.floor(Math.random() * PETS_DATABASE.length)];
@@ -75,14 +98,15 @@ export default function BloxypotCoinflip() {
     }
     setMisPets(iniciales.sort((a, b) => b.valor - a.valor));
 
-    // 2. Cargar partidas reales de Supabase
+    // 2. Cargar partidas reales (Waiting, In_progress y Completed para el historial)
     const cargarPartidas = async () => {
       const { data, error } = await supabase
         .from('partidas')
         .select('*')
         .eq('modo_juego', 'coinflip')
-        .eq('estado', 'waiting')
-        .order('creado_en', { ascending: false });
+        .in('estado', ['waiting', 'in_progress', 'completed'])
+        .order('creado_en', { ascending: false })
+        .limit(30); // Limitar a las últimas 30 para no saturar
       
       if (!error && data) {
         setLobbyGames(data.map(formatGameToUI));
@@ -105,11 +129,30 @@ export default function BloxypotCoinflip() {
             setLobbyGames(prev => [formatted, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
             const formatted = formatGameToUI(payload.new);
-            if (payload.new.estado !== 'waiting') {
-              setLobbyGames(prev => prev.filter(game => game.id !== formatted.id));
-            } else {
-              setLobbyGames(prev => prev.map(game => game.id === formatted.id ? formatted : game));
-            }
+            
+            // Actualizar en el lobby
+            setLobbyGames(prev => {
+                const index = prev.findIndex(g => g.id === formatted.id);
+                if (index !== -1) {
+                    const newArr = [...prev];
+                    newArr[index] = formatted;
+                    return newArr;
+                }
+                return [formatted, ...prev];
+            });
+
+            // Si ALGUIEN está viendo la partida en la Arena, actualizamos su vista en vivo
+            setPartidaSeleccionada((prevPartida) => {
+                if (prevPartida && prevPartida.id === formatted.id) {
+                    // Si la partida pasó de waiting a in_progress mientras miraban, inicia la cuenta regresiva
+                    if (prevPartida.estado === 'waiting' && formatted.estado === 'in_progress') {
+                        iniciarCinematicaMoneda(formatted);
+                    }
+                    return formatted;
+                }
+                return prevPartida;
+            });
+
           } else if (payload.eventType === 'DELETE') {
             setLobbyGames(prev => prev.filter(game => game.id !== payload.old.id));
           }
@@ -143,19 +186,17 @@ export default function BloxypotCoinflip() {
   };
 
   const handleCreateGame = async () => {
+    if (!currentUser) return alert("Cargando usuario...");
     if (creatorSelectedPets.length === 0 || !creatorSide) return alert("Select side and pets!");
-    
-    // Identificador simulado del creador (reemplazar con Auth real después)
-    const userId = "00000000-0000-0000-0000-000000000000"; 
     
     const newGameData = {
         modo_juego: 'coinflip',
-        creador_id: userId,
+        creador_id: currentUser.id,
         apuesta_creador: creatorSelectedPets,
         datos_partida: { 
             lado_creador: creatorSide,
-            avatar_creador: 'https://api.dicebear.com/7.x/avataaars/svg?seed=NinjaUser',
-            host_name: 'NinjaUser (You)',
+            avatar_creador: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + currentUser.id,
+            host_name: 'You (' + currentUser.id.substring(0,4) + ')',
             valor_total: totalCreatorValue
         },
         estado: 'waiting'
@@ -183,8 +224,21 @@ export default function BloxypotCoinflip() {
   const verPartida = (juego) => {
       setPartidaSeleccionada(juego);
       setVistaActual('arena');
-      setGirando(false);
-      setGanador(null);
+      animacionIniciada.current = false;
+      setCuentaRegresiva(null);
+      
+      // Si la partida ya estaba terminada, mostrar el resultado final directamente
+      if (juego.estado === 'completed' && juego.resultado) {
+          setGirando(false);
+          setGanador(juego.resultado.lado_ganador);
+          setMostrarImpacto(true);
+          setRotacion(juego.resultado.lado_ganador === 'Heads' ? 0 : 180);
+      } else {
+          setGirando(false);
+          setGanador(null);
+          setMostrarImpacto(false);
+          setRotacion(0);
+      }
   };
 
   const totalSeleccionadoToJoin = useMemo(() => selectedPetsToJoin.reduce((sum, p) => sum + (typeof p.valor === 'number' ? p.valor : 0), 0), [selectedPetsToJoin]);
@@ -227,13 +281,10 @@ export default function BloxypotCoinflip() {
   const confirmarUnionYJugar = async () => {
     if (!dataJoinValidacion.valida) return alert("Pets are outside the 2% range!");
     
-    // Simular el ID del retador
-    const retadorId = "11111111-1111-1111-1111-111111111111";
-
     const { data, error } = await supabase
       .from('partidas')
       .update({ 
-        retador_id: retadorId,
+        retador_id: currentUser.id,
         apuesta_retador: selectedPetsToJoin,
         estado: 'in_progress' 
       })
@@ -251,50 +302,74 @@ export default function BloxypotCoinflip() {
     setModalJoinAbierto(false); 
     setVistaActual('arena'); 
 
+    // Iniciamos la animación localmente para el que se une
     iniciarCinematicaMoneda(uiData);
   };
 
-
-const iniciarCinematicaMoneda = async (datosPartida) => {
-    setGirando(true); 
+  const iniciarCinematicaMoneda = (datosPartida) => {
+    if (animacionIniciada.current) return; // Prevenir que se ejecute dos veces
+    animacionIniciada.current = true;
+    
+    setGirando(false); 
     setGanador(null);
     setMostrarImpacto(false);
+    
+    // 1. Iniciar Cuenta Regresiva de 3 Segundos
+    setCuentaRegresiva(3);
+    let contador = 3;
+    
+    const intervalo = setInterval(() => {
+        contador -= 1;
+        if (contador > 0) {
+            setCuentaRegresiva(contador);
+        } else {
+            clearInterval(intervalo);
+            setCuentaRegresiva(null);
+            // 2. Al terminar el contador, hacer el tiro real
+            ejecutarTiroRPC(datosPartida);
+        }
+    }, 1000);
+  };
 
-    // 1. Llamamos a Supabase para que tire la moneda de forma segura
+  const ejecutarTiroRPC = async (datosPartida) => {
+    setGirando(true);
+
+    // Llamamos a Supabase para resolver seguro (Usa la RPC que creamos)
     const { data: resultado, error } = await supabase
       .rpc('resolver_partida_coinflip', { p_partida_id: datosPartida.id });
 
+    // Fallback por si la RPC no existe aún, para que no se rompa la prueba
+    let ganaHeads = true;
+    let servidorLadoGanador = 'Heads';
+    
     if (error) {
-      console.error("Error al resolver partida:", error);
-      setGirando(false);
-      return alert("Hubo un error al procesar el resultado de la partida.");
+        console.warn("RPC no conectada o error. Usando Random simulado por ahora.", error);
+        ganaHeads = Math.random() < 0.5;
+        servidorLadoGanador = ganaHeads ? 'Heads' : 'Tails';
+        // Simulamos actualización manual para la prueba
+        await supabase.from('partidas').update({ estado: 'completed', resultado: { lado_ganador: servidorLadoGanador } }).eq('id', datosPartida.id);
+    } else {
+        servidorLadoGanador = resultado.lado_ganador;
+        ganaHeads = servidorLadoGanador === 'Heads';
     }
 
-    // 2. Extraemos el resultado real que nos dio el servidor
-    const servidorLadoGanador = resultado.lado_ganador; // 'Heads' o 'Tails'
-    const ganaHeads = servidorLadoGanador === 'Heads';
-
-    // 3. Iniciamos la animación que ya arreglamos, sabiendo exactamente dónde va a caer
+    // Animación de físicas calculadas
     setTimeout(() => {
       setRotacion(prevRotacion => {
-        const vueltasBase = prevRotacion + 3600; // Suspenso extremo (10 vueltas)
+        const vueltasBase = prevRotacion + 3600; 
         const nuevaRot = ganaHeads ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
         
-        // Esperamos a que la moneda caiga físicamente (4 segundos)
         setTimeout(() => { 
             setGirando(false); 
             setGanador(servidorLadoGanador); 
-            
-            // Efecto de impacto suave una fracción de segundo después de aterrizar
             setTimeout(() => setMostrarImpacto(true), 150);
-            
-            // TODO FUTURO: Aquí es donde mostrarás un popup de "+$500" o "¡Ganaste!"
         }, 4000);
 
         return nuevaRot;
       });
-    }, 100); 
+    }, 100);
   };
+
   // --- COMPONENTES VISUALES ---
   const AvatarVS = ({ img, side, isWaiting = false }) => (
     <div className={`relative box-border h-12 w-12 md:h-14 md:w-14 rounded-full border-2 md:border-[3px] border-solid bg-[#1C1F2E] transition-colors shrink-0 ${isWaiting ? 'border-[#2F3347] border-dashed opacity-60' : side === 'Heads' ? 'border-[#facc15]' : 'border-[#a855f7]'}`}>
@@ -321,20 +396,20 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 mb-6">
               <div className="flex items-center gap-3 rounded-lg p-4 border border-[#252839]" style={{background: 'radial-gradient(circle at 100% 100%, rgba(108, 99, 255, 0.15) 0%, transparent 80%), #1c1f2e'}}>
                 <div className="flex flex-col">
-                  <span className="text-white text-2xl font-black">{lobbyGames.length}</span>
+                  <span className="text-white text-2xl font-black">{lobbyGames.filter(g => g.estado === 'waiting').length}</span>
                   <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Active Rooms</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 rounded-lg p-4 border border-[#252839]" style={{background: 'radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.15) 0%, transparent 80%), #1c1f2e'}}>
                 <div className="flex flex-col">
-                  <span className="text-white text-2xl font-black flex items-center gap-2"><RedCoin cls="w-6 h-6"/> {formatValue(lobbyGames.reduce((acc, g) => acc + g.valorTotalHost, 0))}</span>
+                  <span className="text-white text-2xl font-black flex items-center gap-2"><RedCoin cls="w-6 h-6"/> {formatValue(lobbyGames.filter(g => g.estado === 'waiting').reduce((acc, g) => acc + g.valorTotalHost, 0))}</span>
                   <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Total Value</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 rounded-lg p-4 border border-[#252839]" style={{background: 'radial-gradient(circle at 100% 100%, rgba(108, 99, 255, 0.15) 0%, transparent 80%), #1c1f2e'}}>
                 <div className="flex flex-col">
-                  <span className="text-white text-2xl font-black">24</span>
-                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Total Items</span>
+                  <span className="text-white text-2xl font-black">History</span>
+                  <span className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Live Updates</span>
                 </div>
               </div>
             </div>
@@ -349,30 +424,39 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
 
             <div className="flex flex-col gap-2">
               {lobbyGames.length === 0 && (
-                  <div className="text-center text-[#8f9ac6] py-10">No active rooms right now. Create one!</div>
+                  <div className="text-center text-[#8f9ac6] py-10">No games right now. Create one!</div>
               )}
               {lobbyGames.map((game, idx) => (
-                <div key={game.id} className="relative grid grid-cols-1 xl:grid-cols-[auto_1fr_auto_auto] items-center gap-4 md:gap-6 rounded-lg border border-[#252839] bg-[#1c1f2e] py-3 px-4 md:pl-6 md:pr-4 transition-all hover:border-[#3f4354] animate-fade-in" style={{animationDelay: `${idx * 0.05}s`}}>
-                  <div className="flex items-center gap-3 justify-center xl:justify-start">
+                <div key={game.id} className={`relative grid grid-cols-1 xl:grid-cols-[auto_1fr_auto_auto] items-center gap-4 md:gap-6 rounded-lg border py-3 px-4 md:pl-6 md:pr-4 transition-all animate-fade-in ${game.estado === 'completed' ? 'border-[#252839] bg-[#141323] opacity-80' : 'border-[#252839] bg-[#1c1f2e] hover:border-[#3f4354]'}`} style={{animationDelay: `${idx * 0.05}s`}}>
+                  
+                  {/* Etiqueta de Estado Visual */}
+                  {game.estado === 'completed' && (
+                     <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-lg rounded-br-lg tracking-widest">Finished</div>
+                  )}
+                  {game.estado === 'in_progress' && (
+                     <div className="absolute top-0 left-0 bg-[#6C63FF] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-lg rounded-br-lg tracking-widest shadow-[0_0_10px_rgba(108,99,255,0.5)]">Rolling...</div>
+                  )}
+
+                  <div className="flex items-center gap-3 justify-center xl:justify-start mt-2 xl:mt-0">
                     <AvatarVS img={game.avatar} side={game.lado} />
                     <strong className="text-lg font-black text-[#555b82] italic">VS</strong>
-                    {game.estado === 'playing' ? (
-                        <AvatarVS img="https://api.dicebear.com/7.x/avataaars/svg?seed=NinjaUser" side={game.lado === 'Heads' ? 'Tails' : 'Heads'} />
-                    ) : (
+                    {game.estado === 'waiting' ? (
                         <AvatarVS isWaiting={true} />
+                    ) : (
+                        <AvatarVS img="https://api.dicebear.com/7.x/avataaars/svg?seed=ChallengerUser" side={game.lado === 'Heads' ? 'Tails' : 'Heads'} />
                     )}
                   </div>
 
                   <div className="flex justify-center xl:justify-start py-2">
                     <div className="flex items-center ml-2">
                       {game.petsHost.slice(0, 5).map((pet, i) => (
-                        <div key={i} className="relative box-border block h-12 w-12 md:h-14 md:w-14 rounded-md border-2 border-[#2F3347] bg-[#141323] overflow-hidden -ml-4 transition-transform duration-200 hover:-translate-y-2 hover:border-[#6C63FF] shadow-lg group cursor-pointer" style={{zIndex: 10 - i}}>
+                        <div key={i} className="relative box-border block h-12 w-12 md:h-14 md:w-14 rounded-md border-2 border-[#2F3347] bg-[#141323] overflow-hidden -ml-4 shadow-lg group" style={{zIndex: 10 - i}}>
                           <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at 50% 50%, ${pet.color || '#9ca3af'} 0%, transparent 70%)` }}></div>
-                          <img src={pet.img} className="block w-full h-full object-contain scale-110 drop-shadow-md group-hover:scale-125 transition-transform" alt="pet"/>
+                          <img src={pet.img} className="block w-full h-full object-contain scale-110 drop-shadow-md" alt="pet"/>
                         </div>
                       ))}
                       {game.petsHost.length > 5 && (
-                        <div className="relative box-border flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-md border-2 border-[#2F3347] bg-[#141323] overflow-hidden -ml-4 z-[5] cursor-pointer">
+                        <div className="relative box-border flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-md border-2 border-[#2F3347] bg-[#141323] overflow-hidden -ml-4 z-[5]">
                           <img src={game.petsHost[5].img} className="block w-full h-full object-contain blur-[2px] opacity-40" alt="pet"/>
                           <span className="absolute inset-0 flex items-center justify-center text-white font-black text-sm drop-shadow-md bg-black/40">+{game.petsHost.length - 5}</span>
                         </div>
@@ -381,20 +465,25 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
                   </div>
 
                   <div className="text-center w-full xl:w-32 justify-self-center">
-                    <p className="inline-flex items-center gap-2 text-xl font-black text-white drop-shadow-md">
-                      <RedCoin cls="w-5 h-5 md:w-6 md:h-6"/> <span>{formatValue(game.valorTotalHost)}</span>
+                    <p className={`inline-flex items-center gap-2 text-xl font-black drop-shadow-md ${game.estado === 'completed' ? 'text-[#8f9ac6]' : 'text-white'}`}>
+                      <RedCoin cls="w-5 h-5 md:w-6 md:h-6"/> <span>{formatValue(game.valorTotalHost * (game.estado === 'completed' ? 2 : 1))}</span>
                     </p>
-                    <p className="text-xs font-bold text-[#8f9ac6] mt-0.5">
-                      {formatValue(game.valorTotalHost * 0.98)} - {formatValue(game.valorTotalHost * 1.02)}
-                    </p>
+                    {game.estado === 'waiting' && (
+                        <p className="text-xs font-bold text-[#8f9ac6] mt-0.5">
+                        {formatValue(game.valorTotalHost * 0.98)} - {formatValue(game.valorTotalHost * 1.02)}
+                        </p>
+                    )}
                   </div>
 
                   <div className="flex justify-center xl:justify-end gap-2 w-full mt-2 xl:mt-0">
-                    {game.estado === 'waiting' && (
+                    {/* Solo muestra JOIN si está en waiting Y el creador NO es el usuario actual */}
+                    {game.estado === 'waiting' && currentUser && game.creador_id !== currentUser.id && (
                         <button onClick={() => abrirModalJoin(game)} className="w-full xl:w-24 cursor-pointer h-[34px] px-5 text-sm font-bold rounded-md border border-[#5E55D9]/40 bg-[linear-gradient(135deg,#6C63FF_0%,#5147D9_100%)] text-white shadow-[0_2px_10px_rgba(108,99,255,0.25)] hover:shadow-[0_4px_15px_rgba(108,99,255,0.4)] transition-all uppercase tracking-widest hover:-translate-y-0.5">
                         JOIN
                         </button>
                     )}
+                    
+                    {/* El botón VIEW siempre está visible para todas las partidas */}
                     <button onClick={() => verPartida(game)} className="w-full xl:w-24 cursor-pointer h-[34px] px-5 text-sm font-bold rounded-md border border-[#2D314A] bg-[#2a2e44] text-[#E1E4F2] hover:bg-[#32364f] transition-all uppercase tracking-widest hover:-translate-y-0.5">
                       VIEW
                     </button>
@@ -473,7 +562,7 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
         ========================================= */}
         {vistaActual === 'arena' && partidaSeleccionada && (
           <div className="w-full flex flex-col items-center animate-fade-in mt-10">
-            <button onClick={() => setVistaActual('lobby')} className="self-start text-[#8f9ac6] hover:text-[#6C63FF] font-bold text-sm flex items-center gap-1 transition-colors mb-6 bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839]">
+            <button onClick={() => {setVistaActual('lobby'); animacionIniciada.current = false;}} className="self-start text-[#8f9ac6] hover:text-[#6C63FF] font-bold text-sm flex items-center gap-1 transition-colors mb-6 bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839]">
               &lsaquo; Back to Lobby
             </button>
             
@@ -484,9 +573,9 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
                 </div>
                 <div className="text-3xl font-black text-[#555b82] italic">VS</div>
                 <div className="flex flex-col items-center gap-2">
-                    {partidaSeleccionada.estado === 'in_progress' ? (
+                    {partidaSeleccionada.estado === 'in_progress' || partidaSeleccionada.estado === 'completed' ? (
                         <>
-                           <AvatarVS img="https://api.dicebear.com/7.x/avataaars/svg?seed=NinjaUser" side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} />
+                           <AvatarVS img="https://api.dicebear.com/7.x/avataaars/svg?seed=Challenger" side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} />
                            <span className="text-white font-bold">Challenger</span>
                         </>
                     ) : (
@@ -499,12 +588,22 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
             </div>
 
             {/* CONTENEDOR PRINCIPAL DE ANIMACIÓN Y FÍSICAS */}
-            <div className="relative flex justify-center items-center h-64 mb-10">
-              {/* Efecto de Impacto Expansivo (Solo se activa al caer) */}
+            <div className="relative flex justify-center items-center h-64 mb-10 w-full">
+              
+              {/* --- OVERLAY CONTADOR --- */}
+              {cuentaRegresiva !== null && (
+                  <div className="absolute inset-0 flex items-center justify-center z-50 animate-pulse">
+                      <span className="text-8xl md:text-[150px] font-black text-white drop-shadow-[0_0_30px_rgba(108,99,255,0.8)] opacity-90">
+                          {cuentaRegresiva}
+                      </span>
+                  </div>
+              )}
+
+              {/* Efecto de Impacto Expansivo */}
               <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[80px] rounded-full transition-all duration-700 ease-out z-0 ${mostrarImpacto ? 'opacity-60 scale-150' : 'opacity-0 scale-50'}`}></div>
 
               {/* La Moneda con físicas de salto y gravedad */}
-              <div className="relative w-40 h-40 md:w-56 md:h-56 perspective-1000 z-10"
+              <div className={`relative w-40 h-40 md:w-56 md:h-56 perspective-1000 z-10 ${cuentaRegresiva !== null ? 'opacity-20 blur-sm' : 'opacity-100'}`}
                    style={{
                      transform: girando ? 'translateY(-60px) scale(1.1)' : 'translateY(0px) scale(1)',
                      transition: girando ? 'transform 2s cubic-bezier(0.25, 1, 0.5, 1)' : 'transform 1s cubic-bezier(0.5, 0, 0.2, 1)'
@@ -512,17 +611,15 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
               >
                 <div className="w-full h-full relative preserve-3d"
                   style={{
-                    transitionDuration: girando ? '4s' : '0s', // 4 segundos coinciden con el setTimeout
+                    transitionDuration: girando ? '4s' : '0s', 
                     transitionTimingFunction: 'cubic-bezier(0.1, 0.8, 0.1, 1)', 
                     transform: `rotateY(${rotacion}deg)`
                   }}
                 >
-                  {/* Cara Frontal (Heads) */}
                   <div className={`absolute w-full h-full backface-hidden rounded-full border-4 bg-[#0b0e14] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_60px_rgba(250,204,21,1)]' : 'border-[#3f4354] shadow-none'}`}>
                     <img src={imgMonedaHeads} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Heads" />
                   </div>
                   
-                  {/* Cara Trasera (Tails) */}
                   <div className={`absolute w-full h-full backface-hidden rounded-full border-4 bg-[#0b0e14] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_60px_rgba(168,85,247,1)]' : 'border-[#3f4354] shadow-none'}`}
                        style={{ transform: 'rotateY(180deg)' }}>
                     <img src={imgMonedaTails} className="w-[80%] h-[80%] object-contain drop-shadow-xl" alt="Tails" />
@@ -531,8 +628,8 @@ const iniciarCinematicaMoneda = async (datosPartida) => {
               </div>
             </div>
 
-            <h2 className="text-3xl font-black text-white uppercase tracking-widest mt-4">
-              {ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING...' : 'READY')}
+            <h2 className="text-3xl font-black text-white uppercase tracking-widest mt-4 min-h-[40px]">
+              {cuentaRegresiva !== null ? 'PREPARING...' : (ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING...' : (partidaSeleccionada.estado === 'waiting' ? 'WAITING FOR CHALLENGER' : 'READY')))}
             </h2>
           </div>
         )}
