@@ -3,42 +3,48 @@ import Link from 'next/link';
 import LiveDrops from '../components/LiveDrops'; 
 
 export default function Home() {
-  // Reemplazamos los iconos por tu imagen de Teto, pero le damos un color de aura a cada juego
   const games = [
     { 
       name: 'BATTLES', 
       desc: 'Fight For All', 
       path: '/battles', 
-      img: '/Battles.png', // <-- Tu imagen
+      img: '/Battles.png', 
       auraColor: '#a855f7' // Morado
     },
     { 
       name: 'CASES', 
       desc: 'Unbox Pets', 
       path: '/cases', 
-      img: '/Cases.png', // <-- Tu imagen
+      img: '/Cases.png', 
       auraColor: '#fb923c' // Naranja
     },
     { 
       name: 'COINFLIP', 
       desc: 'Flip a Coin', 
       path: '/coinflip', 
-      img: '/Coinflip.png', // <-- Tu imagen
+      img: '/Coinflip.png', 
       auraColor: '#facc15' // Amarillo/Dorado
     },
     { 
       name: 'MINES', 
       desc: 'Avoid Mines', 
       path: '/mines', 
-      img: '/Mines.png', // <-- Tu imagen
+      img: '/Mines.png', 
       auraColor: '#ec4899' // Rosa
     },
     { 
       name: 'JACKPOT', 
       desc: 'Take a Chance', 
       path: '/jackpot', 
-      img: '/Jackpot.png', // <-- Tu imagen
+      img: '/Jackpot.png', 
       auraColor: '#ef4444' // Rojo
+    },
+    { 
+      name: 'BLACKJACK', 
+      desc: 'Beat the Dealer', 
+      path: '/blackjack', 
+      img: '/Coinflip.png', // <-- Usamos la imagen que tenías, luego la cambias por Blackjack.png
+      auraColor: '#10b981' // Verde Casino (Emerald)
     },
   ];
 
@@ -69,7 +75,7 @@ export default function Home() {
               </button>
             </div>
 
-<div className="hidden md:block opacity-80 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]">
+            <div className="hidden md:block opacity-80 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]">
               <img 
                 src="/favicon.ico" 
                 alt="Teto!live Mascot" 
@@ -80,14 +86,15 @@ export default function Home() {
         </div>
 
         {/* ==========================================
-            TARJETAS DE JUEGOS (NUEVO DISEÑO CON TETO)
+            TARJETAS DE JUEGOS (Ajustadas a 6 elementos)
         ========================================== */}
         <div>
           <h2 className="text-white text-sm font-bold mb-6 flex items-center gap-2">
             <span className="font-black text-lg">Games</span> <span className="text-[#555b82]">- Pick your favorite and dive in</span>
           </h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+          {/* El grid ahora se adapta perfecto a 6 juegos (2 en celular, 3 en tablets/laptops, 6 en monitores gigantes) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
             {games.map((game, idx) => (
               <Link key={idx} href={game.path} className="block group">
                 <div className="relative h-64 md:h-72 rounded-2xl bg-gradient-to-b from-[#2e1065] to-[#170535] p-5 flex flex-col items-center justify-end overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.8)] border border-[#4c1d95] hover:border-[#7c3aed]">
