@@ -69,7 +69,9 @@ export default function CasinoLayout({ children }) {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
+    let channel; // Guardamos el canal para limpiarlo después
+
     const initData = async () => {
       // 1. Obtener usuario actual y sus saldos reales
       const { data: authData } = await supabase.auth.getUser();
@@ -77,8 +79,7 @@ export default function CasinoLayout({ children }) {
 
       if (authData?.user) {
         // Si hay login real, sacamos su perfil y saldo
-// Si hay login real, sacamos su perfil y saldo
-const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
         if (profile) {
           tempUser = { 
             id: authData.user.id, 
@@ -90,6 +91,27 @@ const { data: profile } = await supabase.from('profiles').select('*').eq('id', a
           setSaldoVerde(profile.saldo_verde || 0);
           setSaldoRojo(profile.saldo_rojo || 0);
         }
+
+        // --- ESTO ES LO NUEVO: ESCUCHAR CAMBIOS EN VIVO ---
+        channel = supabase.channel('perfil_updates_layout')
+          .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'profiles', 
+            filter: `id=eq.${authData.user.id}` 
+          }, (payload) => {
+            // Cuando la base de datos cambie (ganes o pierdas), se actualiza al instante sin recargar F5
+            setSaldoVerde(payload.new.saldo_verde);
+            setSaldoRojo(payload.new.saldo_rojo);
+            
+            // Actualizamos también el nivel en vivo dentro de currentUser
+            setCurrentUser(prevUser => ({
+              ...prevUser,
+              level: payload.new.level || prevUser.level
+            }));
+          }).subscribe();
+        // --------------------------------------------------
+
       } else {
         // Fallback simulado para pruebas
         let tempId = localStorage.getItem('temp_user_id');
@@ -98,45 +120,16 @@ const { data: profile } = await supabase.from('profiles').select('*').eq('id', a
         setSaldoVerde(5000000); // Saldo de prueba
         setSaldoRojo(200000);
       }
-      setCurrentUser(tempUser);
-
-      // 2. Cargar historial del Chat (Últimos 50 mensajes)
-      const { data: mensajesHistorial } = await supabase
-        .from('chat_mensajes')
-        .select('*')
-        .order('creado_en', { ascending: false })
-        .limit(50);
       
-      if (mensajesHistorial) setChatMessages(mensajesHistorial);
-
-      // 3. Suscribirse a nuevos mensajes de Chat en vivo
-      const chatChannel = supabase.channel('global_chat')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_mensajes' }, 
-          (payload) => {
-            setChatMessages((prev) => [payload.new, ...prev]);
-          }
-        ).subscribe();
-
-// 4. Suscribirse a cambios en el saldo del usuario (si está logueado)
-      let saldoChannel = null;
-      if (authData?.user) {
-         saldoChannel = supabase.channel('user_balance')
-          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${authData.user.id}` }, 
-            (payload) => {
-              // Esto actualiza el Top Bar mágicamente al instante
-              setSaldoVerde(payload.new.saldo_verde || 0);
-              setSaldoRojo(payload.new.saldo_rojo || 0);
-            }
-          ).subscribe();
-      }
-
-      return () => {
-        supabase.removeChannel(chatChannel);
-        if(saldoChannel) supabase.removeChannel(saldoChannel);
-      };
+      setCurrentUser(tempUser);
     };
 
     initData();
+
+    // Limpiamos el canal cuando te vas de la página para no consumir memoria
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   // Función para enviar mensaje a Supabase
