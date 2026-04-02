@@ -20,17 +20,20 @@ export default function CasesPage() {
   const [sortBy, setSortBy] = useState('price_asc'); 
   const [view, setView] = useState('store'); 
   const [selectedCase, setSelectedCase] = useState(null);
+  
+  // NUEVO: Cantidad de cajas a abrir
+  const [quantity, setQuantity] = useState(1);
 
   const [showNoMoneyModal, setShowNoMoneyModal] = useState(false);
   const [moneyNeeded, setMoneyNeeded] = useState(0);
 
-  const [spinnerItems, setSpinnerItems] = useState([]);
-  const [winningItem, setWinningItem] = useState(null);
+  // NUEVO: Adaptado para múltiples ruletas
+  const [spinnerTracks, setSpinnerTracks] = useState([]);
+  const [winningItems, setWinningItems] = useState([]);
   const [spinning, setSpinning] = useState(false);
-  const sliderRef = useRef(null);
+  const slidersRef = useRef([]);
   
   const WINNING_INDEX = 40; 
-  const REAL_ITEM_WIDTH = 188; 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,8 +83,10 @@ export default function CasesPage() {
     if (!currentUser || !userProfile) return alert("Por favor inicia sesión.");
     if (spinning) return;
 
-    if (userProfile.saldo_verde < selectedCase.price) {
-      setMoneyNeeded(selectedCase.price);
+    const totalCost = selectedCase.price * quantity;
+
+    if (userProfile.saldo_verde < totalCost) {
+      setMoneyNeeded(totalCost);
       setShowNoMoneyModal(true);
       return;
     }
@@ -91,7 +96,7 @@ export default function CasesPage() {
 
     try {
       // 1. COBRAR EN BASE DE DATOS
-      const nuevoSaldo = userProfile.saldo_verde - selectedCase.price;
+      const nuevoSaldo = userProfile.saldo_verde - totalCost;
       const { error: cobroError } = await supabase
         .from('profiles')
         .update({ saldo_verde: nuevoSaldo })
@@ -99,58 +104,67 @@ export default function CasesPage() {
 
       if (cobroError) throw new Error("Fallo al descontar el saldo: " + cobroError.message);
 
-      // 2. SACAR AL GANADOR
-      const winner = getRandomVisualItem(selectedCase.items);
-
-      // --- EL PARCHE DE SEGURIDAD PARA QUE NO TRUENE EL INVENTARIO ---
-      let realItemId = winner.id || winner.item_id;
+      // 2. SACAR A LOS GANADORES Y BUSCAR SUS IDs (Optimizando la búsqueda)
+      const winners = [];
+      const inventoryInserts = [];
       
-      if (!realItemId) {
-        const { data: itemData, error: itemError } = await supabase
-          .from('items')
-          .select('id')
-          .eq('name', winner.name)
-          .single();
-          
-        if (itemError || !itemData) {
-          throw new Error(`No encontramos el ID real de "${winner.name}" en la tabla items.`);
-        }
-        realItemId = itemData.id;
+      // Hacemos caché de los items de la base de datos para no hacer queries en cada iteración
+      const { data: allItemsDB } = await supabase.from('items').select('id, name');
+      const mapNameToId = {};
+      if (allItemsDB) allItemsDB.forEach(i => mapNameToId[i.name] = i.id);
+
+      for (let i = 0; i < quantity; i++) {
+          const winner = getRandomVisualItem(selectedCase.items);
+          winners.push(winner);
+
+          let realItemId = winner.id || winner.item_id || mapNameToId[winner.name];
+          if (!realItemId) {
+             const { data: itemData } = await supabase.from('items').select('id').eq('name', winner.name).single();
+             if (itemData) realItemId = itemData.id;
+             else throw new Error(`No encontramos el ID real de "${winner.name}" en la tabla items.`);
+          }
+          inventoryInserts.push({ user_id: currentUser.id, item_id: realItemId });
       }
 
-      // 3. INSERTAR AL INVENTARIO CON EL ID CONFIRMADO
+      // 3. INSERTAR AL INVENTARIO DE GOLPE
       const { error: invError } = await supabase
         .from('inventory')
-        .insert({
-          user_id: currentUser.id,
-          item_id: realItemId 
-        });
+        .insert(inventoryInserts);
 
       if (invError) throw new Error("Fallo al insertar en el inventario: " + invError.message);
 
       // 4. PREPARAR INTERFAZ
       setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
-      setWinningItem(winner);
+      setWinningItems(winners);
 
-      const track = Array.from({length: 55}, (_, i) => 
-        i === WINNING_INDEX ? winner : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
+      const newTracks = winners.map(w => 
+        Array.from({length: 55}, (_, i) => 
+          i === WINNING_INDEX ? w : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
+        )
       );
-      setSpinnerItems(track);
+      setSpinnerTracks(newTracks);
       
+      // Reiniciamos las referencias del DOM para los sliders
+      slidersRef.current = new Array(quantity).fill(null);
+
       // 5. ANIMACIÓN DIRECTA
+      const REAL_ITEM_WIDTH = quantity > 1 ? 128 : 188; // Si es multi, miden 120 + 8px margen. Si es solo 1, 180 + 8px.
+      
       setTimeout(() => {
-        if (sliderRef.current) {
-          sliderRef.current.style.transition = 'none';
-          sliderRef.current.style.transform = `translateX(0px)`;
-          void sliderRef.current.offsetWidth; 
+        slidersRef.current.forEach(slider => {
+            if (slider) {
+              slider.style.transition = 'none';
+              slider.style.transform = `translateX(0px)`;
+              void slider.offsetWidth; // Force Reflow
 
-          const centerOffset = REAL_ITEM_WIDTH / 2;
-          const randomOffset = (Math.floor(Math.random() * 100) - 50); 
-          const targetPx = -(WINNING_INDEX * REAL_ITEM_WIDTH) - centerOffset + randomOffset;
+              const centerOffset = REAL_ITEM_WIDTH / 2;
+              const randomOffset = (Math.floor(Math.random() * (REAL_ITEM_WIDTH * 0.8)) - (REAL_ITEM_WIDTH * 0.4)); 
+              const targetPx = -(WINNING_INDEX * REAL_ITEM_WIDTH) - centerOffset + randomOffset;
 
-          sliderRef.current.style.transition = 'transform 6s cubic-bezier(0.12, 0.8, 0.15, 1)';
-          sliderRef.current.style.transform = `translateX(${targetPx}px)`;
-        }
+              slider.style.transition = 'transform 6s cubic-bezier(0.12, 0.8, 0.15, 1)';
+              slider.style.transform = `translateX(${targetPx}px)`;
+            }
+        });
 
         setTimeout(() => { 
           setSpinning(false); 
@@ -162,7 +176,6 @@ export default function CasesPage() {
       console.error(err);
       setSpinning(false);
       setView('inspect');
-      // Ahora sí te va a decir exactamente por qué falló
       alert("Error al procesar: " + err.message);
     }
   };
@@ -190,7 +203,7 @@ export default function CasesPage() {
                 <span className="font-bold text-white"><GreenCoin/> {userProfile?.saldo_verde.toLocaleString()}</span>
               </div>
               <div className="flex justify-between border-t border-[#252839] pt-2">
-                <span className="text-xs font-bold uppercase text-[#4a506b]">Precio:</span>
+                <span className="text-xs font-bold uppercase text-[#4a506b]">Precio Total:</span>
                 <span className="font-bold text-red-400"><GreenCoin/> {moneyNeeded.toLocaleString()}</span>
               </div>
             </div>
@@ -245,7 +258,7 @@ export default function CasesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {filteredAndSortedCases.map(caja => (
                   <div 
-                    key={caja.id} onClick={() => { setSelectedCase(caja); setView('inspect'); }}
+                    key={caja.id} onClick={() => { setSelectedCase(caja); setQuantity(1); setView('inspect'); }}
                     className="bg-[#14151f]/80 backdrop-blur-sm border border-[#252839] rounded-3xl p-6 flex flex-col items-center cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:border-white/20 group relative overflow-hidden"
                     style={{ boxShadow: `0 10px 40px ${caja.shadow}`}}
                   >
@@ -276,8 +289,25 @@ export default function CasesPage() {
                 <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${selectedCase.color} 0%, transparent 80%)` }}></div>
                 <img src={selectedCase.img} className="w-48 h-48 object-contain mb-8 z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)] animate-pulse-slow" alt={selectedCase.name} style={{filter: `drop-shadow(0 0 30px ${selectedCase.color}60)`}} />
                 <h2 className="text-3xl font-black text-white uppercase tracking-widest z-10 mb-8 text-center">{selectedCase.name}</h2>
+                
+                {/* SELECTOR DE CANTIDAD */}
+                <div className="w-full mb-6 z-10">
+                    <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest text-center mb-3">Cantidad a abrir</p>
+                    <div className="flex justify-between gap-2">
+                        {[1, 2, 3, 4, 5].map(q => (
+                            <button
+                                key={q}
+                                onClick={() => setQuantity(q)}
+                                className={`flex-1 py-3 rounded-xl font-black transition-all ${quantity === q ? 'bg-[#22c55e] text-[#0b0e14] shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105' : 'bg-[#0b0e14] text-[#8f9ac6] border border-[#252839] hover:border-[#4a506b] hover:text-white'}`}
+                            >
+                                {q}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <button onClick={openCase} disabled={spinning} className="w-full py-4 rounded-2xl font-black text-xl text-[#0b0e14] uppercase tracking-widest shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all hover:-translate-y-1 bg-gradient-to-r from-[#22c55e] to-[#16a34a] flex items-center justify-center gap-3 z-10">
-                  ABRIR POR <GreenCoin cls="w-6 h-6"/> {formatValue(selectedCase.price)}
+                  ABRIR {quantity > 1 ? quantity : ''} POR <GreenCoin cls="w-6 h-6"/> {formatValue(selectedCase.price * quantity)}
                 </button>
               </div>
 
@@ -308,75 +338,115 @@ export default function CasesPage() {
 
         {view === 'opening' && (
           <div className="animate-fade-in flex flex-col items-center justify-center min-h-[60vh] relative">
-            <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-12 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] z-10">
+            <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] z-10">
               Unboxing...
             </h2>
             
-            <div className="relative w-full max-w-[1000px] h-[240px] bg-[#0b0e14]/90 backdrop-blur-xl border-y-4 border-[#252839] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.8)] rounded-2xl z-10 flex items-center">
-              
-              <img 
-                src="/teto.png" 
-                alt="Teto" 
-                className="absolute -right-8 -bottom-8 w-64 opacity-25 pointer-events-none drop-shadow-[0_0_20px_rgba(108,99,255,0.5)] z-0"
-                onError={(e) => e.target.style.display = 'none'}
-              />
+            <div className="flex flex-col gap-4 w-full max-w-[1000px] z-10">
+                {spinnerTracks.map((track, trackIdx) => {
+                    const isMulti = quantity > 1;
+                    const containerHeight = isMulti ? "h-[140px]" : "h-[240px]";
+                    const itemWidthClass = isMulti ? "w-[120px] h-[120px]" : "w-[180px] h-[190px]";
+                    const imgClass = isMulti ? "w-14 h-14" : "w-24 h-24";
+                    const textSize = isMulti ? "text-[10px]" : "text-sm";
 
-              <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
-              <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
+                    return (
+                        <div key={trackIdx} className={`relative w-full ${containerHeight} bg-[#0b0e14]/90 backdrop-blur-xl border-y-4 border-[#252839] overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] rounded-2xl flex items-center`}>
+                          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
+                          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
 
-              <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-[#22c55e] z-30 shadow-[0_0_25px_rgba(34,197,94,1)] -translate-x-1/2"></div>
-              <div className="absolute left-1/2 top-0 bottom-0 w-[200px] -translate-x-1/2 bg-gradient-to-r from-transparent via-[#22c55e]/10 to-transparent z-10 pointer-events-none"></div>
+                          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-[#22c55e] z-30 shadow-[0_0_25px_rgba(34,197,94,1)] -translate-x-1/2"></div>
+                          <div className="absolute left-1/2 top-0 bottom-0 w-[200px] -translate-x-1/2 bg-gradient-to-r from-transparent via-[#22c55e]/10 to-transparent z-10 pointer-events-none"></div>
 
-              <div className="absolute top-0 bottom-0 left-1/2 flex items-center w-max z-10">
-                <div 
-                  ref={sliderRef}
-                  className="flex items-center h-full will-change-transform"
-                >
-                  {spinnerItems.length > 0 && spinnerItems.map((item, idx) => (
-                    <div 
-                      key={idx} 
-                      className="w-[180px] h-[190px] shrink-0 border border-[#252839]/40 bg-[#14151f]/60 rounded-xl mx-1 flex flex-col items-center justify-center relative overflow-hidden" 
-                      style={{ boxShadow: `inset 0 0 30px ${item.color}05` }}
-                    >
-                      <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${item.color} 0%, transparent 60%)`}}></div>
-                      <img src={item.img} className="w-24 h-24 object-contain mb-3 drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] relative z-10" alt={item.name} />
-                      <div className="w-full text-center border-t border-[#252839]/50 pt-2 pb-1 relative z-10 bg-[#0b0e14]/40">
-                        <p className="font-black text-sm uppercase tracking-wide w-full px-2 truncate" style={{color: item.color}}>{item.name}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                          <div className="absolute top-0 bottom-0 left-1/2 flex items-center w-max z-10">
+                            <div 
+                                ref={el => slidersRef.current[trackIdx] = el}
+                                className="flex items-center h-full will-change-transform"
+                            >
+                              {track.map((item, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className={`${itemWidthClass} shrink-0 border border-[#252839]/40 bg-[#14151f]/60 rounded-xl mx-1 flex flex-col items-center justify-center relative overflow-hidden`} 
+                                  style={{ boxShadow: `inset 0 0 30px ${item.color}05` }}
+                                >
+                                  <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${item.color} 0%, transparent 60%)`}}></div>
+                                  <img src={item.img} className={`${imgClass} object-contain mb-2 drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] relative z-10`} alt={item.name} />
+                                  <div className="w-full text-center border-t border-[#252839]/50 pt-1 pb-1 relative z-10 bg-[#0b0e14]/40">
+                                    <p className={`font-black ${textSize} uppercase tracking-wide w-full px-2 truncate`} style={{color: item.color}}>{item.name}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                    );
+                })}
             </div>
           </div>
         )}
 
-        {view === 'result' && winningItem && (
+        {view === 'result' && winningItems.length > 0 && (
           <div className="w-full flex flex-col items-center justify-center min-h-[70vh] animate-bounce-in relative">
-            <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${winningItem.color} 0%, transparent 60%)`}}></div>
-            <h2 className="text-5xl font-black text-white uppercase tracking-widest mb-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] z-10">Item Unboxed!</h2>
+            <h2 className="text-5xl font-black text-white uppercase tracking-widest mb-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] z-10">
+              {quantity > 1 ? 'Items Unboxed!' : 'Item Unboxed!'}
+            </h2>
             
-            <div className="bg-[#14151f]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative" style={{ borderColor: winningItem.color, boxShadow: `0 0 50px ${winningItem.color}40` }}>
-              <div className="absolute -top-6 bg-[#0b0e14] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg" style={{ borderColor: winningItem.color, color: winningItem.color }}>
-                NUEVO ITEM
-              </div>
-              <img src={winningItem.img} className="w-56 h-56 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] mb-8 animate-pulse-slow" alt={winningItem.name} />
-              
-              <h3 className="text-3xl font-black uppercase text-center mb-2 tracking-widest" style={{ color: winningItem.color, textShadow: `0 0 20px ${winningItem.color}80` }}>
-                {winningItem.name}
-              </h3>
-              <p className="text-[#8f9ac6] font-bold text-lg flex items-center gap-2 mb-10 bg-[#0b0e14] px-4 py-2 rounded-lg border border-[#252839]">
-                Valor: <GreenCoin cls="w-5 h-5"/> {formatValue(winningItem.valor || 0)}
-              </p>
-              <div className="flex gap-4 w-full">
-                <button onClick={() => setView('store')} className="flex-1 bg-[#1c1f2e] hover:bg-[#252839] border border-[#2F3347] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md">
-                  Tienda
-                </button>
-                <button onClick={() => openCase()} className="flex-1 bg-[#22c55e] hover:bg-[#16a34a] text-[#0b0e14] border border-[#16a34a] px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)]">
-                  Girar Otra Vez
-                </button>
-              </div>
-            </div>
+            {quantity === 1 ? (
+                // DISEÑO ORIGINAL PARA 1 CAJA
+                <div className="bg-[#14151f]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative" style={{ borderColor: winningItems[0].color, boxShadow: `0 0 50px ${winningItems[0].color}40` }}>
+                  <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${winningItems[0].color} 0%, transparent 60%)`}}></div>
+                  <div className="absolute -top-6 bg-[#0b0e14] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg" style={{ borderColor: winningItems[0].color, color: winningItems[0].color }}>
+                    NUEVO ITEM
+                  </div>
+                  <img src={winningItems[0].img} className="w-56 h-56 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] mb-8 animate-pulse-slow relative z-10" alt={winningItems[0].name} />
+                  
+                  <h3 className="text-3xl font-black uppercase text-center mb-2 tracking-widest relative z-10" style={{ color: winningItems[0].color, textShadow: `0 0 20px ${winningItems[0].color}80` }}>
+                    {winningItems[0].name}
+                  </h3>
+                  <p className="text-[#8f9ac6] font-bold text-lg flex items-center gap-2 mb-10 bg-[#0b0e14] px-4 py-2 rounded-lg border border-[#252839] relative z-10">
+                    Valor: <GreenCoin cls="w-5 h-5"/> {formatValue(winningItems[0].valor || 0)}
+                  </p>
+                  <div className="flex gap-4 w-full relative z-10">
+                    <button onClick={() => setView('store')} className="flex-1 bg-[#1c1f2e] hover:bg-[#252839] border border-[#2F3347] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md">
+                      Tienda
+                    </button>
+                    <button onClick={() => openCase()} className="flex-1 bg-[#22c55e] hover:bg-[#16a34a] text-[#0b0e14] border border-[#16a34a] px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)]">
+                      Girar Otra Vez
+                    </button>
+                  </div>
+                </div>
+            ) : (
+                // DISEÑO CUADRÍCULA PARA MÚLTIPLES CAJAS
+                <div className="flex flex-col items-center w-full max-w-[1000px] z-10">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10 w-full">
+                        {winningItems.map((winItem, idx) => (
+                            <div key={idx} className="bg-[#14151f]/90 backdrop-blur-xl border-2 rounded-2xl p-6 flex flex-col items-center shadow-2xl relative transition-transform hover:scale-105" style={{ borderColor: winItem.color, boxShadow: `0 0 30px ${winItem.color}30` }}>
+                                <div className="absolute inset-0 pointer-events-none opacity-20 rounded-2xl" style={{ background: `radial-gradient(circle at center, ${winItem.color} 0%, transparent 70%)`}}></div>
+                                <img src={winItem.img} className="w-28 h-28 object-contain drop-shadow-xl mb-4 relative z-10 animate-pulse-slow" alt={winItem.name} />
+                                <h3 className="text-sm font-black uppercase text-center mb-2 tracking-widest truncate w-full relative z-10" style={{ color: winItem.color }}>
+                                    {winItem.name}
+                                </h3>
+                                <p className="text-[#8f9ac6] font-bold text-xs flex items-center gap-1 bg-[#0b0e14] px-3 py-1.5 rounded-lg border border-[#252839] relative z-10">
+                                    <GreenCoin cls="w-3 h-3"/> {formatValue(winItem.valor || 0)}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="text-xl font-black text-white mb-8 flex items-center gap-3 bg-[#1c1f2e] border border-[#252839] px-8 py-4 rounded-2xl shadow-lg">
+                        Total Value: <span className="text-[#22c55e] flex items-center gap-2"><GreenCoin cls="w-6 h-6"/> {formatValue(winningItems.reduce((acc, curr) => acc + (curr.valor||0), 0))}</span>
+                    </div>
+
+                    <div className="flex gap-4 w-full max-w-md">
+                        <button onClick={() => setView('store')} className="flex-1 bg-[#1c1f2e] hover:bg-[#252839] border border-[#2F3347] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md">
+                          Tienda
+                        </button>
+                        <button onClick={() => openCase()} className="flex-1 bg-[#22c55e] hover:bg-[#16a34a] text-[#0b0e14] border border-[#16a34a] px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)]">
+                          Girar {quantity} Más
+                        </button>
+                    </div>
+                </div>
+            )}
           </div>
         )}
 
