@@ -34,15 +34,17 @@ const formatGameToUI = (dbGame) => {
         creador_id: dbGame.creador_id,
         retador_id: dbGame.retador_id,
         host: dbGame.datos_partida?.host_name || 'Player',
-        avatar: dbGame.datos_partida?.avatar_creador || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback',
+        avatar: dbGame.datos_partida?.avatar_creador || '/default-avatar.png',
         lado: dbGame.datos_partida?.lado_creador || 'Heads',
         petsHost: dbGame.apuesta_creador || [],
         valorTotalHost: dbGame.datos_partida?.valor_total || 0,
         estado: dbGame.estado,
-        challenger: dbGame.retador_id ? 'Challenger' : null,
+        challenger: dbGame.datos_partida?.challenger_name || 'Challenger',
+        avatarChallenger: dbGame.datos_partida?.avatar_challenger || '/default-avatar.png',
         petsChallenger: dbGame.apuesta_retador || [],
         resultado: dbGame.resultado || null,
-        creado_en: dbGame.creado_en
+        creado_en: dbGame.creado_en,
+        datos_partida_raw: dbGame.datos_partida || {} // Necesario para no borrar datos al hacer UPDATE
     };
 };
 
@@ -73,19 +75,27 @@ export default function BloxypotCoinflip() {
   const [lobbyGames, setLobbyGames] = useState([]);
 
   useEffect(() => {
-    // 0. Obtener Usuario Actual (Auth real o simulado para no chocar contigo mismo)
+    // 0. Obtener Usuario Actual y su PERFIL REAL
     const initUser = async () => {
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-            setCurrentUser(data.user);
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user) {
+            // Ir a la tabla perfiles (Ajusta 'perfiles' si tu tabla se llama diferente, ej. 'profiles' o 'users')
+            const { data: profile } = await supabase
+                .from('perfiles')
+                .select('username, avatar_url')
+                .eq('id', authData.user.id)
+                .single();
+
+            setCurrentUser({ 
+                id: authData.user.id, 
+                username: profile?.username || 'Player',
+                avatar_url: profile?.avatar_url || '/default-avatar.png'
+            });
         } else {
-            // Si no hay login real, creamos un ID temporal en el navegador
+            // Mock temporal si no estás logueado para que puedas probar
             let tempId = localStorage.getItem('temp_user_id');
-            if (!tempId) {
-                tempId = crypto.randomUUID();
-                localStorage.setItem('temp_user_id', tempId);
-            }
-            setCurrentUser({ id: tempId, email: 'invitado@local' });
+            if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
+            setCurrentUser({ id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar_url: '/default-avatar.png' });
         }
     };
     initUser();
@@ -106,7 +116,7 @@ export default function BloxypotCoinflip() {
         .eq('modo_juego', 'coinflip')
         .in('estado', ['waiting', 'in_progress', 'completed'])
         .order('creado_en', { ascending: false })
-        .limit(30); // Limitar a las últimas 30 para no saturar
+        .limit(30); 
       
       if (!error && data) {
         setLobbyGames(data.map(formatGameToUI));
@@ -141,11 +151,12 @@ export default function BloxypotCoinflip() {
                 return [formatted, ...prev];
             });
 
-            // Si ALGUIEN está viendo la partida en la Arena, actualizamos su vista en vivo
+            // Si ALGUIEN está viendo la partida O si tú eres el creador esperando
             setPartidaSeleccionada((prevPartida) => {
                 if (prevPartida && prevPartida.id === formatted.id) {
-                    // Si la partida pasó de waiting a in_progress mientras miraban, inicia la cuenta regresiva
+                    // Si pasó a in_progress y tú estabas esperando (o viendo)
                     if (prevPartida.estado === 'waiting' && formatted.estado === 'in_progress') {
+                        setVistaActual('arena'); // Quita la ventana negra de espera
                         iniciarCinematicaMoneda(formatted);
                     }
                     return formatted;
@@ -155,6 +166,15 @@ export default function BloxypotCoinflip() {
 
           } else if (payload.eventType === 'DELETE') {
             setLobbyGames(prev => prev.filter(game => game.id !== payload.old.id));
+            
+            // Si te borraron la partida mientras esperabas (o la cancelaste tú)
+            setPartidaSeleccionada((prev) => {
+               if(prev && prev.id === payload.old.id) {
+                   setVistaActual('lobby');
+                   return null;
+               }
+               return prev;
+            });
           }
       }).subscribe();
 
@@ -195,23 +215,34 @@ export default function BloxypotCoinflip() {
         apuesta_creador: creatorSelectedPets,
         datos_partida: { 
             lado_creador: creatorSide,
-            avatar_creador: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + currentUser.id,
-            host_name: 'You (' + currentUser.id.substring(0,4) + ')',
+            avatar_creador: currentUser.avatar_url,
+            host_name: currentUser.username,
             valor_total: totalCreatorValue
         },
         estado: 'waiting'
     };
 
-    const { error } = await supabase.from('partidas').insert([newGameData]);
+    const { data, error } = await supabase.from('partidas').insert([newGameData]).select().single();
 
     if (error) {
         console.error("Error al crear partida:", error);
         alert("Error connecting to database.");
     } else {
-        setVistaActual('lobby'); 
+        // Lanzar la "ventanita negra" de espera y guardar la partida actual
+        const uiData = formatGameToUI(data);
+        setPartidaSeleccionada(uiData);
+        setVistaActual('esperando'); 
         setCreatorSelectedPets([]); 
         setCreatorSide(null);
     }
+  };
+
+  const cancelarPartida = async () => {
+      if (!partidaSeleccionada) return;
+      // Borramos de la DB
+      await supabase.from('partidas').delete().eq('id', partidaSeleccionada.id);
+      setVistaActual('lobby');
+      setPartidaSeleccionada(null);
   };
 
   // --- LÓGICA DE JOIN / ARENA ---
@@ -281,12 +312,20 @@ export default function BloxypotCoinflip() {
   const confirmarUnionYJugar = async () => {
     if (!dataJoinValidacion.valida) return alert("Pets are outside the 2% range!");
     
+    // Inyectamos nuestros datos de perfil reales en el JSONB
+    const nuevosDatosPartida = {
+        ...partidaSeleccionada.datos_partida_raw,
+        challenger_name: currentUser.username,
+        avatar_challenger: currentUser.avatar_url
+    };
+
     const { data, error } = await supabase
       .from('partidas')
       .update({ 
         retador_id: currentUser.id,
         apuesta_retador: selectedPetsToJoin,
-        estado: 'in_progress' 
+        estado: 'in_progress',
+        datos_partida: nuevosDatosPartida
       })
       .eq('id', partidaSeleccionada.id)
       .select()
@@ -307,7 +346,7 @@ export default function BloxypotCoinflip() {
   };
 
   const iniciarCinematicaMoneda = (datosPartida) => {
-    if (animacionIniciada.current) return; // Prevenir que se ejecute dos veces
+    if (animacionIniciada.current) return; 
     animacionIniciada.current = true;
     
     setGirando(false); 
@@ -334,26 +373,23 @@ export default function BloxypotCoinflip() {
   const ejecutarTiroRPC = async (datosPartida) => {
     setGirando(true);
 
-    // Llamamos a Supabase para resolver seguro (Usa la RPC que creamos)
     const { data: resultado, error } = await supabase
       .rpc('resolver_partida_coinflip', { p_partida_id: datosPartida.id });
 
-    // Fallback por si la RPC no existe aún, para que no se rompa la prueba
+    // Fallback por si la RPC no existe aún
     let ganaHeads = true;
     let servidorLadoGanador = 'Heads';
     
     if (error) {
-        console.warn("RPC no conectada o error. Usando Random simulado por ahora.", error);
+        console.warn("Usando Random simulado por error RPC.", error);
         ganaHeads = Math.random() < 0.5;
         servidorLadoGanador = ganaHeads ? 'Heads' : 'Tails';
-        // Simulamos actualización manual para la prueba
         await supabase.from('partidas').update({ estado: 'completed', resultado: { lado_ganador: servidorLadoGanador } }).eq('id', datosPartida.id);
     } else {
         servidorLadoGanador = resultado.lado_ganador;
         ganaHeads = servidorLadoGanador === 'Heads';
     }
 
-    // Animación de físicas calculadas
     setTimeout(() => {
       setRotacion(prevRotacion => {
         const vueltasBase = prevRotacion + 3600; 
@@ -438,12 +474,15 @@ export default function BloxypotCoinflip() {
                   )}
 
                   <div className="flex items-center gap-3 justify-center xl:justify-start mt-2 xl:mt-0">
+                    {/* AVATAR REAL DEL CREADOR */}
                     <AvatarVS img={game.avatar} side={game.lado} />
                     <strong className="text-lg font-black text-[#555b82] italic">VS</strong>
+                    
+                    {/* AVATAR REAL DEL RETADOR (SI EXISTE) */}
                     {game.estado === 'waiting' ? (
                         <AvatarVS isWaiting={true} />
                     ) : (
-                        <AvatarVS img="https://api.dicebear.com/7.x/avataaars/svg?seed=ChallengerUser" side={game.lado === 'Heads' ? 'Tails' : 'Heads'} />
+                        <AvatarVS img={game.avatarChallenger} side={game.lado === 'Heads' ? 'Tails' : 'Heads'} />
                     )}
                   </div>
 
@@ -558,6 +597,32 @@ export default function BloxypotCoinflip() {
         )}
 
         {/* =========================================
+            VISTA DE ESPERA (LA VENTANITA NEGRA P/ EL CREADOR)
+        ========================================= */}
+        {vistaActual === 'esperando' && partidaSeleccionada && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4">
+                <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-8 max-w-sm w-full flex flex-col items-center text-center">
+                    
+                    {/* Loader con el avatar real */}
+                    <div className="relative w-24 h-24 mb-6">
+                        <div className="absolute inset-0 rounded-full border-4 border-[#252839] border-t-[#6C63FF] animate-spin"></div>
+                        <img src={partidaSeleccionada.avatar} className="w-full h-full rounded-full object-cover p-1.5" alt="Tú" />
+                    </div>
+
+                    <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Waiting...</h2>
+                    <p className="text-[#8f9ac6] mb-8 font-bold text-sm">Your game is live. Waiting for a challenger to join.</p>
+                    
+                    <button 
+                        onClick={cancelarPartida} 
+                        className="w-full h-12 rounded-lg font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500/20 text-red-500 hover:text-red-400"
+                    >
+                        CANCEL GAME
+                    </button>
+                </div>
+            </div>
+        )}
+
+        {/* =========================================
             VISTA 3: ARENA (LA MONEDA EN 3D)
         ========================================= */}
         {vistaActual === 'arena' && partidaSeleccionada && (
@@ -575,8 +640,8 @@ export default function BloxypotCoinflip() {
                 <div className="flex flex-col items-center gap-2">
                     {partidaSeleccionada.estado === 'in_progress' || partidaSeleccionada.estado === 'completed' ? (
                         <>
-                           <AvatarVS img="https://api.dicebear.com/7.x/avataaars/svg?seed=Challenger" side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} />
-                           <span className="text-white font-bold">Challenger</span>
+                           <AvatarVS img={partidaSeleccionada.avatarChallenger} side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} />
+                           <span className="text-white font-bold">{partidaSeleccionada.challenger}</span>
                         </>
                     ) : (
                         <>
@@ -640,7 +705,7 @@ export default function BloxypotCoinflip() {
           MODAL JOIN
       ========================================= */}
       {modalJoinAbierto && partidaSeleccionada && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center p-6 border-b border-[#252839]">
               <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-2">
