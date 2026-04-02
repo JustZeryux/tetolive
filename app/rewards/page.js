@@ -1,165 +1,208 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/utils/Supabase';
 
-const RedCoin = ({cls="w-4 h-4"}) => <img src="/red-coin.png" className={`${cls} inline-block`} alt="R" onError={e=>e.target.style.display='none'}/>;
-const GreenCoin = ({cls="w-4 h-4"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
+const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
+const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
 
 const formatValue = (val) => {
+  if (typeof val !== 'number') return val;
   if (val >= 1000000) return parseFloat((val / 1000000).toFixed(2)) + 'M';
   if (val >= 1000) return parseFloat((val / 1000).toFixed(2)) + 'K';
   return val.toLocaleString();
 };
 
 export default function RewardsPage() {
-  // Datos simulados del usuario
-  const userStats = {
-    level: 42,
-    rank: 'Gold',
-    wagered: 15500000,
-    nextRankWager: 25000000,
-    rakebackAvailable: 125000,
-    rakebackPercentage: 5, // 5% de lo apostado se devuelve
-  };
+  const [currentUser, setCurrentUser] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0); // Segundos restantes
+  const [cargando, setCargando] = useState(true);
+  const [procesando, setProcesando] = useState(false);
 
-  const progressPct = (userStats.wagered / userStats.nextRankWager) * 100;
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+          setCargando(false);
+          return;
+      }
+      setCurrentUser(user);
 
-  // Cajas Diarias - Escalan con el nivel
-  const DAILY_CASES = [
-    { id: 1, name: 'Bronze Case', levelReq: 0, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#cd7f32', status: 'available' },
-    { id: 2, name: 'Silver Case', levelReq: 10, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#9ca3af', status: 'claimed' },
-    { id: 3, name: 'Gold Case', levelReq: 30, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#facc15', status: 'available' },
-    { id: 4, name: 'Castigo Divino Case', levelReq: 50, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#ef4444', status: 'locked' },
-    { id: 5, name: 'Agujero Negro Case', levelReq: 80, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#a855f7', status: 'locked' },
-    { id: 6, name: 'Diamond Case', levelReq: 100, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#38bdf8', status: 'locked' },
-  ];
+      // Traer la fecha del último reclamo
+      const { data: profile } = await supabase
+        .from('perfiles')
+        .select('ultimo_reclamo_diario')
+        .eq('id', user.id)
+        .single();
 
-  const claimRakeback = () => {
-    alert("Rakeback claimed! Added to your Green Balance.");
-  };
+      if (profile && profile.ultimo_reclamo_diario) {
+          const lastClaim = new Date(profile.ultimo_reclamo_diario).getTime();
+          const now = Date.now();
+          const hours24 = 24 * 60 * 60 * 1000;
+          const nextClaimTime = lastClaim + hours24;
+          
+          if (now < nextClaimTime) {
+              setTimeLeft(Math.floor((nextClaimTime - now) / 1000));
+          } else {
+              setTimeLeft(0);
+          }
+      }
+      setCargando(false);
+    };
 
-  const openDaily = async (caja) => {
-    if (caja.status === 'locked') return alert(`Necesitas nivel ${caja.levelReq} para abrir esta caja.`);
-    if (caja.status === 'claimed') return alert("Ya reclamaste esto hoy. ¡Vuelve mañana!");
+    fetchUserData();
+  }, []);
 
-    // Llamada real a Supabase
-    const { data, error } = await supabase.rpc('claim_daily_reward');
+  // Lógica del Reloj
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLeft]);
 
-    if (error) {
-      alert("❌ Error: " + error.message);
-    } else if (data && data.success) {
-      alert(`🎉 ¡Felicidades! Abriste la ${caja.name} y ganaste una mascota de $${data.value.toLocaleString()}`);
-      // Aquí podrías recargar la página o actualizar el estado para que salga como 'claimed'
-      window.location.reload(); 
+  const claimDaily = async () => {
+    if (!currentUser) return alert("Debes iniciar sesión para reclamar.");
+    if (timeLeft > 0) return alert("Aún no es hora de tu recompensa.");
+    
+    setProcesando(true);
+    const { data, error } = await supabase.rpc('reclamar_recompensa_diaria', { p_user_id: currentUser.id });
+
+    if (error || data?.error) {
+        alert("Error al reclamar: " + (data?.error || error.message));
     } else {
-      alert(`⏳ ${data.message}`);
+        alert(`¡Recompensa Diaria Reclamada!\nHas recibido ${data.recompensa_roja} 🔴 y ${data.recompensa_verde} 🟢.`);
+        setTimeLeft(24 * 60 * 60); // Reiniciar reloj visualmente a 24h
     }
+    setProcesando(false);
+  };
+
+  const formatTime = (totalSeconds) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 animate-fade-in">
-      <div className="max-w-[1000px] mx-auto space-y-8">
+    <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 animate-fade-in relative overflow-hidden">
+      
+      {/* Luces de fondo decorativas */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[400px] bg-gradient-to-b from-[#6C63FF]/20 to-transparent blur-[100px] pointer-events-none"></div>
+
+      <div className="max-w-[1000px] mx-auto relative z-10">
         
-        {/* HEADER & RAKEBACK PANEL */}
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] drop-shadow-md mb-4">
+            Rewards Hub
+          </h1>
+          <p className="text-[#8f9ac6] font-bold text-lg">Claim free coins, level up, and unlock exclusive cases.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* USER LEVEL PROGRESS */}
-          <div className="flex-[2] bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 relative overflow-hidden shadow-xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#facc15] opacity-5 blur-[100px] pointer-events-none"></div>
+          {/* =========================================
+              RECOMPENSA DIARIA (DAILY FAUCET)
+          ========================================= */}
+          <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-8 shadow-2xl flex flex-col items-center relative overflow-hidden group">
             
-            <h2 className="text-2xl font-black uppercase tracking-widest mb-6">VIP Progress 🌟</h2>
+            <div className="absolute inset-0 bg-gradient-to-b from-[#facc15]/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
             
-            <div className="flex items-center gap-6 mb-6">
-              <div className="w-20 h-20 rounded-full border-4 border-[#facc15] bg-[#141323] flex items-center justify-center shadow-[0_0_20px_rgba(250,204,21,0.2)]">
-                <span className="text-3xl font-black text-[#facc15]">{userStats.level}</span>
-              </div>
-              <div className="flex-1">
+            <div className="w-32 h-32 mb-6 relative">
+               <div className="absolute inset-0 bg-[#facc15] blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity animate-pulse"></div>
+               <img src="https://cdn-icons-png.flaticon.com/512/5132/5132168.png" alt="Chest" className="w-full h-full object-contain relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-500" />
+            </div>
+
+            <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-2 z-10">Daily Reward</h2>
+            <p className="text-[#8f9ac6] text-center text-sm font-bold mb-6 z-10">Come back every 24 hours to claim your free coins and start playing.</p>
+
+            <div className="flex gap-4 mb-8 z-10">
+               <div className="bg-[#141323] border border-[#2F3347] px-4 py-2 rounded-xl flex flex-col items-center shadow-inner min-w-[100px]">
+                   <span className="text-[#555b82] text-[10px] font-black uppercase tracking-widest">Guaranteed</span>
+                   <span className="text-xl font-black text-white flex items-center gap-1.5"><RedCoin cls="w-5 h-5"/> 5K</span>
+               </div>
+               <div className="bg-[#141323] border border-[#2F3347] px-4 py-2 rounded-xl flex flex-col items-center shadow-inner min-w-[100px]">
+                   <span className="text-[#555b82] text-[10px] font-black uppercase tracking-widest">Bonus</span>
+                   <span className="text-xl font-black text-[#22c55e] flex items-center gap-1.5"><GreenCoin cls="w-5 h-5"/> 100</span>
+               </div>
+            </div>
+
+            {cargando ? (
+                <div className="w-full h-14 bg-[#141323] border border-[#2F3347] rounded-xl flex items-center justify-center">
+                   <div className="w-6 h-6 border-2 border-[#555b82] border-t-white rounded-full animate-spin"></div>
+                </div>
+            ) : timeLeft > 0 ? (
+                <button disabled className="w-full h-14 bg-[#141323] border border-[#2F3347] rounded-xl font-black text-[#555b82] uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed">
+                    <span>Available in</span>
+                    <span className="text-[#8f9ac6]">{formatTime(timeLeft)}</span>
+                </button>
+            ) : (
+                <button 
+                  onClick={claimDaily}
+                  disabled={procesando}
+                  className="w-full h-14 bg-gradient-to-r from-[#facc15] to-[#eab308] hover:from-[#fef08a] hover:to-[#facc15] text-[#0b0e14] rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:shadow-[0_0_30px_rgba(250,204,21,0.6)] hover:-translate-y-1 z-10 disabled:opacity-50"
+                >
+                  CLAIM NOW
+                </button>
+            )}
+          </div>
+
+          {/* =========================================
+              SISTEMA DE NIVELES (LEVEL REWARDS)
+          ========================================= */}
+          <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-8 shadow-2xl flex flex-col relative overflow-hidden group">
+            <h2 className="text-xl font-black uppercase tracking-widest text-white mb-2 z-10 border-b border-[#252839] pb-4">Level Up Rewards</h2>
+            <p className="text-[#8f9ac6] text-sm font-bold mb-6 z-10 mt-4">Play games to earn XP. Reach new levels to unlock permanent perks and instant bonuses.</p>
+
+            {/* Progreso visual */}
+            <div className="bg-[#141323] border border-[#2F3347] rounded-xl p-4 mb-6 z-10">
                 <div className="flex justify-between items-end mb-2">
-                  <div>
-                    <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Current Rank</p>
-                    <p className="text-xl font-black text-[#facc15]">{userStats.rank}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Wagered</p>
-                    <p className="font-bold flex items-center gap-1"><GreenCoin cls="w-3 h-3"/> {formatValue(userStats.wagered)} / {formatValue(userStats.nextRankWager)}</p>
-                  </div>
+                    <span className="text-white font-black">Level 1</span>
+                    <span className="text-[#8f9ac6] font-bold text-xs">450 / 1000 XP</span>
                 </div>
-                {/* PROGRESS BAR */}
-                <div className="h-4 w-full bg-[#141323] rounded-full overflow-hidden border border-[#252839]">
-                  <div 
-                    className="h-full bg-gradient-to-r from-[#facc15] to-[#eab308] shadow-[0_0_10px_#facc15] transition-all duration-1000"
-                    style={{ width: `${progressPct}%` }}
-                  ></div>
+                <div className="w-full h-2 bg-[#0b0e14] rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#6C63FF] to-[#a855f7] w-[45%] shadow-[0_0_10px_#a855f7]"></div>
                 </div>
-              </div>
+                <p className="text-[#555b82] text-[10px] font-black uppercase tracking-widest text-center mt-3">Level 2 unlocks at 1,000 XP</p>
             </div>
-            <p className="text-xs text-[#8f9ac6] font-medium italic">Level up to unlock better Daily Cases and higher Rakeback percentages.</p>
-          </div>
 
-          {/* RAKEBACK CLAIM */}
-          <div className="flex-[1] bg-[#1c1f2e] border border-[#22c55e]/30 rounded-2xl p-6 flex flex-col justify-center items-center text-center shadow-[0_0_30px_rgba(34,197,94,0.1)] relative">
-            <h3 className="text-[#8f9ac6] text-sm font-bold uppercase tracking-widest mb-2">Available Rakeback</h3>
-            <div className="text-4xl font-black text-[#22c55e] flex items-center justify-center gap-2 mb-2 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
-              <GreenCoin cls="w-8 h-8" /> {formatValue(userStats.rakebackAvailable)}
+            <div className="space-y-3 z-10 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                {/* Recompensa Nivel 2 */}
+                <div className="bg-[#141323] border border-[#2F3347] rounded-xl p-3 flex items-center justify-between opacity-50 grayscale">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#2a2e44] flex items-center justify-center font-black text-white">2</div>
+                        <div>
+                            <p className="text-white font-bold text-sm">Level 2 Bonus</p>
+                            <p className="text-[#555b82] text-xs font-black"><GreenCoin cls="w-3 h-3"/> +500 <span className="mx-1">•</span> <RedCoin cls="w-3 h-3"/> +10K</p>
+                        </div>
+                    </div>
+                    <span className="text-[#555b82] text-xl">🔒</span>
+                </div>
+
+                {/* Recompensa Nivel 10 */}
+                <div className="bg-[#141323] border border-[#2F3347] rounded-xl p-3 flex items-center justify-between opacity-50 grayscale">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#2a2e44] flex items-center justify-center font-black text-white">10</div>
+                        <div>
+                            <p className="text-white font-bold text-sm">VIP Status</p>
+                            <p className="text-[#555b82] text-xs font-black">Daily rewards doubled</p>
+                        </div>
+                    </div>
+                    <span className="text-[#555b82] text-xl">🔒</span>
+                </div>
             </div>
-            <p className="text-xs text-[#8f9ac6] mb-6 font-bold">You are earning <span className="text-white">{userStats.rakebackPercentage}%</span> back on every bet.</p>
-            
-            <button 
-              onClick={claimRakeback}
-              disabled={userStats.rakebackAvailable === 0}
-              className="w-full py-3 rounded-xl font-black text-sm text-[#0b0e14] uppercase tracking-widest bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] transition-all shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_25px_rgba(34,197,94,0.6)] hover:-translate-y-1 disabled:opacity-50 disabled:grayscale"
-            >
-              Claim Rakeback
-            </button>
           </div>
+
         </div>
-
-        {/* DAILY CASES GRID */}
-        <div>
-          <h2 className="text-2xl font-black uppercase tracking-widest mb-2">Daily Cases 🎁</h2>
-          <p className="text-[#8f9ac6] font-bold mb-6">Come back every 24 hours to claim your free cases. Reach higher levels to unlock premium boxes.</p>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {DAILY_CASES.map((caja) => (
-              <div 
-                key={caja.id} 
-                className={`relative bg-[#141323] border ${caja.status === 'available' ? 'border-[#3AFF4E] shadow-[0_0_15px_rgba(58,255,78,0.2)] hover:-translate-y-2' : 'border-[#2F3347]'} rounded-xl p-4 flex flex-col items-center transition-all duration-300 group ${caja.status === 'locked' ? 'opacity-60 grayscale' : 'cursor-pointer'}`}
-                onClick={() => openDaily(caja)}
-              >
-                {/* Visual Glow */}
-                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `radial-gradient(circle at 50% 50%, ${caja.color} 0%, transparent 70%)` }}></div>
-                
-                {/* Level Badge */}
-                <div className="absolute top-2 left-2 bg-[#0b0e14] border border-[#252839] px-2 py-0.5 rounded text-[10px] font-black text-white z-20 flex items-center gap-1">
-                  LVL {caja.levelReq}
-                </div>
-
-                {/* Status Icon */}
-                {caja.status === 'locked' && <div className="absolute top-2 right-2 text-xl z-20">🔒</div>}
-                {caja.status === 'claimed' && <div className="absolute top-2 right-2 text-xl z-20">⏳</div>}
-
-                <img 
-                  src={caja.img} 
-                  alt={caja.name} 
-                  className={`w-20 h-20 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] mb-4 z-10 transition-transform duration-300 ${caja.status === 'available' ? 'group-hover:scale-110 animate-float' : ''}`} 
-                  style={{filter: `drop-shadow(0 0 15px ${caja.color}50)`}} 
-                />
-                
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest z-10 text-center mb-3 h-8 flex items-center justify-center">{caja.name}</h3>
-                
-                {/* Botón de estado */}
-                <div className={`w-full py-2 rounded-lg text-[10px] font-black uppercase tracking-widest text-center z-10 border ${
-                  caja.status === 'available' ? 'bg-[#3AFF4E]/10 text-[#3AFF4E] border-[#3AFF4E]/30' : 
-                  caja.status === 'claimed' ? 'bg-[#252839] text-[#8f9ac6] border-transparent' : 
-                  'bg-[#0b0e14] text-[#555b82] border-[#252839]'
-                }`}>
-                  {caja.status === 'available' ? 'Open Now' : caja.status === 'claimed' ? 'Claimed' : 'Locked'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #2F3347; border-radius: 10px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}} />
     </div>
   );
 }
