@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/utils/Supabase'; // Conexión a DB
 import LoginButton from './LoginButton'; 
-
+import TetoPlayer from './TetoPlayer';
 // Importa las bellezas que creamos
 import EpicToasts from '@/components/EpicToasts';
 import SettingsModal from '@/components/SettingsModal';
@@ -402,7 +402,14 @@ export default function CasinoLayout({ children }) {
 
       {settingsAbierto && <SettingsModal onClose={() => setSettingsAbierto(false)} />}
       <EpicToasts />
-      <MobileBottomNav onOpenChat={() => setChatAbierto(!chatAbierto)} />
+        {/* AQUI ESTÁ EL TETO PLAYER */}
+      <TetoPlayer isMobileVisible={musicMovilAbierto} setIsMobileVisible={setMusicMovilAbierto} />
+      
+      {/* ACTUALIZAMOS EL NAV PARA PASARLE LA FUNCIÓN DEL BOTÓN */}
+      <MobileBottomNav 
+        onOpenChat={() => setChatAbierto(!chatAbierto)} 
+        onToggleMusic={() => setMusicMovilAbierto(!musicMovilAbierto)} 
+      />
 
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
