@@ -74,14 +74,14 @@ export default function BloxypotCoinflip() {
   // Lobby Conectado a Supabase
   const [lobbyGames, setLobbyGames] = useState([]);
 
-  useEffect(() => {
+useEffect(() => {
     // 0. Obtener Usuario Actual y su PERFIL REAL
-    const initUser = async () => {
+    const initUserAndInventory = async () => {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
-            // Ir a la tabla perfiles (Ajusta 'perfiles' si tu tabla se llama diferente, ej. 'profiles' o 'users')
+            // Ir a la tabla REAL
             const { data: profile } = await supabase
-                .from('perfiles')
+                .from('profiles') // <--- CORREGIDO A PROFILES
                 .select('username, avatar_url')
                 .eq('id', authData.user.id)
                 .single();
@@ -91,14 +91,30 @@ export default function BloxypotCoinflip() {
                 username: profile?.username || 'Player',
                 avatar_url: profile?.avatar_url || '/default-avatar.png'
             });
+
+            // 1. CARGAR INVENTARIO REAL
+            // Asegúrate de que el nombre de la tabla de inventario en tu BD sea 'inventarios' o ajusta el nombre.
+            const { data: inventoryData, error } = await supabase
+                .from('inventarios') // <-- TABLA DE TUS MASCOTAS
+                .select('*')
+                .eq('user_id', authData.user.id);
+
+            if (inventoryData && !error) {
+               setMisPets(inventoryData.sort((a, b) => b.valor - a.valor));
+            } else {
+               setMisPets([]); // Si no tienes mascotas o falla, se queda vacío.
+            }
+            
         } else {
-            // Mock temporal si no estás logueado para que puedas probar
             let tempId = localStorage.getItem('temp_user_id');
             if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
             setCurrentUser({ id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar_url: '/default-avatar.png' });
         }
     };
-    initUser();
+    initUserAndInventory();
+
+    // 2. Cargar partidas de Supabase...
+    // (MANTÉN TU CÓDIGO DE CARGAR PARTIDAS QUE YA TIENES ABAJO)
 
     // 1. Cargar inventario (Mantenemos generación por ahora)
     const iniciales = [];
