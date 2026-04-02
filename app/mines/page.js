@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/utils/Supabase';
 
 // Icono de Moneda Verde para apuestas
 const GreenCoin = ({cls="w-4 h-4"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
@@ -12,10 +13,10 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
-// Matemática de Casino Real (Calcula el multiplicador basado en minas y aciertos)
+// Matemática de Casino Visual (Solo para mostrar estimaciones al usuario)
 const calculateMultiplier = (mines, clicks) => {
   if (clicks === 0) return 1.00;
-  let multiplier = 0.95; // 5% de House Edge simulado para darle realismo
+  let multiplier = 0.95; 
   for (let i = 0; i < clicks; i++) {
     multiplier *= (25 - i) / (25 - mines - i);
   }
@@ -23,18 +24,33 @@ const calculateMultiplier = (mines, clicks) => {
 };
 
 export default function MinesGame() {
-  const [saldoVerde, setSaldoVerde] = useState(25000); // Saldo de prueba
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Saldo visual (En producción, esto se debe sincronizar con la tabla perfiles)
+  const [saldoVerde, setSaldoVerde] = useState(25000); 
   const [betAmount, setBetAmount] = useState(100);
   const [minesCount, setMinesCount] = useState(3);
   
-  // Estados del juego: 'idle', 'playing', 'cashed_out', 'busted'
-  const [gameState, setGameState] = useState('idle'); 
+  // Estados del juego
+  const [activeGameId, setActiveGameId] = useState(null);
+  const [gameState, setGameState] = useState('idle'); // 'idle', 'playing', 'cashed_out', 'busted'
   const [grid, setGrid] = useState([]);
   const [safeClicks, setSafeClicks] = useState(0);
   const [shake, setShake] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Evita doble clic rápido
 
-  // Inicializar grid vacío
   useEffect(() => {
+    const initUser = async () => {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+            setCurrentUser(data.user);
+        } else {
+            let tempId = localStorage.getItem('temp_user_id');
+            if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
+            setCurrentUser({ id: tempId });
+        }
+    };
+    initUser();
     resetGrid();
   }, []);
 
@@ -43,64 +59,105 @@ export default function MinesGame() {
     setGrid(emptyGrid);
   };
 
-  const startGame = () => {
+  const startGame = async () => {
     if (betAmount > saldoVerde) return alert("Not enough Green Balance!");
     if (betAmount <= 0) return alert("Bet must be greater than 0");
+    if (!currentUser) return alert("Loading user...");
 
+    setIsProcessing(true);
+
+    // 1. Iniciar en el servidor (Descontar saldo y esconder minas)
+    const { data: partidaId, error } = await supabase.rpc('iniciar_mines', {
+        p_usuario_id: currentUser.id,
+        p_bet: betAmount,
+        p_mines: minesCount
+    });
+
+    if (error || !partidaId) {
+        setIsProcessing(false);
+        return alert("Error connecting to server. Try again.");
+    }
+
+    // 2. Actualizar UI
+    setActiveGameId(partidaId);
     setSaldoVerde(prev => prev - betAmount);
     setSafeClicks(0);
     setGameState('playing');
-
-    // Generar minas aleatorias
-    let newGrid = Array.from({ length: 25 }, (_, i) => ({ id: i, isMine: false, revealed: false }));
-    let minesPlaced = 0;
-    while (minesPlaced < minesCount) {
-      const randomIndex = Math.floor(Math.random() * 25);
-      if (!newGrid[randomIndex].isMine) {
-        newGrid[randomIndex].isMine = true;
-        minesPlaced++;
-      }
-    }
-    setGrid(newGrid);
+    resetGrid();
+    setIsProcessing(false);
   };
 
-  const handleTileClick = (index) => {
-    if (gameState !== 'playing' || grid[index].revealed) return;
+  const handleTileClick = async (index) => {
+    if (gameState !== 'playing' || grid[index].revealed || isProcessing) return;
+
+    setIsProcessing(true);
+
+    // 1. Preguntarle al servidor si hay mina
+    const { data: resultado, error } = await supabase.rpc('revelar_mina', {
+        p_partida_id: activeGameId,
+        p_celda: index
+    });
+
+    if (error) {
+        setIsProcessing(false);
+        return console.error("Error validando celda:", error);
+    }
 
     const newGrid = [...grid];
     newGrid[index].revealed = true;
 
-    if (newGrid[index].isMine) {
-      // BUSTED (Perdiste)
+    if (resultado.estado === 'busted') {
+      // 2a. Pisaste mina
       setGameState('busted');
-      revealAll(newGrid);
+      revealAllServerGrid(resultado.grid, index); // Muestra dónde estaban las reales
       triggerShake();
-    } else {
-      // SAFE (Ganaste un paso)
+      setActiveGameId(null);
+    } else if (resultado.estado === 'safe') {
+      // 2b. Celda segura
       setGrid(newGrid);
       const newClicks = safeClicks + 1;
       setSafeClicks(newClicks);
 
       // Autocashout si descubres todas las seguras
       if (newClicks === 25 - minesCount) {
-        handleCashout(newClicks);
+        handleCashout();
       }
     }
+    
+    setIsProcessing(false);
   };
 
-  const handleCashout = (currentClicks = safeClicks) => {
-    if (gameState !== 'playing' || currentClicks === 0) return;
+  const handleCashout = async () => {
+    if (gameState !== 'playing' || safeClicks === 0 || isProcessing) return;
     
-    const mult = calculateMultiplier(minesCount, currentClicks);
-    const wonAmount = Math.floor(betAmount * mult);
-    
-    setSaldoVerde(prev => prev + wonAmount);
+    setIsProcessing(true);
+
+    // 1. Validar cashout en el servidor
+    const { data: resultado, error } = await supabase.rpc('cashout_mines', {
+        p_partida_id: activeGameId
+    });
+
+    if (error) {
+        setIsProcessing(false);
+        return console.error("Error en cashout:", error);
+    }
+
+    // 2. Aplicar ganancias autorizadas por el backend
+    setSaldoVerde(prev => prev + resultado.winnings);
     setGameState('cashed_out');
-    revealAll(grid);
+    revealAllServerGrid(resultado.grid, -1);
+    setActiveGameId(null);
+    setIsProcessing(false);
   };
 
-  const revealAll = (currentGrid) => {
-    const revealedGrid = currentGrid.map(tile => ({ ...tile, revealed: true }));
+  // Función para revelar el tablero final usando los datos reales del servidor
+  const revealAllServerGrid = (serverGridArray, explodedIndex) => {
+    const revealedGrid = grid.map((tile, i) => ({
+        id: i,
+        revealed: true,
+        isMine: serverGridArray[i], // True si el servidor dice que había mina ahí
+        exploded: i === explodedIndex // Marca la que pisaste para destacarla en rojo
+    }));
     setGrid(revealedGrid);
   };
 
@@ -117,7 +174,7 @@ export default function MinesGame() {
     <div className={`min-h-[calc(100vh-80px)] bg-[#0b0e14] p-4 md:p-8 animate-fade-in ${shake ? 'animate-shake' : ''}`}>
       <div className="max-w-[1000px] mx-auto">
         
-        {/* Header con Saldo Local (Opcional, pero ayuda a la inmersión) */}
+        {/* Header con Saldo Local */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-black text-white tracking-widest uppercase drop-shadow-md">Mines</h1>
           <div className="bg-[#14171f] border border-[#222630] px-4 py-2 rounded-lg flex items-center gap-2 shadow-inner">
@@ -142,12 +199,12 @@ export default function MinesGame() {
                   type="number" 
                   value={betAmount} 
                   onChange={(e) => setBetAmount(Number(e.target.value))}
-                  disabled={gameState === 'playing'}
+                  disabled={gameState === 'playing' || isProcessing}
                   className="w-full bg-transparent text-white font-bold outline-none"
                 />
                 <div className="flex gap-1 ml-2">
-                  <button onClick={() => setBetAmount(Math.floor(betAmount / 2))} disabled={gameState === 'playing'} className="bg-[#222630] hover:bg-[#3f4354] text-[#7c8291] hover:text-white px-3 py-1 rounded text-xs font-bold transition-colors">1/2</button>
-                  <button onClick={() => setBetAmount(betAmount * 2)} disabled={gameState === 'playing'} className="bg-[#222630] hover:bg-[#3f4354] text-[#7c8291] hover:text-white px-3 py-1 rounded text-xs font-bold transition-colors">2x</button>
+                  <button onClick={() => setBetAmount(Math.floor(betAmount / 2))} disabled={gameState === 'playing' || isProcessing} className="bg-[#222630] hover:bg-[#3f4354] text-[#7c8291] hover:text-white px-3 py-1 rounded text-xs font-bold transition-colors">1/2</button>
+                  <button onClick={() => setBetAmount(betAmount * 2)} disabled={gameState === 'playing' || isProcessing} className="bg-[#222630] hover:bg-[#3f4354] text-[#7c8291] hover:text-white px-3 py-1 rounded text-xs font-bold transition-colors">2x</button>
                 </div>
               </div>
             </div>
@@ -158,7 +215,7 @@ export default function MinesGame() {
               <select 
                 value={minesCount} 
                 onChange={(e) => setMinesCount(Number(e.target.value))}
-                disabled={gameState === 'playing'}
+                disabled={gameState === 'playing' || isProcessing}
                 className="w-full bg-[#14171f] border border-[#222630] text-white font-bold p-3 rounded-lg outline-none cursor-pointer focus:border-[#ef4444] transition-colors appearance-none"
               >
                 {[...Array(24)].map((_, i) => (
@@ -182,8 +239,9 @@ export default function MinesGame() {
             {/* Action Button */}
             {gameState === 'playing' ? (
               <button 
-                onClick={() => handleCashout()}
-                className="animate-shine w-full bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] text-[#0b0e14] font-black py-4 rounded-xl text-sm tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:-translate-y-1 mt-auto flex flex-col items-center"
+                onClick={handleCashout}
+                disabled={isProcessing}
+                className="animate-shine w-full bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] text-[#0b0e14] font-black py-4 rounded-xl text-sm tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:-translate-y-1 mt-auto flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>CASHOUT</span>
                 <span className="text-xs mt-0.5 flex items-center gap-1"><GreenCoin cls="w-3 h-3"/> {formatValue(potentialWin)}</span>
@@ -191,7 +249,8 @@ export default function MinesGame() {
             ) : (
               <button 
                 onClick={startGame}
-                className="animate-shine w-full bg-gradient-to-r from-[#facc15] to-[#eab308] hover:from-[#fef08a] hover:to-[#facc15] text-[#0b0e14] font-black py-4 rounded-xl text-sm tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:shadow-[0_0_30px_rgba(250,204,21,0.6)] hover:-translate-y-1 mt-auto"
+                disabled={isProcessing}
+                className="animate-shine w-full bg-gradient-to-r from-[#facc15] to-[#eab308] hover:from-[#fef08a] hover:to-[#facc15] text-[#0b0e14] font-black py-4 rounded-xl text-sm tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:shadow-[0_0_30px_rgba(250,204,21,0.6)] hover:-translate-y-1 mt-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 BET
               </button>
@@ -215,14 +274,13 @@ export default function MinesGame() {
             <div className="grid grid-cols-5 gap-2 md:gap-3 w-full aspect-square max-w-[500px] z-10">
               {grid.map((tile, index) => {
                 
-                // Determinar el estilo basado en el estado
                 let tileClass = "bg-[#1a1e29] border-b-4 border-[#14171f] hover:bg-[#222630] cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg";
                 let content = null;
 
                 if (tile.revealed) {
                   if (tile.isMine) {
                     // MINA
-                    tileClass = `bg-[#ef4444]/20 border border-[#ef4444] shadow-[0_0_15px_rgba(239,68,68,0.4)] ${gameState === 'busted' ? 'animate-pop-in' : 'opacity-50'}`;
+                    tileClass = `bg-[#ef4444]/20 border ${tile.exploded ? 'border-[#ef4444] shadow-[0_0_30px_rgba(239,68,68,0.8)] scale-105' : 'border-[#ef4444]/50 shadow-[0_0_15px_rgba(239,68,68,0.4)] opacity-80'} ${gameState === 'busted' && tile.exploded ? 'animate-pop-in' : ''}`;
                     content = <span className="text-3xl md:text-5xl drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">💣</span>;
                   } else {
                     // DIAMANTE SEGURO
@@ -238,11 +296,9 @@ export default function MinesGame() {
                   <div 
                     key={index}
                     onClick={() => handleTileClick(index)}
-                    className={`rounded-xl flex items-center justify-center relative overflow-hidden ${tileClass}`}
+                    className={`rounded-xl flex items-center justify-center relative overflow-hidden ${tileClass} ${isProcessing && !tile.revealed && gameState === 'playing' ? 'opacity-70 pointer-events-none' : ''}`}
                   >
-                    {/* Efecto de cristal oscuro sobre los botones sin revelar */}
                     {!tile.revealed && <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent"></div>}
-                    
                     {content}
                   </div>
                 );
