@@ -233,18 +233,16 @@ useEffect(() => {
   };
 
 const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
-if (!currentUser || petsSeleccionadas.length === 0) return alert("Selecciona pets");
+    if (!currentUser || petsSeleccionadas.length === 0) return alert("Selecciona pets");
 
-    // 1. Sumamos el valor real de las pets
     const valorTotal = petsSeleccionadas.reduce((sum, pet) => sum + pet.valor, 0);
 
-    // 2. Insertamos la partida en la base de datos
     const { data: nuevaPartida, error } = await supabase
         .from('partidas')
         .insert({
             modo_juego: 'coinflip',
             creador_id: currentUser.id,
-            apuesta_creador: petsSeleccionadas, // Guardamos el array de pets completo
+            apuesta_creador: petsSeleccionadas, 
             datos_partida: { lado: ladoElegido, valor_total: valorTotal },
             estado: 'waiting'
         })
@@ -252,30 +250,19 @@ if (!currentUser || petsSeleccionadas.length === 0) return alert("Selecciona pet
         .single();
 
     if (!error) {
-        // 3. Bloqueamos las mascotas en el inventario para que no las use en otro lado
+        // Bloqueamos las mascotas
         const idsA_Bloquear = petsSeleccionadas.map(p => p.inventarioId);
-        await supabase
-            .from('inventory')
-            .update({ is_locked: true })
-            .in('id', idsA_Bloquear);
+        await supabase.from('inventory').update({ is_locked: true }).in('id', idsA_Bloquear);
             
-        alert("¡Partida creada con éxito!");
-        // Aquí cierras tu modal
-    }
-};
-
-  const { data, error } = await supabase.from('partidas').insert([newGameData]).select().single();
-
-    if (error) {
-        console.error("Error al crear partida:", error);
-        alert("Error connecting to database.");
-    } else {
-        // Lanzar la "ventanita negra" de espera y guardar la partida actual
-        const uiData = formatGameToUI(data);
+        // Lanzar la ventanita negra de espera
+        const uiData = formatGameToUI(nuevaPartida);
         setPartidaSeleccionada(uiData);
         setVistaActual('esperando'); 
         setCreatorSelectedPets([]); 
         setCreatorSide(null);
+    } else {
+        console.error("Error al crear partida:", error);
+        alert("Error connecting to database.");
     }
   };
 
