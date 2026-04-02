@@ -42,6 +42,7 @@ export default function CasesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setCurrentUser(user);
+      // Aquí usamos tu variable saldo_verde real
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setUserProfile(profile);
     }
@@ -69,21 +70,24 @@ export default function CasesPage() {
     return result;
   }, [casesData, searchTerm, sortBy]);
 
+  // --- AQUI ESTA LA LOGICA DE LA RULETA BLINDADA (spinRoulette) ---
   const openCase = async () => {
     if (!currentUser) return alert("Please log in.");
     if (spinning) return;
 
-    // --- CHECK DE DINERO ---
+    // 1. Comprobar si tiene dinero (saldo_verde)
     if (userProfile.saldo_verde < selectedCase.price) {
       setMoneyNeeded(selectedCase.price);
       setShowNoMoneyModal(true);
       return;
     }
 
+    // 2. Preparamos la UI para empezar la apertura
     setView('opening');
     setSpinning(false);
     setOffset(0);
 
+    // 3. El servidor decide QUÉ GANASTE REALMENTE y descuenta el saldo
     const { data: winner, error } = await supabase.rpc('abrir_caja', { 
         p_usuario_id: currentUser.id,
         p_case_id: selectedCase.id
@@ -94,21 +98,32 @@ export default function CasesPage() {
         return alert(winner?.error || "Error opening case.");
     }
 
-    // Actualizar saldo localmente para que el siguiente click detecte si te quedaste pobre
+    // 4. Actualizamos el saldo local para reflejar la compra de la caja
     setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - selectedCase.price}));
     setWinningItem(winner);
 
-    const track = Array.from({length: 55}, (_, i) => 
-      i === WINNING_INDEX ? winner : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
+    // 5. LA MAGIA: Armamos un carril de 60 items aleatorios de relleno...
+    const track = Array.from({length: 60}, () => 
+      selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
     );
+    // ...Y forzamos que en la posición ganadora ESTÉ EL PREMIO REAL DE LA BD
+    track[WINNING_INDEX] = winner;
     
     setSpinnerItems(track);
     setSpinning(true);
     
+    // 6. Arrancamos la animación CSS de la ruleta
     setTimeout(() => {
+      // Calculamos cuánto moverse para parar justo en el WINNING_INDEX
+      // El "Math.random() * 140 - 70" es para que no pare en el pixel exacto del centro y se vea más realista
       const targetOffset = -(WINNING_INDEX * ITEM_WIDTH) + (Math.floor(Math.random() * 140) - 70);
       setOffset(targetOffset);
-      setTimeout(() => { setSpinning(false); setView('result'); }, 5000); 
+      
+      // 7. Terminamos la animación después de 5 segundos
+      setTimeout(() => { 
+        setSpinning(false); 
+        setView('result'); 
+      }, 5000); 
     }, 100);
   };
 
@@ -208,7 +223,7 @@ export default function CasesPage() {
                 <div className="grid grid-cols-3 gap-4">
                   {selectedCase.items.map((it, i) => (
                     <div key={i} className="flex flex-col items-center p-3 rounded-2xl bg-[#0b0e14] border border-[#252839] hover:border-white/10 transition-all">
-                      <img src={it.img} className="w-16 h-16 object-contain" />
+                      <img src={it.img || it.image_url} className="w-16 h-16 object-contain" />
                       <span className="text-[10px] font-black mt-2 text-center leading-none uppercase" style={{color: it.color}}>{it.name}</span>
                     </div>
                   ))}
@@ -230,7 +245,7 @@ export default function CasesPage() {
                 }}>
                  {spinnerItems.map((it, i) => (
                    <div key={i} className="w-[180px] h-full shrink-0 flex flex-col items-center justify-center border-r border-[#252839]/30" style={{background: `linear-gradient(to bottom, ${it.color}05, transparent)`}}>
-                      <img src={it.img} className="w-24 h-24 object-contain" />
+                      <img src={it.img || it.image_url} className="w-24 h-24 object-contain" />
                       <div className="h-1 w-12 rounded-full mt-4" style={{backgroundColor: it.color}}></div>
                    </div>
                  ))}
@@ -244,7 +259,7 @@ export default function CasesPage() {
           <div className="flex flex-col items-center justify-center min-h-[70vh] animate-bounce-in">
              <div className="bg-[#14151f] p-12 rounded-[3rem] border-4 flex flex-col items-center shadow-2xl" style={{borderColor: winningItem.color}}>
                 <span className="font-black uppercase tracking-[0.3em] text-[#4a506b] mb-4">You Unboxed</span>
-                <img src={winningItem.img} className="w-64 h-64 object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] mb-8" />
+                <img src={winningItem.img || winningItem.image_url} className="w-64 h-64 object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] mb-8" />
                 <h3 className="text-4xl font-black uppercase mb-10" style={{color: winningItem.color}}>{winningItem.name}</h3>
                 <div className="flex gap-4">
                   <button onClick={() => setView('store')} className="px-10 py-4 bg-[#0b0e14] border border-[#252839] rounded-2xl font-black uppercase tracking-widest text-sm">Close</button>
