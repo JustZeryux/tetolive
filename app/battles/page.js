@@ -20,10 +20,12 @@ export default function BattlesPage() {
   // Estados Creador
   const [selectedCases, setSelectedCases] = useState([]);
   const [playerCount, setPlayerCount] = useState(2); 
+  const [isCreating, setIsCreating] = useState(false); // CANDADO PARA EVITAR DOBLE CREACIÓN
 
   // Estados Arena (Animación de Rondas)
   const [currentRound, setCurrentRound] = useState(-1);
   const [battleResults, setBattleResults] = useState(null);
+  const [isJoining, setIsJoining] = useState(false); // CANDADO PARA EVITAR UNIÓN MÚLTIPLE
   const resolvingRef = useRef(false);
 
   // --- SOLUCIÓN AL ERROR DE LAS CAJAS ---
@@ -31,7 +33,6 @@ export default function BattlesPage() {
   
   useEffect(() => {
     const loadCasesForBattles = async () => {
-      // Cargamos las columnas exactas de tu tabla 'cases'
       const { data, error } = await supabase.from('cases').select('id, name, price, image_url, items, color');
       if (data && !error) {
         setAvailableCases(data);
@@ -39,7 +40,6 @@ export default function BattlesPage() {
     };
     loadCasesForBattles();
   }, []);
-  // ------------------------------------
   
   useEffect(() => {
     // 1. Obtener Usuario
@@ -83,7 +83,6 @@ export default function BattlesPage() {
                     if (prev.estado === 'waiting' && payload.new.estado === 'in_progress') {
                         iniciarResolucionBatalla(payload.new);
                     } else if (payload.new.estado === 'completed' && !resolvingRef.current) {
-                        // Si ya se completó y apenas entramos a ver
                         setBattleResults(payload.new.resultado);
                         setCurrentRound(payload.new.datos_partida.cases.length); // Mostrar todo
                     }
@@ -110,34 +109,53 @@ export default function BattlesPage() {
   const handleCreate = async () => {
     if (selectedCases.length === 0) return alert("Add at least one case!");
     if (!currentUser) return alert("Loading user...");
+    
+    // CANDADO PARA EVITAR QUE SE CREEN 10 PARTIDAS AL DARLE MUCHOS CLICS
+    if (isCreating) return; 
+    setIsCreating(true);
 
-    const newGameData = {
-      modo_juego: 'battles',
-      creador_id: currentUser.id,
-      apuesta_creador: totalCost,
-      datos_partida: { 
+    try {
+      const datosPartida = { 
           cases: selectedCases,
           playerCount: playerCount,
           players: [{ id: currentUser.id, name: currentUser.username, avatar: currentUser.avatar_url }],
           cost: totalCost
-      },
-      estado: 'waiting'
-    };
+      };
 
-    const { data, error } = await supabase.from('partidas').insert([newGameData]).select().single();
-    if (!error && data) {
-        setSelectedCases([]);
-        setView('arena');
-        setActiveBattle(data);
-        setBattleResults(null);
-        setCurrentRound(-1);
+      // LLAMADA AL SERVIDOR: Crea la partida y descuenta el saldo verde al creador automáticamente
+      const { data, error } = await supabase.rpc('create_battle', {
+        p_creador_id: currentUser.id,
+        p_apuesta: totalCost,
+        p_datos_partida: datosPartida
+      });
+
+      if (error) {
+        console.error("Error creating battle:", error);
+        alert(error.message || "Error al crear la batalla. Verifica tu saldo verde.");
+        return;
+      }
+
+      // Si se creó con éxito, buscamos la nueva partida para mostrarla en la arena
+      if (data && data.status === 'success') {
+          const { data: nuevaPartida } = await supabase.from('partidas').select('*').eq('id', data.partida_id).single();
+          if (nuevaPartida) {
+              setSelectedCases([]);
+              setView('arena');
+              setActiveBattle(nuevaPartida);
+              setBattleResults(null);
+              setCurrentRound(-1);
+          }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsCreating(false);
     }
   };
 
   // --- LÓGICA DE UNIRSE / ARENA ---
   const joinBattle = async (battle) => {
     if (battle.estado === 'completed' || battle.estado === 'in_progress') {
-        // Solo mirar
         setActiveBattle(battle);
         if(battle.resultado) setBattleResults(battle.resultado);
         setCurrentRound(battle.datos_partida.cases.length);
@@ -145,27 +163,48 @@ export default function BattlesPage() {
         return;
     }
 
-    // Unirse activamente
     const currentPlayers = battle.datos_partida.players || [];
     if (currentPlayers.some(p => p.id === currentUser.id)) {
-        // Ya estoy en la partida, solo abro la vista
         setActiveBattle(battle); setView('arena'); return;
     }
 
-    const updatedPlayers = [...currentPlayers, { id: currentUser.id, name: currentUser.username, avatar: currentUser.avatar_url }];
-    const isFull = updatedPlayers.length === battle.datos_partida.playerCount;
+    // CANDADO PARA EVITAR DOBLE CLIC
+    if (isJoining) return;
+    setIsJoining(true);
 
-    const { data, error } = await supabase.from('partidas').update({
-        datos_partida: { ...battle.datos_partida, players: updatedPlayers },
-        estado: isFull ? 'in_progress' : 'waiting'
-    }).eq('id', battle.id).select().single();
+    try {
+      const userInfo = { id: currentUser.id, name: currentUser.username, avatar: currentUser.avatar_url };
 
-    if (!error && data) {
-        setActiveBattle(data);
+      // LLAMADA AL SERVIDOR: Te une a la partida, te descuenta el saldo y verifica si ya se llenó
+      const { data, error } = await supabase.rpc('join_battle', {
+        p_partida_id: battle.id,
+        p_user_id: currentUser.id,
+        p_user_info: userInfo
+      });
+
+      if (error) {
+        console.error("Error joining:", error);
+        alert(error.message || "Error al unirse. Verifica tu saldo verde o si la partida ya no está disponible.");
+        return;
+      }
+
+      // Preparamos la arena visualmente mientras Realtime procesa todo
+      const { data: updatedBattle } = await supabase.from('partidas').select('*').eq('id', battle.id).single();
+      if (updatedBattle) {
+        setActiveBattle(updatedBattle);
         setView('arena');
         setBattleResults(null);
         setCurrentRound(-1);
-        if (isFull) iniciarResolucionBatalla(data);
+
+        // Si la partida se llenó, tu propia computadora le dice al servidor que abra las cajas
+        if (data.is_full) {
+            iniciarResolucionBatalla(updatedBattle);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -173,18 +212,19 @@ export default function BattlesPage() {
       if (resolvingRef.current) return;
       resolvingRef.current = true;
 
-      // Llamar a Supabase para abrir todas las cajas de golpe
+      // TU RPC ORIGINAL PARA ABRIR CAJAS. 
+      // (Esta función debe hacer el random y asignar al ganador las pets en tu base de datos)
       const { data: _, error } = await supabase.rpc('resolver_partida_battles', { p_partida_id: battle.id });
       
       if(error) console.error("Error RPC Battles:", error);
 
-      // Esperar a que Realtime nos devuelva el registro actualizado con el "resultado", o forzar fetch
+      // Esperar a que Realtime nos devuelva el registro actualizado con el "resultado"
       setTimeout(async () => {
           const { data: updatedBattle } = await supabase.from('partidas').select('*').eq('id', battle.id).single();
           if (updatedBattle && updatedBattle.resultado) {
               setBattleResults(updatedBattle.resultado);
               
-              // Animación: Revelar ronda por ronda
+              // Animación: Revelar ronda por ronda de forma sincronizada
               let r = 0;
               const totalRounds = updatedBattle.datos_partida.cases.length;
               const interval = setInterval(() => {
@@ -280,7 +320,6 @@ export default function BattlesPage() {
                     {pData.cases.map((caja, idx) => (
                       <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center">
                         <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
-                        {/* Se corrige img -> image_url para cargar de DB */}
                         <img src={caja.image_url} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color}80)`}}/>
                       </div>
                     ))}
@@ -295,9 +334,10 @@ export default function BattlesPage() {
                     </div>
                     <button 
                       onClick={() => joinBattle(battle)}
-                      className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md group-hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'}`}
+                      disabled={isJoining}
+                      className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md group-hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'} disabled:opacity-50`}
                     >
-                      {isCompleted ? 'View Battle' : (pData.players.some(p => p.id === currentUser?.id) ? 'View' : 'Join Battle')}
+                      {isJoining ? 'Wait...' : (isCompleted ? 'View Battle' : (pData.players.some(p => p.id === currentUser?.id) ? 'View' : 'Join Battle'))}
                     </button>
                   </div>
                 </div>
@@ -349,7 +389,6 @@ export default function BattlesPage() {
                         <div key={caja.uniqueId} className="bg-[#1c1f2e] border border-[#252839] rounded-lg p-2 flex items-center gap-3 animate-fade-in">
                           <span className="text-[#555b82] font-black text-xs w-4">{idx + 1}</span>
                           <div className="w-8 h-8 relative shrink-0">
-                            {/* Se corrige img -> image_url */}
                             <img src={caja.image_url} className="w-full h-full object-contain drop-shadow-md z-10 relative" alt="case"/>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -369,8 +408,8 @@ export default function BattlesPage() {
                         <GreenCoin cls="w-6 h-6"/> {formatValue(totalCost)}
                       </span>
                     </div>
-                    <button onClick={handleCreate} disabled={selectedCases.length === 0} className="w-full py-4 bg-gradient-to-r from-[#ef4444] to-[#dc2626] hover:from-[#f87171] text-white font-black rounded-xl text-sm uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(239,68,68,0.4)] disabled:opacity-50 disabled:grayscale hover:-translate-y-1">
-                      Call to Battle
+                    <button onClick={handleCreate} disabled={selectedCases.length === 0 || isCreating} className="w-full py-4 bg-gradient-to-r from-[#ef4444] to-[#dc2626] hover:from-[#f87171] text-white font-black rounded-xl text-sm uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(239,68,68,0.4)] disabled:opacity-50 disabled:grayscale hover:-translate-y-1">
+                      {isCreating ? 'Creating...' : 'Call to Battle'}
                     </button>
                   </div>
                 </div>
@@ -380,11 +419,9 @@ export default function BattlesPage() {
               <div className="w-full lg:w-2/3 bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-xl">
                 <h3 className="text-white text-lg font-black uppercase tracking-widest mb-6">Available Cases</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {/* AQUÍ SE HACE EL CAMBIO PARA USAR LOS DATOS DE LA BD */}
                   {availableCases.map((caja) => (
                     <div key={caja.id} onClick={() => addCase(caja)} className="bg-[#141323] border border-[#252839] hover:border-[#ef4444] rounded-xl p-4 flex flex-col items-center cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_5px_15px_rgba(239,68,68,0.15)] group relative">
                       <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
-                      {/* Se corrige img -> image_url */}
                       <img src={caja.image_url} className="w-16 h-16 object-contain drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform mb-3 relative z-10" alt={caja.name} style={{filter: `drop-shadow(0 0 10px ${caja.color}60)`}}/>
                       <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1 text-center z-10">{caja.name}</h4>
                       <p className="text-[#3AFF4E] font-black text-xs flex items-center gap-1 z-10"><GreenCoin cls="w-3 h-3"/> {formatValue(caja.price)}</p>
@@ -473,14 +510,12 @@ export default function BattlesPage() {
                                         
                                         {!revealedItem && !isCurrentSpinning && (
                                             <div className="opacity-40 grayscale flex flex-col items-center">
-                                                {/* Se corrige img -> image_url */}
                                                 <img src={caja.image_url} className="w-10 h-10 object-contain drop-shadow-md" alt="case"/>
                                             </div>
                                         )}
 
                                         {isCurrentSpinning && (
                                             <div className="flex flex-col items-center animate-pulse">
-                                                {/* Se corrige img -> image_url */}
                                                 <img src={caja.image_url} className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-bounce" alt="case" style={{filter: `drop-shadow(0 0 10px ${caja.color}80)`}}/>
                                                 <span className="text-[10px] font-black text-[#8f9ac6] mt-2 uppercase">Unboxing...</span>
                                             </div>
@@ -490,7 +525,6 @@ export default function BattlesPage() {
                                             <div className="w-full h-full flex flex-col items-center justify-center animate-fade-in relative group">
                                                 <div className="absolute inset-0 opacity-10" style={{ background: `radial-gradient(circle at center, ${revealedItem.color} 0%, transparent 70%)` }}></div>
                                                 <div className="absolute top-1 right-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-[#0b0e14]/80 border border-[#252839] text-white z-10">{revealedItem.chance}%</div>
-                                                {/* Aquí se asume que revelado sigue viniendo con .img desde el RPC de Supabase */}
                                                 <img src={revealedItem.img || revealedItem.image_url} className="w-14 h-14 object-contain drop-shadow-lg z-10 group-hover:scale-110 transition-transform" alt="item"/>
                                                 <p className="text-[10px] font-bold truncate w-full text-center px-1 z-10 mt-1" style={{color: revealedItem.color}}>{revealedItem.name}</p>
                                                 <p className="text-white font-black text-[10px] flex items-center gap-1 z-10"><GreenCoin cls="w-2.5 h-2.5"/> {formatValue(revealedItem.valor)}</p>
