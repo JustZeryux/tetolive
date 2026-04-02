@@ -42,7 +42,7 @@ const menuSections = [
   {
     title: "Community",
     links: [
-      { name: 'My Profile', path: '/profile', iconImg: '/Affiliates.png' }, // <--- AGREGADO AQUÍ
+      { name: 'My Profile', path: '/profile', iconImg: '/Affiliates.png' }, 
       { name: 'Leaderboard', path: '/leaderboard', iconImg: '/Leaderboard.png' },
       { name: 'Affiliates', path: '/affiliates', iconImg: '/Affiliates.png' },
       { name: 'Provably Fair', path: '/provably-fair', iconImg: '/ProvablyFair.png' },
@@ -69,16 +69,18 @@ export default function CasinoLayout({ children }) {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-useEffect(() => {
-    let channel; // Guardamos el canal para limpiarlo después
+  // Ref para Auto-scroll
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    let channel; 
+    let chatChannel;
 
     const initData = async () => {
-      // 1. Obtener usuario actual y sus saldos reales
       const { data: authData } = await supabase.auth.getUser();
       let tempUser = null;
 
       if (authData?.user) {
-        // Si hay login real, sacamos su perfil y saldo
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
         if (profile) {
           tempUser = { 
@@ -92,7 +94,6 @@ useEffect(() => {
           setSaldoRojo(profile.saldo_rojo || 0);
         }
 
-        // --- ESTO ES LO NUEVO: ESCUCHAR CAMBIOS EN VIVO ---
         channel = supabase.channel('perfil_updates_layout')
           .on('postgres_changes', { 
             event: 'UPDATE', 
@@ -100,39 +101,54 @@ useEffect(() => {
             table: 'profiles', 
             filter: `id=eq.${authData.user.id}` 
           }, (payload) => {
-            // Cuando la base de datos cambie (ganes o pierdas), se actualiza al instante sin recargar F5
             setSaldoVerde(payload.new.saldo_verde);
             setSaldoRojo(payload.new.saldo_rojo);
-            
-            // Actualizamos también el nivel en vivo dentro de currentUser
             setCurrentUser(prevUser => ({
               ...prevUser,
-              level: payload.new.level || prevUser.level
+              level: payload.new.level || prevUser?.level || 1,
+              theme: payload.new.theme || prevUser?.theme || 'green'
             }));
           }).subscribe();
-        // --------------------------------------------------
 
       } else {
-        // Fallback simulado para pruebas
+        // Fallback simulado
         let tempId = localStorage.getItem('temp_user_id');
         if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
         tempUser = { id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + tempId, level: 1, theme: 'purple' };
-        setSaldoVerde(5000000); // Saldo de prueba
+        setSaldoVerde(5000000); 
         setSaldoRojo(200000);
       }
       
       setCurrentUser(tempUser);
+
+      // Cargar historial de chat inicial
+      const { data: chatData } = await supabase.from('chat_mensajes').select('*').order('creado_en', { ascending: false }).limit(50);
+      if (chatData) {
+          setChatMessages(chatData.reverse());
+      }
     };
 
     initData();
 
-    // Limpiamos el canal cuando te vas de la página para no consumir memoria
+    // Suscripción al Chat Público
+    chatChannel = supabase.channel('public_chat')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_mensajes' }, (payload) => {
+        setChatMessages(prev => [...prev, payload.new]);
+      }).subscribe();
+
     return () => {
       if (channel) supabase.removeChannel(channel);
+      if (chatChannel) supabase.removeChannel(chatChannel);
     };
   }, []);
 
-  // Función para enviar mensaje a Supabase
+  // Auto-scroll del chat
+  useEffect(() => {
+      if (chatEndRef.current) {
+          chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+  }, [chatMessages, chatAbierto]);
+
   const enviarMensaje = async (e) => {
     e.preventDefault();
     if (!nuevoMensaje.trim() || enviando || !currentUser) return;
@@ -143,8 +159,8 @@ useEffect(() => {
       user_id: currentUser.id,
       username: currentUser.username,
       avatar: currentUser.avatar,
-      level: currentUser.level,
-      theme: currentUser.theme,
+      level: currentUser.level || 1,
+      theme: currentUser.theme || 'green',
       texto: nuevoMensaje.trim()
     }]);
 
@@ -166,8 +182,8 @@ useEffect(() => {
     }
   };
 
-  // Helper para formatear la hora (de timestamp a HH:MM)
   const formatearHora = (timestamp) => {
+    if (!timestamp) return "";
     const d = new Date(timestamp);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -175,9 +191,7 @@ useEffect(() => {
   return (
     <div className="flex h-screen bg-[#0b0e14] text-white overflow-hidden font-sans">
       
-      {/* ==========================================
-          SIDEBAR IZQUIERDA
-      ========================================== */}
+      {/* SIDEBAR IZQUIERDA */}
       <aside 
         className={`fixed top-0 left-0 h-full bg-[#14171f] border-r border-[#222630] flex flex-col z-50 transition-all duration-300 overflow-hidden group 
         ${menuMovilAbierto ? 'translate-x-0 w-[240px]' : '-translate-x-full md:translate-x-0 md:w-[70px] md:hover:w-[240px]'}`}
@@ -227,19 +241,15 @@ useEffect(() => {
         </nav>
       </aside>
 
-      {/* ==========================================
-          ÁREA CENTRAL
-      ========================================== */}
+      {/* ÁREA CENTRAL */}
       <div className={`flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-300 md:ml-[70px] ${chatAbierto ? 'xl:mr-[320px]' : 'xl:mr-[70px]'}`}>
         
-        {/* TOPBAR */}
         <header className="h-[80px] bg-[#14171f]/95 backdrop-blur-md border-b border-[#222630] flex items-center justify-between px-4 md:px-8 z-40 shrink-0 shadow-sm">
           <div className="flex items-center gap-4">
             <button onClick={() => setMenuMovilAbierto(true)} className="md:hidden text-[#7c8291] hover:text-white text-2xl">☰</button>
           </div>
 
           <div className="flex items-center gap-3 md:gap-5">
-            {/* SALDOS REALES */}
             <div className="hidden sm:flex bg-[#0b0e14] border border-[#222630] rounded-xl p-1.5 shadow-inner">
               <div className="px-4 py-1.5 flex items-center gap-2 border-r border-[#222630] hover:bg-[#14171f] transition-colors cursor-pointer rounded-l-lg" title="Green Balance">
                 <GreenCoin cls="w-4 h-4 floating"/> <span className="text-[#22c55e] font-black text-sm">{formatValue(saldoVerde)}</span>
@@ -253,17 +263,14 @@ useEffect(() => {
               DEPOSIT
             </button>
 
-            {/* SECCIÓN DEL PERFIL DE USUARIO */}
             <div className="flex items-center gap-3 pl-2 md:pl-4 border-l border-[#222630]">
               <LoginButton />
             </div>
 
-            {/* BOTÓN DE AJUSTES */}
             <button onClick={() => setSettingsAbierto(true)} className="p-2 text-[#7c8291] hover:text-white hover:bg-[#1a1e29] transition-colors rounded-lg" title="Settings">
               ⚙️
             </button>
 
-            {/* BOTÓN DE CHAT */}
             <button onClick={() => setChatAbierto(!chatAbierto)} className={`p-2 transition-colors rounded-lg ${chatAbierto ? 'text-white bg-[#222630]' : 'text-[#7c8291] hover:text-white hover:bg-[#1a1e29]'}`}>
               💬
             </button>
@@ -275,18 +282,16 @@ useEffect(() => {
         </main>
       </div>
 
-      {/* ==========================================
-          SIDEBAR DERECHA (CHAT)
-      ========================================== */}
+      {/* SIDEBAR DERECHA (CHAT) */}
       <aside 
         className={`fixed top-[80px] xl:top-0 right-0 h-[calc(100%-80px)] xl:h-full bg-[#171925] border-l border-[#222630] flex flex-col z-40 transition-all duration-300 overflow-hidden 
         ${chatAbierto ? 'translate-x-0 w-[320px] shadow-[-10px_0_30px_rgba(0,0,0,0.5)] xl:shadow-none' : 'translate-x-full xl:translate-x-0 xl:w-[70px]'}`}
       >
         {!chatAbierto && (
-          <div className="hidden xl:flex flex-col items-center py-6 gap-4 overflow-y-auto custom-scrollbar opacity-100 h-full w-[70px]">
+          <div className="hidden xl:flex flex-col items-center py-6 gap-4 overflow-y-auto custom-scrollbar h-full w-[70px]">
             <span className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2 border-b border-[#252839] pb-2 w-full text-center">Live</span>
-            {chatMessages.slice(0, 15).map((msg) => (
-              <div key={msg.id} className="relative group cursor-pointer" title={msg.username}>
+            {chatMessages.slice(-15).reverse().map((msg, i) => (
+              <div key={i} className="relative group cursor-pointer" title={msg.username}>
                 <div className="w-10 h-10 rounded-full border-2 border-[#22283F] group-hover:border-[#6C63FF] bg-[#1C1F2E] overflow-hidden transition-colors">
                   <img src={msg.avatar} alt="user" className="w-full h-full object-cover" />
                 </div>
@@ -320,37 +325,33 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* ZONA DE MENSAJES (flex-col-reverse mantiene el scroll abajo) */}
-            <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-3 custom-scrollbar flex flex-col-reverse">
-              <div className="space-y-3">
-                {chatMessages.length === 0 && <p className="text-center text-[#555b82] text-xs">No messages yet. Say hi!</p>}
-                
-                {/* Los mensajes se mapean al revés gracias al flex-col-reverse nativo, así que el más nuevo va abajo */}
-                {[...chatMessages].reverse().map((msg) => (
-                  <div key={msg.id} className="group flex gap-3 px-3 py-2 bg-[#1c1f2e] border border-transparent hover:border-[#252839] rounded-xl transition-colors">
-                    <div className="relative shrink-0">
-                      <div className="w-10 h-10 rounded-full border-[3px] border-[#22283F] bg-[#1C1F2E] overflow-hidden cursor-pointer">
-                        <img src={msg.avatar} className="w-full h-full object-cover" alt="avatar"/>
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className={`inline-flex items-center justify-center text-[9px] font-black border-l-2 rounded-[4px] px-1.5 py-[1px] ${getLevelStyle(msg.theme)}`}>
-                          {msg.level}
-                        </span>
-                        <span className="text-xs font-bold text-white truncate">{msg.username}</span>
-                        <span className="ml-auto text-[10px] font-medium text-[#555b82] shrink-0">{formatearHora(msg.creado_en)}</span>
-                      </div>
-                      <p className="text-[13px] font-medium leading-snug text-[#9793ba] break-words">
-                        {msg.texto}
-                      </p>
+            <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-3 custom-scrollbar flex flex-col">
+              {chatMessages.length === 0 && <p className="text-center text-[#555b82] text-xs">No messages yet. Say hi!</p>}
+              
+              {chatMessages.map((msg, idx) => (
+                <div key={idx} className="group flex gap-3 px-3 py-2 bg-[#1c1f2e] border border-transparent hover:border-[#252839] rounded-xl transition-colors animate-fade-in">
+                  <div className="relative shrink-0">
+                    <div className="w-10 h-10 rounded-full border-[3px] border-[#22283F] bg-[#1C1F2E] overflow-hidden cursor-pointer">
+                      <img src={msg.avatar} className="w-full h-full object-cover" alt="avatar"/>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className={`inline-flex items-center justify-center text-[9px] font-black border-l-2 rounded-[4px] px-1.5 py-[1px] ${getLevelStyle(msg.theme)}`}>
+                        {msg.level}
+                      </span>
+                      <span className="text-xs font-bold text-white truncate">{msg.username}</span>
+                      <span className="ml-auto text-[10px] font-medium text-[#555b82] shrink-0">{formatearHora(msg.creado_en)}</span>
+                    </div>
+                    <p className="text-[13px] font-medium leading-snug text-[#9793ba] break-words">
+                      {msg.texto}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
             </div>
 
-            {/* INPUT CHAT FORMULARIO */}
             <div className="p-4 pt-2 shrink-0">
               <form onSubmit={enviarMensaje} className="relative bg-[#141323] border border-[#252839] rounded-xl flex items-center p-1 focus-within:border-[#6C63FF] transition-colors shadow-inner">
                 <input 
@@ -374,19 +375,18 @@ useEffect(() => {
                   <span className="w-2 h-2 rounded-full bg-[#3AFF4E] shadow-[0_0_8px_#3AFF4E] animate-pulse"></span>
                   <span className="text-xs font-bold text-[#8f9ac6]">Live Chat</span>
                 </div>
-                <button className="text-xs font-bold text-[#555b82] hover:text-[#8f9ac6] transition-colors">Chat Rules</button>
               </div>
             </div>
           </div>
         )}
       </aside>
 
-      {/* MODALES Y COMPONENTES GLOBALES */}
+      {/* MODALES Y TOASTS */}
       {cajeroAbierto && (
         <div className="fixed inset-0 bg-[#0b0e14]/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md animate-fade-in">
           <div className="bg-[#14171f] border border-[#222630] rounded-2xl w-full max-w-lg p-6 flex flex-col items-center">
              <h2 className="text-xl font-black mb-4">Deposit / Withdraw</h2>
-             <p className="text-gray-400 mb-6 text-center">Cajero funcional oculto por brevedad.</p>
+             <p className="text-gray-400 mb-6 text-center">Cajero en desarrollo.</p>
              <button onClick={() => setCajeroAbierto(false)} className="bg-[#ef4444] px-6 py-2 rounded-lg font-black text-white">Cerrar</button>
           </div>
         </div>
