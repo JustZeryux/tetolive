@@ -12,34 +12,24 @@ const formatValue = (val) => {
 };
 
 // --- DATA PARA LAS CAJAS (Con items para que el servidor pueda calcular) ---
-const AVAILABLE_CASES = [
-  {
-    id: 'starter', name: 'Starter Case', price: 50000, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#34d399',
-    items: [
-      { name: 'Common Dog', img: 'https://cdn.bgsi.gg/items/giant-robot.png', valor: 10000, chance: 70, color: '#9ca3af' },
-      { name: 'Rare Cat', img: 'https://cdn.bgsi.gg/items/circus-monster.png', valor: 50000, chance: 25, color: '#3b82f6' },
-      { name: 'Epic Dragon', img: 'https://cdn.bgsi.gg/items/que-fofo-face-god.png', valor: 250000, chance: 4.5, color: '#a855f7' },
-      { name: 'Mythic Titan', img: 'https://cdn.bgsi.gg/items/mythic-stellar-acheron.png', valor: 5000000, chance: 0.5, color: '#facc15' },
-    ]
-  },
-  {
-    id: 'premium', name: 'Premium Case', price: 250000, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#a855f7',
-    items: [
-      { name: 'Epic Dragon', img: 'https://cdn.bgsi.gg/items/que-fofo-face-god.png', valor: 250000, chance: 60, color: '#a855f7' },
-      { name: 'Legendary Phoenix', img: 'https://cdn.bgsi.gg/items/silly-doggy-tophat.png', valor: 750000, chance: 30, color: '#ef4444' },
-      { name: 'Mythic Titan', img: 'https://cdn.bgsi.gg/items/mythic-stellar-acheron.png', valor: 5000000, chance: 9, color: '#facc15' },
-      { name: 'Secret God', img: 'https://cdn.bgsi.gg/items/shiny-santa-slime.png', valor: 25000000, chance: 1, color: '#ec4899' },
-    ]
-  },
-  {
-    id: 'mythic', name: 'Mythic Case', price: 1000000, img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', color: '#facc15',
-    items: [
-      { name: 'Mythic Titan', img: 'https://cdn.bgsi.gg/items/mythic-stellar-acheron.png', valor: 5000000, chance: 80, color: '#facc15' },
-      { name: 'Secret God', img: 'https://cdn.bgsi.gg/items/shiny-santa-slime.png', valor: 25000000, chance: 15, color: '#ec4899' },
-      { name: 'Ultimate Being', img: 'https://cdn.bgsi.gg/items/giant-robot.png', valor: 100000000, chance: 5, color: '#3AFF4E' },
-    ]
-  }
-];
+const [availableCases, setAvailableCases] = useState([]);
+
+useEffect(() => {
+  const loadCasesForBattles = async () => {
+    // Pedimos exactamente las columnas que creaste en tu tabla "cases"
+    const { data, error } = await supabase
+      .from('cases')
+      .select('id, name, price, image_url, color, items');
+
+    if (data && !error) {
+      setAvailableCases(data);
+    } else {
+      console.error("Error al cargar cajas:", error);
+    }
+  };
+
+  loadCasesForBattles();
+}, []);
 
 export default function BattlesPage() {
   const [currentUser, setCurrentUser] = useState(null);
