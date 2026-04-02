@@ -42,7 +42,7 @@ const menuSections = [
   {
     title: "Community",
     links: [
-      { name: 'Mi Perfil', path: '/profile', iconImg: '/Affiliates.png' }, // <--- AGREGADO AQUÍ
+      { name: 'My Profile', path: '/profile', iconImg: '/Affiliates.png' }, // <--- AGREGADO AQUÍ
       { name: 'Leaderboard', path: '/leaderboard', iconImg: '/Leaderboard.png' },
       { name: 'Affiliates', path: '/affiliates', iconImg: '/Affiliates.png' },
       { name: 'Provably Fair', path: '/provably-fair', iconImg: '/ProvablyFair.png' },
