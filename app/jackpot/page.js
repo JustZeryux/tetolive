@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/utils/Supabase';
 
 const RedCoin = ({cls="w-4 h-4"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
@@ -23,9 +23,9 @@ export default function JackpotPage() {
   const [spinnerItems, setSpinnerItems] = useState([]);
   const [offset, setOffset] = useState(0);
   const [winner, setWinner] = useState(null);
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState([]); // Historial bruto de apuestas
   
-  // Estados del Inventario (Para apostar PETS)
+  // Estados del Inventario
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [myInventory, setMyInventory] = useState([]);
   const [selectedPets, setSelectedPets] = useState([]);
@@ -33,22 +33,30 @@ export default function JackpotPage() {
 
   const isResolving = useRef(false);
 
-  const potTotal = players.reduce((sum, p) => sum + p.bet, 0);
+  // AGRUPAR JUGADORES: Si el mismo jugador hace 3 depósitos distintos, los unimos visualmente en 1 solo bloque
+  const groupedPlayers = useMemo(() => {
+     const map = {};
+     players.forEach(p => {
+         if(!map[p.id]) {
+             map[p.id] = { ...p, pets: [...(p.pets||[])] };
+         } else {
+             map[p.id].bet += p.bet;
+             map[p.id].pets = [...map[p.id].pets, ...(p.pets||[])];
+         }
+     });
+     return Object.values(map).sort((a,b) => b.bet - a.bet);
+  }, [players]);
 
-  // Inicialización (Usuario y Partida Activa)
+  const potTotal = groupedPlayers.reduce((sum, p) => sum + p.bet, 0);
+
   useEffect(() => {
     const initData = async () => {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
             const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('id', authData.user.id).single();
             setCurrentUser({ id: authData.user.id, username: profile?.username || 'Player', avatar_url: profile?.avatar_url || '/default-avatar.png' });
-        } else {
-            let tempId = localStorage.getItem('temp_user_id');
-            if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
-            setCurrentUser({ id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + tempId });
         }
 
-        // Buscar si hay un Jackpot activo
         const { data: activeGame } = await supabase
             .from('partidas')
             .select('*')
@@ -62,7 +70,6 @@ export default function JackpotPage() {
     };
     initData();
 
-    // Suscripción Realtime para Jackpot
     const channel = supabase.channel('jackpot_room')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.jackpot" }, 
         (payload) => {
@@ -73,13 +80,25 @@ export default function JackpotPage() {
              if (game.estado === 'waiting') {
                  cargarDatosDePartida(game);
              } else if (game.estado === 'completed' && game.resultado?.ganador && gameState === 'betting') {
-                 iniciarRuletaVisual(game.resultado.ganador, game.datos_partida.players);
+                 // Usar los groupedPlayers para la ruleta
+                 iniciarRuletaVisual(game.resultado.ganador, getGrouped(game.datos_partida.players));
              }
           }
       }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [gameState]);
+
+  // Helper para el Realtime
+  const getGrouped = (rawPlayers) => {
+      if(!rawPlayers) return [];
+      const map = {};
+      rawPlayers.forEach(p => {
+         if(!map[p.id]) map[p.id] = { ...p, pets: [...(p.pets||[])] };
+         else { map[p.id].bet += p.bet; map[p.id].pets = [...map[p.id].pets, ...(p.pets||[])]; }
+      });
+      return Object.values(map).sort((a,b) => b.bet - a.bet);
+  };
 
   const cargarDatosDePartida = (game) => {
       setActiveGameId(game.id);
@@ -92,14 +111,16 @@ export default function JackpotPage() {
       }
   };
 
-  // Timer Global
   useEffect(() => {
     if (gameState !== 'betting' || !endTime) return;
     const tick = () => {
       const remaining = Math.max(0, Math.floor((new Date(endTime).getTime() - Date.now()) / 1000));
       setTimeLeft(remaining);
+      
       if (remaining <= 0 && activeGameId && !isResolving.current) {
-        resolverPartidaGlobal();
+        isResolving.current = true;
+        // Delay aleatorio para evitar que 100 usuarios ejecuten el RPC a la vez
+        setTimeout(() => resolverPartidaGlobal(), Math.random() * 1000);
       }
     };
     tick();
@@ -107,7 +128,6 @@ export default function JackpotPage() {
     return () => clearInterval(timer);
   }, [endTime, gameState, activeGameId]);
 
-  // Cargar Inventario al abrir el Modal
   const openInventoryModal = async () => {
       if (!currentUser) return alert("Debes iniciar sesión para jugar.");
       setIsInventoryOpen(true);
@@ -140,9 +160,9 @@ export default function JackpotPage() {
       }
   };
 
-  // Manejar Depósito de Pets
   const handleDepositPets = async () => {
     if (selectedPets.length === 0) return alert("Selecciona al menos una pet.");
+    if (isDepositing) return;
     setIsDepositing(true);
     
     const valorTotalPets = selectedPets.reduce((sum, pet) => sum + pet.valor, 0);
@@ -154,76 +174,59 @@ export default function JackpotPage() {
       avatar: currentUser.avatar_url,
       bet: valorTotalPets,
       color: colorAsignado,
-      pets: selectedPets // Guardamos el detalle de lo que apostó
+      pets: selectedPets 
     };
 
-    // 1. Bloquear las pets en el inventario real
-    const idsBloqueadas = selectedPets.map(p => p.inventarioId);
-    await supabase.from('inventory').update({ is_locked: true }).in('id', idsBloqueadas);
+    const petIds = selectedPets.map(p => p.inventarioId);
 
-    // 2. Ingresar a la partida
-    if (!activeGameId) {
-        // Crear nueva sala
-        const limitTime = new Date(Date.now() + 45000).toISOString(); 
-        const { data, error } = await supabase.from('partidas').insert([{
-            modo_juego: 'jackpot',
-            creador_id: currentUser.id,
-            apuesta_creador: selectedPets,
-            datos_partida: { players: [myPlayerEntry], endTime: limitTime },
-            estado: 'waiting'
-        }]).select().single();
-        
-        if (!error && data) {
-            setActiveGameId(data.id);
-            setEndTime(limitTime);
-            setPlayers([myPlayerEntry]);
-        }
-    } else {
-        // Unirse a sala existente
-        const currentPlayers = [...players];
-        const existIdx = currentPlayers.findIndex(p => p.id === currentUser.id);
-        
-        if (existIdx !== -1) {
-            currentPlayers[existIdx].bet += valorTotalPets;
-            currentPlayers[existIdx].pets = [...(currentPlayers[existIdx].pets || []), ...selectedPets];
-        } else {
-            currentPlayers.push(myPlayerEntry);
-        }
-        currentPlayers.sort((a,b) => b.bet - a.bet);
+    try {
+      // MAGIA DEL SERVIDOR: Hace todo el trabajo pesado, bloquea mascotas y crea o une
+      const { data, error } = await supabase.rpc('join_jackpot', {
+         p_user_id: currentUser.id,
+         p_player_entry: myPlayerEntry,
+         p_pet_ids: petIds
+      });
 
-        await supabase.from('partidas').update({
-            datos_partida: { players: currentPlayers, endTime: endTime }
-        }).eq('id', activeGameId);
+      if (error) {
+         alert("Hubo un error al apostar. Refresca la página y vuelve a intentarlo.");
+         console.error(error);
+      }
+      // Cerramos modal sin esperar la respuesta completa, Realtime actualizará la UI al instante
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDepositing(false);
+      setIsInventoryOpen(false);
+      setSelectedPets([]);
     }
-    
-    setIsDepositing(false);
-    setIsInventoryOpen(false);
-    setSelectedPets([]);
   };
 
-  // Disparar RPC en el servidor
   const resolverPartidaGlobal = async () => {
-      isResolving.current = true;
       setGameState('rolling');
       const { data: result } = await supabase.rpc('resolver_partida_jackpot', { p_partida_id: activeGameId });
-      if (result && result.ganador) iniciarRuletaVisual(result.ganador, players);
+      
+      // Solo ejecutamos la animación si el servidor responde correctamente con un ganador
+      if (result && result.ganador) {
+          iniciarRuletaVisual(result.ganador, groupedPlayers);
+      }
   };
 
-  const iniciarRuletaVisual = (ganadorReal, currentPlayers) => {
+  const iniciarRuletaVisual = (ganadorReal, finalGroupedPlayers) => {
     setGameState('rolling');
     setWinner(ganadorReal);
 
-    const localPotTotal = currentPlayers.reduce((sum, p) => sum + p.bet, 0);
+    const localPotTotal = finalGroupedPlayers.reduce((sum, p) => sum + p.bet, 0);
     const track = [];
     
+    // Generar la pista de la ruleta usando las proporciones correctas agrupadas
     for (let i = 0; i < 60; i++) {
       if (i === 45) { 
         track.push(ganadorReal); 
       } else {
-        let randomFill = currentPlayers[0];
+        let randomFill = finalGroupedPlayers[0];
         const fillTicket = Math.random() * localPotTotal;
         let fillCurrent = 0;
-        for (let p of currentPlayers) {
+        for (let p of finalGroupedPlayers) {
           fillCurrent += p.bet;
           if (fillTicket <= fillCurrent) { randomFill = p; break; }
         }
@@ -335,19 +338,19 @@ export default function JackpotPage() {
               <span className="text-4xl font-black text-white flex items-center gap-2 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]">
                 <RedCoin cls="w-8 h-8" /> {formatValue(potTotal)}
               </span>
-              <span className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mt-1">{players.length} Players in pot</span>
+              <span className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mt-1">{groupedPlayers.length} Players in pot</span>
             </div>
 
             {/* Timer Central */}
             <div className="flex flex-col items-center justify-center min-w-[120px]">
               {gameState === 'betting' ? (
                 <>
-                  <div className={`w-20 h-20 rounded-full border-4 border-[#252839] flex items-center justify-center relative shadow-inner mb-2 bg-[#0b0e14] ${players.length === 0 ? 'opacity-50' : ''}`}>
-                    <div className="absolute inset-0 rounded-full border-4 border-[#ef4444] transition-all duration-1000 ease-linear" style={{ clipPath: `polygon(50% 50%, 50% 0, ${timeLeft < 22 ? '100% 0' : '100% 100%'}, ${timeLeft < 11 ? '0 100%' : '100% 100%'}, 0 0)`, opacity: players.length > 0 ? 1 : 0}}></div>
-                    <span className="text-2xl font-black text-white relative z-10">{players.length > 0 ? `${timeLeft}s` : '∞'}</span>
+                  <div className={`w-20 h-20 rounded-full border-4 border-[#252839] flex items-center justify-center relative shadow-inner mb-2 bg-[#0b0e14] ${groupedPlayers.length === 0 ? 'opacity-50' : ''}`}>
+                    <div className="absolute inset-0 rounded-full border-4 border-[#ef4444] transition-all duration-1000 ease-linear" style={{ clipPath: `polygon(50% 50%, 50% 0, ${timeLeft < 22 ? '100% 0' : '100% 100%'}, ${timeLeft < 11 ? '0 100%' : '100% 100%'}, 0 0)`, opacity: groupedPlayers.length > 0 ? 1 : 0}}></div>
+                    <span className="text-2xl font-black text-white relative z-10">{groupedPlayers.length > 0 ? `${timeLeft}s` : '∞'}</span>
                   </div>
-                  <span className={`text-xs font-black uppercase tracking-widest ${players.length > 0 ? 'text-[#ef4444] animate-pulse' : 'text-[#555b82]'}`}>
-                      {players.length > 0 ? 'Rolling Soon' : 'Waiting...'}
+                  <span className={`text-xs font-black uppercase tracking-widest ${groupedPlayers.length > 0 ? 'text-[#ef4444] animate-pulse' : 'text-[#555b82]'}`}>
+                      {groupedPlayers.length > 0 ? 'Rolling Soon' : 'Waiting...'}
                   </span>
                 </>
               ) : gameState === 'rolling' ? (
@@ -403,10 +406,10 @@ export default function JackpotPage() {
               </div>
             ) : (
               <div className="w-full flex justify-center items-center gap-4 opacity-50 px-4 overflow-hidden">
-                {players.length === 0 && (
+                {groupedPlayers.length === 0 && (
                     <div className="text-[#555b82] font-black tracking-widest uppercase text-sm">Be the first to bet!</div>
                 )}
-                {players.slice(0, 8).map((p, i) => (
+                {groupedPlayers.slice(0, 8).map((p, i) => (
                   <div key={i} className="w-16 h-16 rounded-full border-2 overflow-hidden animate-float shrink-0" style={{borderColor: p.color, animationDelay: `${i * 0.2}s`}}>
                     <img src={p.avatar} className="w-full h-full object-cover grayscale" alt="waiting"/>
                   </div>
@@ -416,9 +419,9 @@ export default function JackpotPage() {
           </div>
         </div>
 
-        {/* LISTA DE JUGADORES */}
+        {/* LISTA DE JUGADORES (AGRUPADOS) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {players.map((player, idx) => {
+          {groupedPlayers.map((player, idx) => {
             const chance = ((player.bet / potTotal) * 100).toFixed(2);
             return (
               <div key={idx} className={`bg-[#1c1f2e] border ${winner?.id === player.id && gameState === 'finished' ? 'border-[#3AFF4E] shadow-[0_0_20px_rgba(58,255,78,0.2)]' : 'border-[#252839]'} rounded-xl p-4 flex flex-col gap-4 shadow-lg hover:border-[#3f4354] transition-colors relative overflow-hidden group`}>
@@ -446,7 +449,7 @@ export default function JackpotPage() {
                     </div>
                 </div>
 
-                {/* Mostrar miniaturas de las pets que apostó este jugador */}
+                {/* Mostrar miniaturas de las pets que apostó este jugador (Agrupadas si hizo múltiples depósitos) */}
                 {player.pets && player.pets.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2 p-2 bg-[#0b0e14] rounded-lg border border-[#252839]/50">
                         {player.pets.slice(0, 6).map((pet, i) => (
