@@ -69,6 +69,7 @@ export default function CasinoLayout({ children }) {
   const [chatMessages, setChatMessages] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [musicMovilAbierto, setMusicMovilAbierto] = useState(false);
 
   // Ref para Auto-scroll
   const chatEndRef = useRef(null);
