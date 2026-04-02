@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/utils/Supabase';
 
 // --- HELPERS VISUALES ---
 const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" className={`${cls} inline-block`} alt="R" onError={e=>e.target.style.display='none'}/>;
@@ -10,14 +11,14 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
-// --- DATA DE EJEMPLO PARA LAS CAJAS ---
+// --- DATA PARA LAS CAJAS ---
 const CASES = [
   {
     id: 'starter',
     name: 'Starter Case',
     price: 50000,
-    img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', // Caja generica
-    color: '#34d399', // Verde
+    img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', 
+    color: '#34d399', 
     items: [
       { name: 'Common Dog', img: 'https://cdn.bgsi.gg/items/giant-robot.png', valor: 10000, chance: 70, color: '#9ca3af' },
       { name: 'Rare Cat', img: 'https://cdn.bgsi.gg/items/circus-monster.png', valor: 50000, chance: 25, color: '#3b82f6' },
@@ -30,7 +31,7 @@ const CASES = [
     name: 'Premium Case',
     price: 500000,
     img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', 
-    color: '#a855f7', // Morado
+    color: '#a855f7', 
     items: [
       { name: 'Epic Dragon', img: 'https://cdn.bgsi.gg/items/que-fofo-face-god.png', valor: 250000, chance: 60, color: '#a855f7' },
       { name: 'Legendary Phoenix', img: 'https://cdn.bgsi.gg/items/silly-doggy-tophat.png', valor: 750000, chance: 30, color: '#ef4444' },
@@ -43,7 +44,7 @@ const CASES = [
     name: 'Mythic Case',
     price: 2500000,
     img: 'https://cdn-icons-png.flaticon.com/512/3673/3673556.png', 
-    color: '#facc15', // Dorado
+    color: '#facc15', 
     items: [
       { name: 'Mythic Titan', img: 'https://cdn.bgsi.gg/items/mythic-stellar-acheron.png', valor: 5000000, chance: 80, color: '#facc15' },
       { name: 'Secret God', img: 'https://cdn.bgsi.gg/items/shiny-santa-slime.png', valor: 25000000, chance: 15, color: '#ec4899' },
@@ -53,7 +54,8 @@ const CASES = [
 ];
 
 export default function BloxypotCases() {
-  const [view, setView] = useState('store'); // 'store' | 'inspect' | 'opening' | 'result'
+  const [currentUser, setCurrentUser] = useState(null);
+  const [view, setView] = useState('store'); 
   const [selectedCase, setSelectedCase] = useState(null);
   
   // Estados para la Ruleta
@@ -62,62 +64,89 @@ export default function BloxypotCases() {
   const [spinning, setSpinning] = useState(false);
   const [offset, setOffset] = useState(0);
 
-  // Ancho constante de cada tarjeta en la ruleta (en pixeles) para calcular el freno exacto
   const ITEM_WIDTH = 160; 
-  const WINNING_INDEX = 40; // El ítem ganador siempre será el número 40 en la fila
+  const WINNING_INDEX = 40; 
+
+  useEffect(() => {
+    // 0. Obtener Usuario Actual (Auth real o simulado)
+    const initUser = async () => {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+            setCurrentUser(data.user);
+        } else {
+            let tempId = localStorage.getItem('temp_user_id');
+            if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
+            setCurrentUser({ id: tempId });
+        }
+    };
+    initUser();
+  }, []);
 
   const inspectCase = (caja) => {
     setSelectedCase(caja);
     setView('inspect');
   };
 
-  // Función RNG Basada en Pesos (Probabilidades reales)
-  const getRandomItemByChance = (items) => {
+  // Generador falso (solo para el relleno visual de la ruleta)
+  const getRandomVisualItem = (items) => {
     const random = Math.random() * 100;
     let sum = 0;
     for (let item of items) {
       sum += item.chance;
       if (random <= sum) return item;
     }
-    return items[0]; // Fallback
+    return items[0];
   };
 
-  const openCase = () => {
+  const openCase = async () => {
     if (!selectedCase) return;
+    if (!currentUser) return alert("Cargando usuario...");
     
-    // 1. Decidir el ganador real
-    const winner = getRandomItemByChance(selectedCase.items);
+    // Mostramos estado de carga visual si el internet tarda
+    setView('opening');
+    setSpinning(false); // Aún no gira
+    setOffset(0);
+
+    // 1. Decidir el ganador real EN EL SERVIDOR (Seguro)
+    const { data: winner, error } = await supabase.rpc('abrir_caja', { 
+        p_usuario_id: currentUser.id,
+        p_case_id: selectedCase.id,
+        p_precio: selectedCase.price,
+        p_items: selectedCase.items
+    });
+
+    if (error || !winner) {
+        console.error("Error al abrir caja:", error);
+        setView('inspect');
+        return alert("Hubo un error al procesar la caja. Intenta de nuevo.");
+    }
+
     setWinningItem(winner);
 
-    // 2. Generar la cinta de la ruleta (50 items falsos + el ganador en la pos 40)
+    // 2. Generar la cinta de la ruleta (El ítem en la pos 40 ES el que dictó el servidor)
     const track = [];
     for (let i = 0; i < 55; i++) {
       if (i === WINNING_INDEX) {
         track.push(winner);
       } else {
-        track.push(getRandomItemByChance(selectedCase.items));
+        track.push(getRandomVisualItem(selectedCase.items));
       }
     }
+    
     setSpinnerItems(track);
     setSpinning(true);
-    setView('opening');
     
-    // 3. Resetear posición a 0 inmediatamente
-    setOffset(0);
-
-    // 4. Iniciar animación después de un micro-retraso para que React renderice
+    // 3. Iniciar animación después de un micro-retraso para que React renderice la cinta
     setTimeout(() => {
-      // Formula mágica: Mover la cinta hacia la izquierda hasta el index 40
-      // Agregamos un pequeño Math.random() para que no frene EXACTO en el centro siempre, sino un poquito descentrado (más realista)
       const randomOffset = Math.floor(Math.random() * (ITEM_WIDTH - 20)) - (ITEM_WIDTH / 2 - 10);
       const targetOffset = -(WINNING_INDEX * ITEM_WIDTH) + randomOffset;
       setOffset(targetOffset);
       
-      // Esperar a que termine de girar (5 segundos)
+      // Esperar a que termine de girar
       setTimeout(() => {
         setSpinning(false);
         setView('result');
-      }, 5000); // 5000ms hace match con la transición CSS
+      }, 5000); 
     }, 100);
   };
 
@@ -217,10 +246,12 @@ export default function BloxypotCases() {
         ========================================= */}
         {view === 'opening' && (
           <div className="w-full flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
-            <h2 className="text-2xl font-black text-[#8f9ac6] uppercase tracking-widest mb-10 animate-pulse">Opening {selectedCase?.name}...</h2>
+            <h2 className="text-2xl font-black text-[#8f9ac6] uppercase tracking-widest mb-10 animate-pulse">
+              {spinning ? `Opening ${selectedCase?.name}...` : 'Connecting to Server...'}
+            </h2>
             
             {/* CONTENEDOR DE LA RULETA */}
-            <div className="w-full relative h-[200px] bg-[#141323] border-y-2 border-[#252839] overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] flex items-center">
+            <div className={`w-full relative h-[200px] bg-[#141323] border-y-2 border-[#252839] overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] flex items-center transition-opacity duration-300 ${spinning ? 'opacity-100' : 'opacity-0'}`}>
               
               {/* Sombras Laterales (Viñeta) */}
               <div className="absolute left-0 top-0 w-1/4 h-full bg-gradient-to-r from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
@@ -228,7 +259,6 @@ export default function BloxypotCases() {
 
               {/* LA LÍNEA DEL MEDIO (SELECTOR) */}
               <div className="absolute left-1/2 top-0 bottom-0 w-[4px] bg-[#facc15] -translate-x-1/2 z-30 shadow-[0_0_15px_#facc15]">
-                 {/* Triangulitos */}
                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-[#facc15]"></div>
                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[10px] border-b-[#facc15]"></div>
               </div>
@@ -236,7 +266,6 @@ export default function BloxypotCases() {
               {/* LA CINTA QUE GIRA */}
               <div className="absolute left-1/2 flex items-center h-full will-change-transform"
                    style={{
-                     // -ITEM_WIDTH/2 asegura que el primer item inicie perfectamente centrado
                      transform: `translateX(calc(-${ITEM_WIDTH/2}px + ${offset}px))`,
                      transition: spinning ? 'transform 5s cubic-bezier(0.15, 0.85, 0.15, 1)' : 'none'
                    }}
