@@ -25,9 +25,13 @@ export default function BattlesPage() {
   const [currentRound, setCurrentRound] = useState(-1);
   const [battleResults, setBattleResults] = useState(null);
   const resolvingRef = useRef(false);
-const [availableCases, setAvailableCases] = useState([]);  
+
+  // --- SOLUCIÓN AL ERROR DE LAS CAJAS ---
+  const [availableCases, setAvailableCases] = useState([]);  
+  
   useEffect(() => {
     const loadCasesForBattles = async () => {
+      // Cargamos las columnas exactas de tu tabla 'cases'
       const { data, error } = await supabase.from('cases').select('id, name, price, image_url, items, color');
       if (data && !error) {
         setAvailableCases(data);
@@ -35,14 +39,14 @@ const [availableCases, setAvailableCases] = useState([]);
     };
     loadCasesForBattles();
   }, []);
+  // ------------------------------------
   
-  // -----
   useEffect(() => {
     // 1. Obtener Usuario
     const initUser = async () => {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
-            const { data: profile } = await supabase.from('perfiles').select('username, avatar_url').eq('id', authData.user.id).single();
+            const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('id', authData.user.id).single();
             setCurrentUser({ id: authData.user.id, username: profile?.username || 'Player', avatar_url: profile?.avatar_url || '/default-avatar.png' });
         } else {
             let tempId = localStorage.getItem('temp_user_id');
@@ -276,7 +280,8 @@ const [availableCases, setAvailableCases] = useState([]);
                     {pData.cases.map((caja, idx) => (
                       <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center">
                         <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
-                        <img src={caja.img} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color}80)`}}/>
+                        {/* Se corrige img -> image_url para cargar de DB */}
+                        <img src={caja.image_url} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color}80)`}}/>
                       </div>
                     ))}
                     <span className="text-[#555b82] font-black text-xs ml-2 shrink-0">{pData.cases.length} Rounds</span>
@@ -344,7 +349,8 @@ const [availableCases, setAvailableCases] = useState([]);
                         <div key={caja.uniqueId} className="bg-[#1c1f2e] border border-[#252839] rounded-lg p-2 flex items-center gap-3 animate-fade-in">
                           <span className="text-[#555b82] font-black text-xs w-4">{idx + 1}</span>
                           <div className="w-8 h-8 relative shrink-0">
-                            <img src={caja.img} className="w-full h-full object-contain drop-shadow-md z-10 relative" alt="case"/>
+                            {/* Se corrige img -> image_url */}
+                            <img src={caja.image_url} className="w-full h-full object-contain drop-shadow-md z-10 relative" alt="case"/>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-white font-bold text-xs truncate" style={{color: caja.color}}>{caja.name}</p>
@@ -374,10 +380,12 @@ const [availableCases, setAvailableCases] = useState([]);
               <div className="w-full lg:w-2/3 bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-xl">
                 <h3 className="text-white text-lg font-black uppercase tracking-widest mb-6">Available Cases</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {AVAILABLE_CASES.map((caja) => (
+                  {/* AQUÍ SE HACE EL CAMBIO PARA USAR LOS DATOS DE LA BD */}
+                  {availableCases.map((caja) => (
                     <div key={caja.id} onClick={() => addCase(caja)} className="bg-[#141323] border border-[#252839] hover:border-[#ef4444] rounded-xl p-4 flex flex-col items-center cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_5px_15px_rgba(239,68,68,0.15)] group relative">
                       <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
-                      <img src={caja.img} className="w-16 h-16 object-contain drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform mb-3 relative z-10" alt={caja.name} style={{filter: `drop-shadow(0 0 10px ${caja.color}60)`}}/>
+                      {/* Se corrige img -> image_url */}
+                      <img src={caja.image_url} className="w-16 h-16 object-contain drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform mb-3 relative z-10" alt={caja.name} style={{filter: `drop-shadow(0 0 10px ${caja.color}60)`}}/>
                       <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1 text-center z-10">{caja.name}</h4>
                       <p className="text-[#3AFF4E] font-black text-xs flex items-center gap-1 z-10"><GreenCoin cls="w-3 h-3"/> {formatValue(caja.price)}</p>
                     </div>
@@ -465,13 +473,15 @@ const [availableCases, setAvailableCases] = useState([]);
                                         
                                         {!revealedItem && !isCurrentSpinning && (
                                             <div className="opacity-40 grayscale flex flex-col items-center">
-                                                <img src={caja.img} className="w-10 h-10 object-contain drop-shadow-md" alt="case"/>
+                                                {/* Se corrige img -> image_url */}
+                                                <img src={caja.image_url} className="w-10 h-10 object-contain drop-shadow-md" alt="case"/>
                                             </div>
                                         )}
 
                                         {isCurrentSpinning && (
                                             <div className="flex flex-col items-center animate-pulse">
-                                                <img src={caja.img} className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-bounce" alt="case" style={{filter: `drop-shadow(0 0 10px ${caja.color}80)`}}/>
+                                                {/* Se corrige img -> image_url */}
+                                                <img src={caja.image_url} className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-bounce" alt="case" style={{filter: `drop-shadow(0 0 10px ${caja.color}80)`}}/>
                                                 <span className="text-[10px] font-black text-[#8f9ac6] mt-2 uppercase">Unboxing...</span>
                                             </div>
                                         )}
@@ -480,7 +490,8 @@ const [availableCases, setAvailableCases] = useState([]);
                                             <div className="w-full h-full flex flex-col items-center justify-center animate-fade-in relative group">
                                                 <div className="absolute inset-0 opacity-10" style={{ background: `radial-gradient(circle at center, ${revealedItem.color} 0%, transparent 70%)` }}></div>
                                                 <div className="absolute top-1 right-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-[#0b0e14]/80 border border-[#252839] text-white z-10">{revealedItem.chance}%</div>
-                                                <img src={revealedItem.img} className="w-14 h-14 object-contain drop-shadow-lg z-10 group-hover:scale-110 transition-transform" alt="item"/>
+                                                {/* Aquí se asume que revelado sigue viniendo con .img desde el RPC de Supabase */}
+                                                <img src={revealedItem.img || revealedItem.image_url} className="w-14 h-14 object-contain drop-shadow-lg z-10 group-hover:scale-110 transition-transform" alt="item"/>
                                                 <p className="text-[10px] font-bold truncate w-full text-center px-1 z-10 mt-1" style={{color: revealedItem.color}}>{revealedItem.name}</p>
                                                 <p className="text-white font-black text-[10px] flex items-center gap-1 z-10"><GreenCoin cls="w-2.5 h-2.5"/> {formatValue(revealedItem.valor)}</p>
                                             </div>
