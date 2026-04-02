@@ -134,7 +134,7 @@ export default function CasesPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {CASES.map(caja => (
+              casesData.map(caja => (
                 <div 
                   key={caja.id} onClick={() => { setSelectedCase(caja); setView('inspect'); }}
                   className="bg-[#1c1f2e] border border-[#252839] rounded-3xl p-8 flex flex-col items-center cursor-pointer transition-all duration-300 hover:-translate-y-3 hover:shadow-2xl group relative overflow-hidden"
