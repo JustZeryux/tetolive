@@ -59,12 +59,13 @@ export default function BloxypotCoinflip() {
   const [partidaSeleccionada, setPartidaSeleccionada] = useState(null); 
   const [selectedPetsToJoin, setSelectedPetsToJoin] = useState([]);
   const [modalJoinAbierto, setModalJoinAbierto] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
 
   // Lobby
   const [lobbyGames, setLobbyGames] = useState([]);
 
   useEffect(() => {
-    // 1. INICIALIZAR USUARIO Y MASCOTAS (SOLUCIÓN IMÁGENES ROTAS)
+    // 1. INICIALIZAR USUARIO Y MASCOTAS
     const initUserAndInventory = async () => {
         const { data: authData } = await supabase.auth.getUser();
         
@@ -81,7 +82,6 @@ export default function BloxypotCoinflip() {
                 avatar_url: profile?.avatar_url || '/default-avatar.png'
             });
 
-            // Pedimos el inventario asegurando que la imagen se llame image_url
             const { data: inventoryData, error } = await supabase
                 .from('inventory')
                 .select(`
@@ -98,7 +98,7 @@ export default function BloxypotCoinflip() {
                     item_id: inv.items.id,
                     nombre: inv.items.name,
                     valor: inv.items.value,
-                    image_url: inv.items.image_url, // Unificamos el nombre de la variable
+                    image_url: inv.items.image_url, 
                     color: inv.items.color
                 }));
                 setMisPets(mascotasReales.sort((a, b) => b.valor - a.valor));
@@ -127,7 +127,7 @@ export default function BloxypotCoinflip() {
 
     cargarPartidas();
 
-    // 3. REALTIME LOBBY
+    // 3. REALTIME LOBBY (EL CREADOR DETECTA QUE ALGUIEN SE UNIÓ)
     const channel = supabase.channel('lobby_coinflip')
       .on('postgres_changes', { 
           event: '*', 
@@ -139,9 +139,11 @@ export default function BloxypotCoinflip() {
           if (payload.eventType === 'INSERT') {
             const formatted = formatGameToUI(payload.new);
             setLobbyGames(prev => [formatted, ...prev]);
+            
           } else if (payload.eventType === 'UPDATE') {
             const formatted = formatGameToUI(payload.new);
             
+            // Actualizar lista
             setLobbyGames(prev => {
                 const index = prev.findIndex(g => g.id === formatted.id);
                 if (index !== -1) {
@@ -152,16 +154,23 @@ export default function BloxypotCoinflip() {
                 return [formatted, ...prev];
             });
 
+            // MAGIA DEL CREADOR: Si la partida se completó y tú eres el creador, arranca tu animación
             setPartidaSeleccionada((prevPartida) => {
                 if (prevPartida && prevPartida.id === formatted.id) {
-                    if (prevPartida.estado === 'waiting' && formatted.estado === 'in_progress') {
-                        setVistaActual('arena'); 
-                        iniciarCinematicaMoneda(formatted);
+                    // Verificamos si pasó de esperando a completado por el servidor
+                    if (prevPartida.estado === 'waiting' && formatted.estado === 'completed' && formatted.resultado) {
+                        
+                        // Solo mandamos a la arena si el usuario es el creador de esta partida
+                        if (currentUser && formatted.creador_id === currentUser.id) {
+                           setVistaActual('arena'); 
+                           iniciarCinematicaMoneda(formatted);
+                        }
                     }
                     return formatted;
                 }
                 return prevPartida;
             });
+
           } else if (payload.eventType === 'DELETE') {
             setLobbyGames(prev => prev.filter(game => game.id !== payload.old.id));
             setPartidaSeleccionada((prev) => {
@@ -175,7 +184,7 @@ export default function BloxypotCoinflip() {
       }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [currentUser]); // Dependencia agregada para que Realtime lea bien quién somos
 
   // --- LÓGICA DE CREACIÓN ---
   const creatorFilteredPets = useMemo(() => {
@@ -199,7 +208,6 @@ export default function BloxypotCoinflip() {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
-  // CREAR JUEGO (CORREGIDO Y BLINDADO)
   const handleCreateGame = async () => {
     if (!currentUser) return alert("Debes iniciar sesión.");
     if (creatorSelectedPets.length === 0) return alert("Debes seleccionar al menos una pet.");
@@ -222,7 +230,7 @@ export default function BloxypotCoinflip() {
         .insert({
             modo_juego: 'coinflip',
             creador_id: currentUser.id,
-            apuesta_creador: creatorSelectedPets, 
+            apuesta_creador: { items: creatorSelectedPets }, 
             datos_partida: datosPartidaIniciales,
             estado: 'waiting'
         })
@@ -230,11 +238,8 @@ export default function BloxypotCoinflip() {
         .single();
 
     if (!error && nuevaPartida) {
-        // Bloqueamos las mascotas en la BD
+        // Bloqueamos las mascotas temporalmente para UI
         const idsA_Bloquear = creatorSelectedPets.map(p => p.inventarioId);
-        await supabase.from('inventory').update({ is_locked: true }).in('id', idsA_Bloquear);
-            
-        // Quitamos las mascotas bloqueadas de nuestro inventario local temporalmente
         setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
 
         const uiData = formatGameToUI(nuevaPartida);
@@ -244,7 +249,7 @@ export default function BloxypotCoinflip() {
         setCreatorSide(null);
     } else {
         console.error("Error al crear partida:", error);
-        alert("Hubo un error al crear la partida. Revisa la consola.");
+        alert("Hubo un error al crear la partida.");
     }
     
     setIsCreating(false);
@@ -252,18 +257,11 @@ export default function BloxypotCoinflip() {
 
   const cancelarPartida = async () => {
       if (!partidaSeleccionada) return;
-      // 1. Borramos de la DB
       await supabase.from('partidas').delete().eq('id', partidaSeleccionada.id);
       
-      // 2. Desbloqueamos las mascotas en la BD
-      const idsA_Desbloquear = partidaSeleccionada.petsHost.map(p => p.inventarioId);
-      await supabase.from('inventory').update({ is_locked: false }).in('id', idsA_Desbloquear);
-
-      // 3. Regresamos las pets al inventario local
       setMisPets(prev => {
-          const recuperadas = partidaSeleccionada.petsHost;
+          const recuperadas = partidaSeleccionada.petsHost?.items || [];
           const merged = [...prev, ...recuperadas];
-          // Eliminar duplicados por si acaso
           const uniqueIds = new Set();
           return merged.filter(pet => {
               const isDuplicate = uniqueIds.has(pet.inventarioId);
@@ -291,9 +289,9 @@ export default function BloxypotCoinflip() {
       
       if (juego.estado === 'completed' && juego.resultado) {
           setGirando(false);
-          setGanador(juego.resultado.lado_ganador);
+          setGanador(juego.resultado.lado === 'creador_gana' ? juego.lado : (juego.lado === 'Heads' ? 'Tails' : 'Heads'));
           setMostrarImpacto(true);
-          setRotacion(juego.resultado.lado_ganador === 'Heads' ? 0 : 180);
+          setRotacion(ganador === 'Heads' ? 0 : 180);
       } else {
           setGirando(false);
           setGanador(null);
@@ -341,44 +339,67 @@ export default function BloxypotCoinflip() {
 
   const confirmarUnionYJugar = async () => {
     if (!dataJoinValidacion.valida) return alert("Las mascotas no están en el rango del 2% permitido.");
-    
-    const nuevosDatosPartida = {
-        ...partidaSeleccionada.datos_partida_raw,
-        challenger_name: currentUser.username,
-        avatar_challenger: currentUser.avatar_url
-    };
+    if (isJoining) return; 
+    setIsJoining(true);
 
-    const { data, error } = await supabase
-      .from('partidas')
-      .update({ 
-        retador_id: currentUser.id,
-        apuesta_retador: selectedPetsToJoin,
-        estado: 'in_progress',
-        datos_partida: nuevosDatosPartida
-      })
-      .eq('id', partidaSeleccionada.id)
-      .select()
-      .single();
+    try {
+      const nuevosDatosPartida = {
+          ...partidaSeleccionada.datos_partida_raw,
+          challenger_name: currentUser.username,
+          avatar_challenger: currentUser.avatar_url
+      };
 
-    if (error) {
-      console.error("Error uniendo:", error);
-      return alert("Esta partida ya no está disponible o hubo un error.");
+      await supabase.from('partidas')
+        .update({ datos_partida: nuevosDatosPartida })
+        .eq('id', partidaSeleccionada.id);
+
+      const apuestaParaServidor = {
+        items: selectedPetsToJoin.map(p => p.inventarioId), 
+        detalle_completo: selectedPetsToJoin 
+      };
+
+      const { data: serverResponse, error } = await supabase.rpc('join_coinflip', {
+        p_partida_id: partidaSeleccionada.id,
+        p_retador_id: currentUser.id,
+        p_apuesta_retador: apuestaParaServidor
+      });
+
+      if (error) {
+        console.error("Error uniendo:", error);
+        alert("Esta partida ya no está disponible.");
+        setIsJoining(false);
+        return;
+      }
+
+      const idsA_Bloquear = selectedPetsToJoin.map(p => p.inventarioId);
+      setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
+      
+      setModalJoinAbierto(false); 
+      setVistaActual('arena'); 
+
+      const uiData = formatGameToUI({
+          ...partidaSeleccionada,
+          retador_id: currentUser.id,
+          apuesta_retador: apuestaParaServidor,
+          estado: 'completed',
+          resultado: {
+             ganador: serverResponse.ganador,
+             lado: serverResponse.lado
+          },
+          datos_partida: nuevosDatosPartida
+      });
+      
+      setPartidaSeleccionada(uiData);
+      iniciarCinematicaMoneda(uiData);
+
+    } catch (err) {
+      console.error("Error fatal:", err);
+    } finally {
+      setIsJoining(false);
     }
-
-    // Bloquear las pets que usó el retador
-    const idsA_Bloquear = selectedPetsToJoin.map(p => p.inventarioId);
-    await supabase.from('inventory').update({ is_locked: true }).in('id', idsA_Bloquear);
-    setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
-    
-    const uiData = formatGameToUI(data);
-    setPartidaSeleccionada(uiData);
-    setModalJoinAbierto(false); 
-    setVistaActual('arena'); 
-
-    iniciarCinematicaMoneda(uiData);
   };
 
-  // --- ANIMACIONES ARENA ---
+  // --- ANIMACIONES ARENA (MODIFICADA PARA LEER DEL SERVIDOR) ---
   const iniciarCinematicaMoneda = (datosPartida) => {
     if (animacionIniciada.current) return; 
     animacionIniciada.current = true;
@@ -397,44 +418,42 @@ export default function BloxypotCoinflip() {
         } else {
             clearInterval(intervalo);
             setCuentaRegresiva(null);
-            ejecutarTiroRPC(datosPartida);
+            
+            // EL SERVIDOR YA DECIDIÓ, APLICAMOS LA ANIMACIÓN DIRECTO
+            const ladoServidor = datosPartida.resultado?.lado; // 'creador_gana' o 'retador_gana'
+            
+            // Traducimos al texto visual de 'Heads' o 'Tails' basado en lo que eligió el creador
+            const ganaCreador = ladoServidor === 'creador_gana';
+            let servidorLadoGanador = 'Heads';
+            
+            if (ganaCreador) {
+                servidorLadoGanador = datosPartida.lado; // Si el host eligió Heads y ganó, la moneda será Heads
+            } else {
+                servidorLadoGanador = datosPartida.lado === 'Heads' ? 'Tails' : 'Heads'; 
+            }
+
+            setGirando(true);
+            
+            setTimeout(() => {
+              setRotacion(prevRotacion => {
+                const ganaHeadsVisual = servidorLadoGanador === 'Heads';
+                const vueltasBase = prevRotacion + 3600; 
+                const nuevaRot = ganaHeadsVisual ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
+                
+                setTimeout(() => { 
+                    setGirando(false); 
+                    setGanador(servidorLadoGanador); 
+                    setTimeout(() => setMostrarImpacto(true), 150);
+                }, 4000);
+
+                return nuevaRot;
+              });
+            }, 100);
+
         }
     }, 1000);
   };
 
-  const ejecutarTiroRPC = async (datosPartida) => {
-    setGirando(true);
-
-    const { data: resultado, error } = await supabase
-      .rpc('resolver_partida_coinflip', { p_partida_id: datosPartida.id });
-
-    let servidorLadoGanador = 'Heads';
-    
-    if (error) {
-        console.warn("Fallo RPC, usando RNG local.", error);
-        const ganaHeadsLocal = Math.random() < 0.5;
-        servidorLadoGanador = ganaHeadsLocal ? 'Heads' : 'Tails';
-        await supabase.from('partidas').update({ estado: 'completed', resultado: { lado_ganador: servidorLadoGanador } }).eq('id', datosPartida.id);
-    } else {
-        servidorLadoGanador = resultado.lado_ganador;
-    }
-
-    setTimeout(() => {
-      setRotacion(prevRotacion => {
-        const ganaHeads = servidorLadoGanador === 'Heads';
-        const vueltasBase = prevRotacion + 3600; 
-        const nuevaRot = ganaHeads ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
-        
-        setTimeout(() => { 
-            setGirando(false); 
-            setGanador(servidorLadoGanador); 
-            setTimeout(() => setMostrarImpacto(true), 150);
-        }, 4000);
-
-        return nuevaRot;
-      });
-    }, 100);
-  };
 
   // --- COMPONENTES VISUALES ---
   const AvatarVS = ({ img, side, isWaiting = false }) => (
@@ -518,17 +537,16 @@ export default function BloxypotCoinflip() {
 
                   <div className="flex justify-center xl:justify-start py-2">
                     <div className="flex items-center ml-2">
-                      {game.petsHost.slice(0, 5).map((pet, i) => (
+                      {game.petsHost?.items?.slice(0, 5).map((pet, i) => (
                         <div key={i} className="relative box-border block h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 shadow-[0_0_10px_rgba(0,0,0,0.5)] group hover:-translate-y-2 hover:z-50 transition-transform" style={{zIndex: 10 - i}}>
-                          {/* SE USÓ image_url EN LUGAR DE img */}
                           <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: `radial-gradient(circle at 50% 50%, ${pet.color || '#9ca3af'} 0%, transparent 70%)` }}></div>
                           <img src={pet.image_url} className="block w-full h-full object-contain scale-110 drop-shadow-md relative z-10" alt="pet"/>
                         </div>
                       ))}
-                      {game.petsHost.length > 5 && (
+                      {game.petsHost?.items?.length > 5 && (
                         <div className="relative box-border flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 z-[5]">
-                          <img src={game.petsHost[5].image_url} className="block w-full h-full object-contain blur-[3px] opacity-30" alt="pet"/>
-                          <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md bg-black/50 backdrop-blur-[1px]">+{game.petsHost.length - 5}</span>
+                          <img src={game.petsHost.items[5].image_url} className="block w-full h-full object-contain blur-[3px] opacity-30" alt="pet"/>
+                          <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md bg-black/50 backdrop-blur-[1px]">+{game.petsHost.items.length - 5}</span>
                         </div>
                       )}
                     </div>
@@ -589,7 +607,6 @@ export default function BloxypotCoinflip() {
                                 return (
                                     <div key={pet.inventarioId} onClick={() => toggleCreatorPet(pet)} className={`relative bg-[#0b0e14] border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all hover:-translate-y-1 ${isSelected ? 'border-[#6C63FF] shadow-[0_0_20px_rgba(108,99,255,0.3)] bg-gradient-to-b from-[#6C63FF]/10 to-transparent' : 'border-[#252839] hover:border-[#4a506b]'}`}>
                                         {isSelected && <div className="absolute top-2 right-2 w-3 h-3 bg-[#6C63FF] rounded-full shadow-[0_0_10px_#6C63FF]"></div>}
-                                        {/* USO CORRECTO DE IMAGE_URL */}
                                         <img src={pet.image_url} className="w-14 h-14 object-contain mb-3 drop-shadow-lg" alt="pet"/>
                                         <div className="text-[9px] text-center w-full truncate font-black uppercase" style={{color: pet.color || '#8f9ac6'}}>{pet.nombre}</div>
                                         <div className="text-[10px] font-black text-white flex items-center justify-center gap-1 mt-1"><RedCoin cls="w-3 h-3"/> {formatValue(pet.valor)}</div>
@@ -785,7 +802,6 @@ export default function BloxypotCoinflip() {
                             return (
                                 <div key={pet.inventarioId} onClick={() => toggleSelectPetJoin(pet)} className={`relative bg-[#0b0e14] border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all hover:-translate-y-1 ${isSelected ? 'border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)] bg-gradient-to-b from-[#22c55e]/10 to-transparent' : 'border-[#252839] hover:border-[#4a506b]'}`}>
                                     {isSelected && <div className="absolute top-2 right-2 w-3 h-3 bg-[#22c55e] rounded-full shadow-[0_0_10px_#22c55e]"></div>}
-                                    {/* USO CORRECTO DE IMAGE_URL */}
                                     <img src={pet.image_url} className="w-12 h-12 object-contain mb-2 drop-shadow-md" alt="pet"/>
                                     <div className="text-[9px] text-center w-full truncate text-[#8f9ac6] font-black uppercase">{pet.nombre}</div>
                                     <div className="text-[10px] font-black text-white flex items-center gap-1 mt-1"><RedCoin cls="w-3 h-3"/> {formatValue(pet.valor)}</div>
@@ -823,10 +839,10 @@ export default function BloxypotCoinflip() {
 
                     <button 
                         onClick={confirmarUnionYJugar} 
-                        disabled={!dataJoinValidacion.valida}
-                        className={`w-full py-4 rounded-xl font-black text-white uppercase tracking-widest transition-all ${dataJoinValidacion.valida ? 'bg-[#22c55e] hover:bg-[#16a34a] text-black shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-105' : 'bg-[#14151f] text-[#555b82] border border-[#252839] cursor-not-allowed'}`}
+                        disabled={!dataJoinValidacion.valida || isJoining}
+                        className={`w-full py-4 rounded-xl font-black text-white uppercase tracking-widest transition-all ${dataJoinValidacion.valida && !isJoining ? 'bg-[#22c55e] hover:bg-[#16a34a] text-black shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-105' : 'bg-[#14151f] text-[#555b82] border border-[#252839] cursor-not-allowed'}`}
                     >
-                        CONFIRM & PLAY
+                        {isJoining ? 'JOINING...' : 'CONFIRM & PLAY'}
                     </button>
                 </div>
             </div>
