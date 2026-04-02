@@ -24,14 +24,12 @@ export default function CasesPage() {
   const [showNoMoneyModal, setShowNoMoneyModal] = useState(false);
   const [moneyNeeded, setMoneyNeeded] = useState(0);
 
-  // Ruleta
   const [spinnerItems, setSpinnerItems] = useState([]);
   const [winningItem, setWinningItem] = useState(null);
   const [spinning, setSpinning] = useState(false);
-  const sliderRef = useRef(null); // <-- Usamos useRef para animaciones a prueba de balas
+  const sliderRef = useRef(null);
   
   const WINNING_INDEX = 40; 
-  // Ancho exacto del item: 180px + 8px de margen (mx-1) = 188px
   const REAL_ITEM_WIDTH = 188; 
 
   useEffect(() => {
@@ -68,6 +66,16 @@ export default function CasesPage() {
     return result;
   }, [casesData, searchTerm, sortBy]);
 
+  const getRandomVisualItem = (items) => {
+    const random = Math.random() * 100;
+    let sum = 0;
+    for (let item of items) {
+      sum += item.chance;
+      if (random <= sum) return item;
+    }
+    return items[0];
+  };
+
   const openCase = async () => {
     if (!currentUser || !userProfile) return alert("Por favor inicia sesión.");
     if (spinning) return;
@@ -82,39 +90,54 @@ export default function CasesPage() {
     setSpinning(true); 
 
     try {
-      // 1. COBRAR EL SALDO DIRECTO EN LA BASE DE DATOS
+      // 1. COBRAR EN BASE DE DATOS
       const nuevoSaldo = userProfile.saldo_verde - selectedCase.price;
       const { error: cobroError } = await supabase
         .from('profiles')
         .update({ saldo_verde: nuevoSaldo })
         .eq('id', currentUser.id);
 
-      if (cobroError) throw cobroError;
+      if (cobroError) throw new Error("Fallo al descontar el saldo: " + cobroError.message);
 
-      // 2. SELECCIONAR EL GANADOR POR PROBABILIDAD
+      // 2. SACAR AL GANADOR
       const winner = getRandomVisualItem(selectedCase.items);
 
-      // 3. INSERTAR EL ITEM EN EL INVENTARIO DEL USUARIO
-      // Asumimos que winner.id coincide con el id de tu tabla public.items (ej: 'teto_pet_01')
+      // --- EL PARCHE DE SEGURIDAD PARA QUE NO TRUENE EL INVENTARIO ---
+      let realItemId = winner.id || winner.item_id;
+      
+      if (!realItemId) {
+        const { data: itemData, error: itemError } = await supabase
+          .from('items')
+          .select('id')
+          .eq('name', winner.name)
+          .single();
+          
+        if (itemError || !itemData) {
+          throw new Error(`No encontramos el ID real de "${winner.name}" en la tabla items.`);
+        }
+        realItemId = itemData.id;
+      }
+
+      // 3. INSERTAR AL INVENTARIO CON EL ID CONFIRMADO
       const { error: invError } = await supabase
         .from('inventory')
         .insert({
           user_id: currentUser.id,
-          item_id: winner.id // <-- Asegúrate de que tu JSON de cajas tiene un .id que coincida con public.items
+          item_id: realItemId 
         });
 
-      if (invError) throw invError;
+      if (invError) throw new Error("Fallo al insertar en el inventario: " + invError.message);
 
-      // 4. ACTUALIZAR LA UI
+      // 4. PREPARAR INTERFAZ
       setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
       setWinningItem(winner);
 
-      // 5. INICIAR LA RULETA VISUAL
       const track = Array.from({length: 55}, (_, i) => 
         i === WINNING_INDEX ? winner : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
       );
       setSpinnerItems(track);
       
+      // 5. ANIMACIÓN DIRECTA
       setTimeout(() => {
         if (sliderRef.current) {
           sliderRef.current.style.transition = 'none';
@@ -139,7 +162,8 @@ export default function CasesPage() {
       console.error(err);
       setSpinning(false);
       setView('inspect');
-      alert("Error de conexión al procesar la caja. Tu saldo no fue afectado.");
+      // Ahora sí te va a decir exactamente por qué falló
+      alert("Error al procesar: " + err.message);
     }
   };
 
@@ -282,7 +306,6 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* RULETA PERFECCIONADA CON CSS DIRECTO */}
         {view === 'opening' && (
           <div className="animate-fade-in flex flex-col items-center justify-center min-h-[60vh] relative">
             <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-12 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] z-10">
@@ -292,7 +315,7 @@ export default function CasesPage() {
             <div className="relative w-full max-w-[1000px] h-[240px] bg-[#0b0e14]/90 backdrop-blur-xl border-y-4 border-[#252839] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.8)] rounded-2xl z-10 flex items-center">
               
               <img 
-                src="/Cases.png" 
+                src="/teto.png" 
                 alt="Teto" 
                 className="absolute -right-8 -bottom-8 w-64 opacity-25 pointer-events-none drop-shadow-[0_0_20px_rgba(108,99,255,0.5)] z-0"
                 onError={(e) => e.target.style.display = 'none'}
@@ -301,11 +324,9 @@ export default function CasesPage() {
               <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
               <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0b0e14] to-transparent z-20 pointer-events-none"></div>
 
-              {/* Láser central */}
               <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-[#22c55e] z-30 shadow-[0_0_25px_rgba(34,197,94,1)] -translate-x-1/2"></div>
               <div className="absolute left-1/2 top-0 bottom-0 w-[200px] -translate-x-1/2 bg-gradient-to-r from-transparent via-[#22c55e]/10 to-transparent z-10 pointer-events-none"></div>
 
-              {/* Track absoluto para la animación */}
               <div className="absolute top-0 bottom-0 left-1/2 flex items-center w-max z-10">
                 <div 
                   ref={sliderRef}
