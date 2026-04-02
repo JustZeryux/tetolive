@@ -2,13 +2,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function MobileBottomNav({ onOpenChat }) {
+export default function MobileBottomNav({ onOpenChat, onToggleMusic }) {
   const pathname = usePathname();
 
   const navItems = [
     { name: 'Home', path: '/', icon: '🏠' },
     { name: 'Games', path: '/cases', icon: '🎲' },
-    { name: 'Deposit', path: '#deposit', icon: '💳', isCentral: true },
+    // Aquí cambiamos el Deposit por el Teto Radio y le pasamos onToggleMusic
+    { name: 'Radio', path: '#music', icon: '🎵', isCentral: true, action: onToggleMusic },
     { name: 'Wallet', path: '/wallet', icon: '💼' },
     { name: 'Chat', path: '#chat', icon: '💬', action: onOpenChat },
   ];
@@ -20,9 +21,10 @@ export default function MobileBottomNav({ onOpenChat }) {
 
         if (item.isCentral) {
           return (
-            <button key={idx} className="relative -top-5 group" onClick={() => window.dispatchEvent(new CustomEvent('open-cashier'))}>
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#22c55e] to-[#16a34a] flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(34,197,94,0.4)] border-4 border-[#0b0e14] group-hover:scale-105 transition-transform">
-                💳
+            <button key={idx} className="relative -top-5 group" onClick={item.action}>
+              {/* Le cambié el color verde por el rosa de Teto para que cuadre con la temática */}
+              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#f472b6] to-[#ec4899] flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(244,114,182,0.4)] border-4 border-[#0b0e14] group-hover:scale-105 transition-transform">
+                {item.icon}
               </div>
             </button>
           );
