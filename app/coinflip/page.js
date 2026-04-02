@@ -232,22 +232,37 @@ useEffect(() => {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
-  const handleCreateGame = async () => {
-    if (!currentUser) return alert("Cargando usuario...");
-    if (creatorSelectedPets.length === 0 || !creatorSide) return alert("Select side and pets!");
-    
-    const newGameData = {
-        modo_juego: 'coinflip',
-        creador_id: currentUser.id,
-        apuesta_creador: creatorSelectedPets,
-        datos_partida: { 
-            lado_creador: creatorSide,
-            avatar_creador: currentUser.avatar_url,
-            host_name: currentUser.username,
-            valor_total: totalCreatorValue
-        },
-        estado: 'waiting'
-    };
+  const handleCreateGame = async (petsSeleccionadas, ladoElegido) => {
+if (!currentUser || petsSeleccionadas.length === 0) return alert("Selecciona pets");
+
+    // 1. Sumamos el valor real de las pets
+    const valorTotal = petsSeleccionadas.reduce((sum, pet) => sum + pet.valor, 0);
+
+    // 2. Insertamos la partida en la base de datos
+    const { data: nuevaPartida, error } = await supabase
+        .from('partidas')
+        .insert({
+            modo_juego: 'coinflip',
+            creador_id: currentUser.id,
+            apuesta_creador: petsSeleccionadas, // Guardamos el array de pets completo
+            datos_partida: { lado: ladoElegido, valor_total: valorTotal },
+            estado: 'waiting'
+        })
+        .select()
+        .single();
+
+    if (!error) {
+        // 3. Bloqueamos las mascotas en el inventario para que no las use en otro lado
+        const idsA_Bloquear = petsSeleccionadas.map(p => p.inventarioId);
+        await supabase
+            .from('inventory')
+            .update({ is_locked: true })
+            .in('id', idsA_Bloquear);
+            
+        alert("¡Partida creada con éxito!");
+        // Aquí cierras tu modal
+    }
+};
 
     const { data, error } = await supabase.from('partidas').insert([newGameData]).select().single();
 
