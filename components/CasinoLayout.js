@@ -115,12 +115,13 @@ export default function CasinoLayout({ children }) {
           }
         ).subscribe();
 
-      // 4. Suscribirse a cambios en el saldo del usuario (si está logueado)
+// 4. Suscribirse a cambios en el saldo del usuario (si está logueado)
       let saldoChannel = null;
       if (authData?.user) {
          saldoChannel = supabase.channel('user_balance')
-          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'perfiles', filter: `id=eq.${authData.user.id}` }, 
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${authData.user.id}` }, 
             (payload) => {
+              // Esto actualiza el Top Bar mágicamente al instante
               setSaldoVerde(payload.new.saldo_verde || 0);
               setSaldoRojo(payload.new.saldo_rojo || 0);
             }
