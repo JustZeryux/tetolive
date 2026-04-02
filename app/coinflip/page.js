@@ -94,13 +94,37 @@ useEffect(() => {
 
             // 1. CARGAR INVENTARIO REAL
             // Asegúrate de que el nombre de la tabla de inventario en tu BD sea 'inventarios' o ajusta el nombre.
-            const { data: inventoryData, error } = await supabase
-                .from('inventarios') // <-- TABLA DE TUS MASCOTAS
-                .select('*')
-                .eq('user_id', authData.user.id);
+// Así se hace un JOIN en Supabase para traer tu mascota Y su valor
+const { data: inventoryData, error } = await supabase
+  .from('inventory')
+  .select(`
+    id,
+    is_locked,
+    items (
+      id,
+      name,
+      value,
+      image_url,
+      color
+    )
+  `)
+  .eq('user_id', currentUser.id);
 
-            if (inventoryData && !error) {
-               setMisPets(inventoryData.sort((a, b) => b.valor - a.valor));
+if (inventoryData) {
+  // Supabase te devuelve la pet anidada en la propiedad "items". 
+  // Lo mapeamos para que sea más fácil de usar en tu frontend:
+  const misPetsReales = inventoryData.map(inv => ({
+    inventory_id: inv.id, // El ID único de ese item en TU inventario
+    item_id: inv.items.id,
+    name: inv.items.name,
+    value: inv.items.value,
+    image: inv.items.image_url,
+    color: inv.items.color,
+    is_locked: inv.is_locked
+  }));
+  
+  setInventoryPets(misPetsReales);
+}
             } else {
                setMisPets([]); // Si no tienes mascotas o falla, se queda vacío.
             }
