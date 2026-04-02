@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/utils/Supabase';
 
 const RedCoin = ({cls="w-4 h-4"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
 
@@ -10,106 +11,190 @@ const formatValue = (val) => {
 };
 
 export default function JackpotPage() {
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Estados de Partida Activa
+  const [activeGameId, setActiveGameId] = useState(null);
   const [gameState, setGameState] = useState('betting'); // 'betting' | 'rolling' | 'finished'
   const [timeLeft, setTimeLeft] = useState(45);
+  const [endTime, setEndTime] = useState(null); // Tiempo global del servidor
   const [betAmount, setBetAmount] = useState('');
   
   // Estados de la ruleta
   const [spinnerItems, setSpinnerItems] = useState([]);
   const [offset, setOffset] = useState(0);
   const [winner, setWinner] = useState(null);
-
-  // Mock Data: Jugadores en el pozo
-  const [players, setPlayers] = useState([
-    { id: 1, name: 'Zeryux', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zeryux', bet: 25000000, color: '#ef4444' },
-    { id: 2, name: 'GamerX', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=GamerX', bet: 5000000, color: '#3b82f6' },
-    { id: 3, name: 'LuckyPro', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky', bet: 1000000, color: '#facc15' },
-    { id: 4, name: 'NinjaUser', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=NinjaUser', bet: 500000, color: '#a855f7' },
-  ]);
+  const [players, setPlayers] = useState([]);
+  
+  const isResolving = useRef(false);
 
   const potTotal = players.reduce((sum, p) => sum + p.bet, 0);
 
-  // Lógica del Timer y Cambio de Estado
+  // Inicialización (Usuario y Partida Activa)
   useEffect(() => {
-    if (gameState !== 'betting') return;
-    
-    if (timeLeft <= 0) {
-      startRoll();
-      return;
-    }
+    const initData = async () => {
+        // 1. Obtener usuario (Real o Simulado)
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user) {
+            const { data: profile } = await supabase.from('perfiles').select('username, avatar_url').eq('id', authData.user.id).single();
+            setCurrentUser({ id: authData.user.id, username: profile?.username || 'Player', avatar_url: profile?.avatar_url || '/default-avatar.png' });
+        } else {
+            let tempId = localStorage.getItem('temp_user_id');
+            if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
+            setCurrentUser({ id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + tempId });
+        }
 
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
+        // 2. Buscar si hay un Jackpot activo (waiting)
+        const { data: activeGame } = await supabase
+            .from('partidas')
+            .select('*')
+            .eq('modo_juego', 'jackpot')
+            .eq('estado', 'waiting')
+            .order('creado_en', { ascending: false })
+            .limit(1)
+            .single();
 
-    return () => clearInterval(timer);
-  }, [timeLeft, gameState]);
+        if (activeGame) {
+            cargarDatosDePartida(activeGame);
+        }
+    };
+    initData();
 
-  // Agregar simulación de jugadores entrando al pozo
-  useEffect(() => {
-    if (gameState !== 'betting' || timeLeft < 10) return;
-    
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        const newPlayer = {
-          id: Date.now(),
-          name: `Sniper${Math.floor(Math.random() * 99)}`,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`,
-          bet: Math.floor(Math.random() * 2000000) + 100000,
-          color: ['#10b981', '#ec4899', '#8b5cf6', '#f97316'][Math.floor(Math.random() * 4)]
-        };
-        setPlayers(prev => [...prev, newPlayer].sort((a,b) => b.bet - a.bet)); // Ordenar por apuesta
+    // 3. Suscripción Realtime para Jackpot
+    const channel = supabase.channel('jackpot_room')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.jackpot" }, 
+        (payload) => {
+          const game = payload.new;
+          
+          if (payload.eventType === 'INSERT') {
+             cargarDatosDePartida(game);
+          } else if (payload.eventType === 'UPDATE') {
+             // Si la partida sigue abierta, actualizar jugadores
+             if (game.estado === 'waiting') {
+                 cargarDatosDePartida(game);
+             } 
+             // Si la partida cambió a 'completed' y no estábamos resolviendo nosotros
+             else if (game.estado === 'completed' && game.resultado?.ganador && gameState === 'betting') {
+                 iniciarRuletaVisual(game.resultado.ganador, game.datos_partida.players);
+             }
+          }
+      }).subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const cargarDatosDePartida = (game) => {
+      setActiveGameId(game.id);
+      setPlayers(game.datos_partida?.players || []);
+      setEndTime(game.datos_partida?.endTime || null);
+      if (game.estado === 'waiting') {
+          setGameState('betting');
+          setWinner(null);
+          setOffset(0);
       }
-    }, 3500);
+  };
 
-    return () => clearInterval(interval);
-  }, [gameState, timeLeft]);
+  // Lógica del Timer Global Sincronizado
+  useEffect(() => {
+    if (gameState !== 'betting' || !endTime) return;
+    
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((new Date(endTime).getTime() - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      
+      if (remaining <= 0 && activeGameId && !isResolving.current) {
+        resolverPartidaGlobal();
+      }
+    };
 
-  const handleDeposit = () => {
+    tick(); // Ejecutar de inmediato
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [endTime, gameState, activeGameId]);
+
+  // Manejar Depósito
+  const handleDeposit = async () => {
     const val = parseInt(betAmount);
     if (isNaN(val) || val <= 0) return alert("Enter a valid bet!");
+    if (!currentUser) return alert("Loading user...");
     
-    const newPlayer = {
-      id: 999, // Tu ID
-      name: 'You',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=You',
+    const colorAsignado = ['#10b981', '#ec4899', '#8b5cf6', '#f97316', '#ef4444', '#3b82f6', '#facc15'][Math.floor(Math.random() * 7)];
+    
+    const myPlayerEntry = {
+      id: currentUser.id,
+      name: currentUser.username,
+      avatar: currentUser.avatar_url,
       bet: val,
-      color: '#3AFF4E'
+      color: colorAsignado
     };
-    
-    setPlayers(prev => [...prev, newPlayer].sort((a,b) => b.bet - a.bet));
+
+    if (!activeGameId) {
+        // Crear nueva sala de Jackpot si no hay ninguna
+        const limitTime = new Date(Date.now() + 45000).toISOString(); // 45 segundos
+        const { data, error } = await supabase.from('partidas').insert([{
+            modo_juego: 'jackpot',
+            creador_id: currentUser.id,
+            apuesta_creador: val,
+            datos_partida: { players: [myPlayerEntry], endTime: limitTime },
+            estado: 'waiting'
+        }]).select().single();
+        
+        if (!error && data) {
+            setActiveGameId(data.id);
+            setEndTime(limitTime);
+            setPlayers([myPlayerEntry]);
+        }
+    } else {
+        // Unirse a la sala existente
+        const currentPlayers = [...players];
+        // Revisar si ya estoy en el pot para sumar mi apuesta, si no, me agrego
+        const existIdx = currentPlayers.findIndex(p => p.id === currentUser.id);
+        if (existIdx !== -1) {
+            currentPlayers[existIdx].bet += val;
+        } else {
+            currentPlayers.push(myPlayerEntry);
+        }
+        currentPlayers.sort((a,b) => b.bet - a.bet);
+
+        await supabase.from('partidas').update({
+            datos_partida: { players: currentPlayers, endTime: endTime }
+        }).eq('id', activeGameId);
+    }
     setBetAmount('');
   };
 
-  const startRoll = () => {
-    setGameState('rolling');
-    
-    // 1. Decidir ganador basado en probabilidades (Tickets)
-    let winnerObj = players[0];
-    const winningTicket = Math.random() * potTotal;
-    let currentTicket = 0;
-    
-    for (let p of players) {
-      currentTicket += p.bet;
-      if (winningTicket <= currentTicket) {
-        winnerObj = p;
-        break;
-      }
-    }
-    
-    setWinner(winnerObj);
+  // Disparar RPC en el servidor
+  const resolverPartidaGlobal = async () => {
+      isResolving.current = true;
+      setGameState('rolling');
 
-    // 2. Generar cinta de la ruleta (Ponderada por % de apuesta para que sea realista)
+      // Llamamos a la función segura
+      const { data: result, error } = await supabase.rpc('resolver_partida_jackpot', { p_partida_id: activeGameId });
+      
+      // Si retorna null o error, es porque otro usuario ya la resolvió en el mismo momento.
+      // El Realtime capturará el UPDATE y lanzará la ruleta para nosotros automáticamente.
+      if (result && result.ganador) {
+          iniciarRuletaVisual(result.ganador, players);
+      }
+  };
+
+  const iniciarRuletaVisual = (ganadorReal, currentPlayers) => {
+    setGameState('rolling');
+    setWinner(ganadorReal);
+
+    // Generar cinta de la ruleta (Ponderada por % para que visualmente concuerde con el pot)
+    const localPotTotal = currentPlayers.reduce((sum, p) => sum + p.bet, 0);
     const track = [];
+    
     for (let i = 0; i < 60; i++) {
-      if (i === 45) { // Index ganador
-        track.push(winnerObj);
+      if (i === 45) { 
+        track.push(ganadorReal); // El ganador EXACTO dictado por el servidor
       } else {
-        // Elegir avatar al azar basado en su peso para el relleno
-        let randomFill = players[0];
-        const fillTicket = Math.random() * potTotal;
+        // Relleno aleatorio ponderado
+        let randomFill = currentPlayers[0];
+        const fillTicket = Math.random() * localPotTotal;
         let fillCurrent = 0;
-        for (let p of players) {
+        for (let p of currentPlayers) {
           fillCurrent += p.bet;
           if (fillTicket <= fillCurrent) { randomFill = p; break; }
         }
@@ -120,23 +205,27 @@ export default function JackpotPage() {
     setSpinnerItems(track);
     setOffset(0);
 
-    // 3. Iniciar animación
+    // Iniciar animación CSS
     setTimeout(() => {
-      const ITEM_WIDTH = 100; // Ancho de cada avatar en la ruleta
+      const ITEM_WIDTH = 100; // Ancho de cada avatar
       const randomOffset = Math.floor(Math.random() * (ITEM_WIDTH - 20)) - (ITEM_WIDTH / 2 - 10);
       const targetOffset = -(45 * ITEM_WIDTH) + randomOffset;
       setOffset(targetOffset);
       
+      // Fin de la animación
       setTimeout(() => {
         setGameState('finished');
         setTimeout(() => {
-          // Reset para la siguiente ronda
-          setPlayers([{ id: 1, name: 'Zeryux', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zeryux', bet: 1500000, color: '#ef4444' }]);
+          // Reset para una nueva ronda limpia
+          setActiveGameId(null);
+          setPlayers([]);
+          setEndTime(null);
           setTimeLeft(45);
           setGameState('betting');
           setWinner(null);
-        }, 5000);
-      }, 6000);
+          isResolving.current = false;
+        }, 5000); // Muestra al ganador por 5 segundos
+      }, 6000); // 6 segundos es lo que dura la transición CSS de la ruleta
     }, 100);
   };
 
@@ -167,15 +256,16 @@ export default function JackpotPage() {
             </div>
 
             {/* Timer Central */}
-            <div className="flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center min-w-[120px]">
               {gameState === 'betting' ? (
                 <>
-                  <div className="w-20 h-20 rounded-full border-4 border-[#252839] flex items-center justify-center relative shadow-inner mb-2 bg-[#0b0e14]">
-                    {/* Anillo de progreso SVG (Simulado con borde para simplicidad) */}
-                    <div className="absolute inset-0 rounded-full border-4 border-[#ef4444] transition-all duration-1000 ease-linear" style={{ clipPath: `polygon(50% 50%, 50% 0, ${timeLeft < 22 ? '100% 0' : '100% 100%'}, ${timeLeft < 11 ? '0 100%' : '100% 100%'}, 0 0)`}}></div>
-                    <span className="text-2xl font-black text-white relative z-10">{timeLeft}s</span>
+                  <div className={`w-20 h-20 rounded-full border-4 border-[#252839] flex items-center justify-center relative shadow-inner mb-2 bg-[#0b0e14] ${players.length === 0 ? 'opacity-50' : ''}`}>
+                    <div className="absolute inset-0 rounded-full border-4 border-[#ef4444] transition-all duration-1000 ease-linear" style={{ clipPath: `polygon(50% 50%, 50% 0, ${timeLeft < 22 ? '100% 0' : '100% 100%'}, ${timeLeft < 11 ? '0 100%' : '100% 100%'}, 0 0)`, opacity: players.length > 0 ? 1 : 0}}></div>
+                    <span className="text-2xl font-black text-white relative z-10">{players.length > 0 ? `${timeLeft}s` : '∞'}</span>
                   </div>
-                  <span className="text-[#ef4444] text-xs font-black uppercase tracking-widest animate-pulse">Rolling Soon</span>
+                  <span className={`text-xs font-black uppercase tracking-widest ${players.length > 0 ? 'text-[#ef4444] animate-pulse' : 'text-[#555b82]'}`}>
+                      {players.length > 0 ? 'Rolling Soon' : 'Waiting...'}
+                  </span>
                 </>
               ) : gameState === 'rolling' ? (
                 <div className="text-center">
@@ -184,7 +274,7 @@ export default function JackpotPage() {
               ) : (
                 <div className="text-center">
                   <span className="text-[#3AFF4E] text-xs font-black uppercase tracking-widest mb-1 block">Winner takes all!</span>
-                  <span className="text-3xl font-black text-white uppercase tracking-widest">{winner?.name}</span>
+                  <span className="text-2xl font-black text-white tracking-widest truncate max-w-[150px] inline-block">{winner?.name}</span>
                 </div>
               )}
             </div>
@@ -219,17 +309,14 @@ export default function JackpotPage() {
           {/* LA RULETA VISUAL */}
           <div className="w-full h-[160px] bg-[#0b0e14] relative overflow-hidden flex items-center shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]">
             
-            {/* Sombras Laterales */}
             <div className="absolute left-0 top-0 w-1/4 h-full bg-gradient-to-r from-[#1c1f2e] to-transparent z-20 pointer-events-none"></div>
             <div className="absolute right-0 top-0 w-1/4 h-full bg-gradient-to-l from-[#1c1f2e] to-transparent z-20 pointer-events-none"></div>
 
-            {/* Selector Central */}
             <div className="absolute left-1/2 top-0 bottom-0 w-[4px] bg-[#facc15] -translate-x-1/2 z-30 shadow-[0_0_15px_#facc15]">
                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-[#facc15]"></div>
                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[10px] border-b-[#facc15]"></div>
             </div>
 
-            {/* Cinta Giratoria */}
             {gameState !== 'betting' ? (
               <div className="absolute left-1/2 flex items-center h-full will-change-transform"
                    style={{
@@ -247,10 +334,12 @@ export default function JackpotPage() {
                 ))}
               </div>
             ) : (
-              /* Estado "Betting" - Muestra avatares rebotando suavemente */
               <div className="w-full flex justify-center items-center gap-4 opacity-50 px-4 overflow-hidden">
+                {players.length === 0 && (
+                    <div className="text-[#555b82] font-black tracking-widest uppercase text-sm">Be the first to bet!</div>
+                )}
                 {players.slice(0, 8).map((p, i) => (
-                  <div key={p.id} className="w-16 h-16 rounded-full border-2 overflow-hidden animate-float" style={{borderColor: p.color, animationDelay: `${i * 0.2}s`}}>
+                  <div key={i} className="w-16 h-16 rounded-full border-2 overflow-hidden animate-float shrink-0" style={{borderColor: p.color, animationDelay: `${i * 0.2}s`}}>
                     <img src={p.avatar} className="w-full h-full object-cover grayscale" alt="waiting"/>
                   </div>
                 ))}
@@ -264,13 +353,11 @@ export default function JackpotPage() {
           {players.map((player, idx) => {
             const chance = ((player.bet / potTotal) * 100).toFixed(2);
             return (
-              <div key={player.id} className="bg-[#1c1f2e] border border-[#252839] rounded-xl p-4 flex items-center gap-4 shadow-lg hover:border-[#3f4354] transition-colors relative overflow-hidden group">
+              <div key={idx} className={`bg-[#1c1f2e] border ${winner?.id === player.id && gameState === 'finished' ? 'border-[#3AFF4E] shadow-[0_0_20px_rgba(58,255,78,0.2)]' : 'border-[#252839]'} rounded-xl p-4 flex items-center gap-4 shadow-lg hover:border-[#3f4354] transition-colors relative overflow-hidden group`}>
                 
-                {/* Indicador de color del jugador */}
                 <div className="absolute left-0 top-0 bottom-0 w-1" style={{backgroundColor: player.color}}></div>
                 <div className="absolute inset-0 opacity-5 pointer-events-none" style={{background: `radial-gradient(circle at left, ${player.color} 0%, transparent 50%)`}}></div>
 
-                {/* Avatar y Corona para el #1 */}
                 <div className="relative">
                   {idx === 0 && <span className="absolute -top-3 -left-2 text-xl z-20 drop-shadow-md rotate-[-20deg]">👑</span>}
                   <div className="w-12 h-12 rounded-full border-2 overflow-hidden bg-[#141323] relative z-10" style={{borderColor: player.color}}>
@@ -278,16 +365,14 @@ export default function JackpotPage() {
                   </div>
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-bold text-sm truncate">{player.name}</p>
                   <p className="text-[#8f9ac6] font-black text-xs flex items-center gap-1 mt-0.5"><RedCoin cls="w-3 h-3"/> {formatValue(player.bet)}</p>
                 </div>
 
-                {/* Porcentaje */}
                 <div className="text-right shrink-0">
-                  <div className="bg-[#0b0e14] border border-[#252839] px-3 py-1.5 rounded-lg flex items-center gap-1">
-                    <span className="text-white font-black text-sm">{chance}%</span>
+                  <div className={`bg-[#0b0e14] border ${winner?.id === player.id && gameState === 'finished' ? 'border-[#3AFF4E]' : 'border-[#252839]'} px-3 py-1.5 rounded-lg flex items-center gap-1`}>
+                    <span className={`font-black text-sm ${winner?.id === player.id && gameState === 'finished' ? 'text-[#3AFF4E]' : 'text-white'}`}>{chance}%</span>
                   </div>
                 </div>
 
