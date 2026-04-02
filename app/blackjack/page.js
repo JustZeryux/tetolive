@@ -42,9 +42,8 @@ const calculateScore = (hand) => {
   return value;
 };
 
-// === EPIC VISUAL CARD (RESPONSIVE FIX) ===
+// === EPIC VISUAL CARD ===
 const PlayingCard = ({ card, hidden = false, index, isSmall = false }) => {
-  // Mobile first classes, scaling up on md screens to prevent overlaps
   const baseW = isSmall ? "w-12 h-16 -ml-4 md:w-16 md:h-24 md:-ml-6" : "w-14 h-20 -ml-5 md:w-24 md:h-36 md:-ml-10";
   const textClass = isSmall ? "text-xs md:text-base" : "text-sm md:text-xl";
   const iconClass = isSmall ? "text-xl md:text-3xl" : "text-2xl md:text-5xl";
@@ -72,6 +71,7 @@ export default function BlackjackPage() {
   const [userProfile, setUserProfile] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
+  const [allItemsDb, setAllItemsDb] = useState([]); // Base de datos real de items
 
   const [gameMode, setGameMode] = useState('ai'); 
 
@@ -83,6 +83,7 @@ export default function BlackjackPage() {
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
   const [winner, setWinner] = useState(null); 
+  const [aiGameId, setAiGameId] = useState(null); // ID de la partida contra IA en BD
 
   // PvP States
   const [pvpLobbyGames, setPvpLobbyGames] = useState([]);
@@ -97,17 +98,22 @@ export default function BlackjackPage() {
   const [joiningGameId, setJoiningGameId] = useState(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchInitData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUser(user);
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        setUserProfile(data);
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        setUserProfile(profile);
       }
+      
+      // Obtener todos los items para que el bot pueda apostar cosas reales
+      const { data: items } = await supabase.from('items').select('*');
+      if (items) setAllItemsDb(items);
+
       loadPvPLobby();
       setCargando(false);
     };
-    fetchUser();
+    fetchInitData();
 
     // Sincronización Realtime PvP
     const lobbySub = supabase.channel('blackjack_lobby')
@@ -122,7 +128,7 @@ export default function BlackjackPage() {
     return () => { supabase.removeChannel(lobbySub); };
   }, [activePvPGame]);
 
-  // MOTOR MULTIJUGADOR (PVP): Efectuar el pago cuando termine la mesa
+  // Motor Multijugador (PvP Payout)
   useEffect(() => {
       const processPvPPayout = async () => {
           if (activePvPGame?.estado === 'completed' && !pvpPayoutProcessed.current) {
@@ -153,14 +159,13 @@ export default function BlackjackPage() {
       if (activePvPGame?.estado === 'completed') processPvPPayout();
       else pvpPayoutProcessed.current = false;
 
-      // Host reparte cartas cuando entra P2
       const checkDeal = async () => {
           if (activePvPGame?.estado === 'playing' && activePvPGame.datos_partida.p1.hand.length === 0 && currentUser?.id === activePvPGame.creador_id) {
              const newDeck = createDeck();
              const dp = { ...activePvPGame.datos_partida };
              dp.p1.hand = [newDeck.pop(), newDeck.pop()];
              dp.p2.hand = [newDeck.pop(), newDeck.pop()];
-             dp.dealerHand = [newDeck.pop(), newDeck.pop()]; // Dealers 2nd card stays hidden on UI
+             dp.dealerHand = [newDeck.pop(), newDeck.pop()]; 
              dp.p1.score = calculateScore(dp.p1.hand);
              dp.p2.score = calculateScore(dp.p2.hand);
              dp.deck = newDeck;
@@ -186,20 +191,49 @@ export default function BlackjackPage() {
   const saldoVerde = userProfile?.saldo_verde || 0;
   const totalPetsValue = selectedPets.reduce((acc, curr) => acc + curr.valor, 0);
 
-  const generateBotPets = (targetValue) => {
-      return [
-          { nombre: "AI Myst Pet", valor: Math.floor(targetValue * 0.7), imagen: "https://api.dicebear.com/7.x/bottts/svg?seed=1", color: "#ef4444" },
-          { nombre: "AI Help Pet", valor: Math.floor(targetValue * 0.3), imagen: "https://api.dicebear.com/7.x/bottts/svg?seed=2", color: "#facc15" }
-      ];
+  // === IA REAL PET GENERATOR (Busca en la tabla items) ===
+  const generateRealBotPets = (targetValue) => {
+      if (!allItemsDb || allItemsDb.length === 0) return [];
+      let currentSum = 0;
+      let aiSelected = [];
+      
+      // Mezclar items para que sea al azar
+      let shuffled = [...allItemsDb].sort(() => 0.5 - Math.random());
+      
+      for (let item of shuffled) {
+          if (currentSum + (item.value || 0) <= targetValue) {
+              aiSelected.push({
+                 item_id: item.id,
+                 nombre: item.name,
+                 valor: item.value || 0,
+                 imagen: item.image_url,
+                 color: item.color || '#ffffff'
+              });
+              currentSum += (item.value || 0);
+          }
+      }
+      
+      // Si no logró sumar nada (porque todo es muy caro), fuerza el más barato
+      if (aiSelected.length === 0 && shuffled.length > 0) {
+           let cheapest = [...shuffled].sort((a,b) => (a.value||0) - (b.value||0))[0];
+           aiSelected.push({
+               item_id: cheapest.id,
+               nombre: cheapest.name,
+               valor: cheapest.value || 0,
+               imagen: cheapest.image_url,
+               color: cheapest.color || '#ffffff'
+           });
+      }
+      return aiSelected;
   };
 
   // ==========================================
-  // LÓGICA MODO VS AI (PvE)
+  // LÓGICA MODO VS AI (PvE) CON BD REAL
   // ==========================================
   const startGameAI = async () => {
-    if (!currentUser) return alert("Log in to play.");
-    if (currency === 'green' && (betAmount <= 0 || betAmount > saldoVerde)) return alert("Invalid Green Coin amount.");
-    if (currency === 'pets' && selectedPets.length === 0) return alert("Select pets to bet first.");
+    if (!currentUser) return alert("Inicia sesión para jugar.");
+    if (currency === 'green' && (betAmount <= 0 || betAmount > saldoVerde)) return alert("Saldo verde inválido.");
+    if (currency === 'pets' && selectedPets.length === 0) return alert("Selecciona pets para apostar primero.");
 
     setProcesando(true);
     try {
@@ -208,9 +242,28 @@ export default function BlackjackPage() {
           await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
           setUserProfile(prev => ({ ...prev, saldo_verde: nuevoSaldo }));
       } else {
-          setBotPets(generateBotPets(totalPetsValue));
+          // COBRAR MASCOTAS AL USUARIO (Borrarlas del inventario temporalmente)
+          const petIds = selectedPets.map(p => p.inventarioId);
+          const { error: errDel } = await supabase.from('inventory').delete().in('id', petIds);
+          if (errDel) throw new Error("Error cobrando pets: " + errDel.message);
       }
 
+      // REGISTRAR PARTIDA VS IA EN LA BD
+      const { data: matchData } = await supabase.from('partidas').insert({
+          modo_juego: 'blackjack_ai',
+          creador_id: currentUser.id,
+          estado: 'playing',
+          datos_partida: { 
+              currency, 
+              betAmount: currency === 'green' ? betAmount : totalPetsValue, 
+              selectedPets, 
+              botPets 
+          }
+      }).select('id').single();
+      
+      if (matchData) setAiGameId(matchData.id);
+
+      // Repartir Cartas
       const newDeck = createDeck();
       const pHand = [newDeck.pop(), newDeck.pop()];
       const dHand = [newDeck.pop(), newDeck.pop()];
@@ -221,8 +274,12 @@ export default function BlackjackPage() {
       setGameState('playing');
       setWinner(null);
 
+      // Checar Blackjack natural
       if (calculateScore(pHand) === 21) handleGameOverAI('player', pHand, dHand, true);
-    } catch (err) { alert("Error processing bet."); }
+    } catch (err) { 
+        console.error(err);
+        alert("Error procesando apuesta: " + err.message); 
+    }
     setProcesando(false);
   };
 
@@ -261,13 +318,47 @@ export default function BlackjackPage() {
           let ganancia = 0;
           if (result === 'player') ganancia = isBlackjack ? Math.floor(betAmount * 2.5) : betAmount * 2;
           else if (result === 'tie') ganancia = betAmount; 
+          
           if (ganancia > 0) {
             const saldoRecuperado = userProfile.saldo_verde + ganancia;
             await supabase.from('profiles').update({ saldo_verde: saldoRecuperado }).eq('id', currentUser.id);
             setUserProfile(prev => ({ ...prev, saldo_verde: saldoRecuperado }));
           }
+      } else {
+          // LÓGICA DE PAGO EN PETS (BD REAL)
+          if (result === 'player') {
+              // Ganas: Te regresan tus pets + te insertan las de la IA
+              const inserts = [];
+              selectedPets.forEach(p => inserts.push({ user_id: currentUser.id, item_id: p.item_id }));
+              botPets.forEach(p => inserts.push({ user_id: currentUser.id, item_id: p.item_id }));
+              await supabase.from('inventory').insert(inserts);
+
+              // Actualizamos el saldo rojo reflejado en base de datos
+              const gananciaRojo = botPets.reduce((acc, curr) => acc + (curr.valor || 0), 0);
+              const nuevoRojo = (userProfile.saldo_rojo || 0) + gananciaRojo;
+              await supabase.from('profiles').update({ saldo_rojo: nuevoRojo }).eq('id', currentUser.id);
+              setUserProfile(prev => ({...prev, saldo_rojo: nuevoRojo}));
+
+          } else if (result === 'tie') {
+              // Empate: Solo te regresan tus pets
+              const inserts = selectedPets.map(p => ({ user_id: currentUser.id, item_id: p.item_id }));
+              await supabase.from('inventory').insert(inserts);
+          } else if (result === 'dealer') {
+              // Pierdes: Ya se habían borrado al inicio. Solo actualizamos el saldo rojo
+              const perdidaRojo = selectedPets.reduce((acc, curr) => acc + (curr.valor || 0), 0);
+              const nuevoRojo = Math.max(0, (userProfile.saldo_rojo || 0) - perdidaRojo);
+              await supabase.from('profiles').update({ saldo_rojo: nuevoRojo }).eq('id', currentUser.id);
+              setUserProfile(prev => ({...prev, saldo_rojo: nuevoRojo}));
+          }
       }
-    } catch (err) {}
+
+      // Marcar Partida como Terminada
+      if (aiGameId) {
+          await supabase.from('partidas').update({ estado: 'completed', resultado: result }).eq('id', aiGameId);
+      }
+    } catch (err) {
+        console.error("Error pagando IA:", err);
+    }
     setProcesando(false);
   };
 
@@ -329,7 +420,6 @@ export default function BlackjackPage() {
       setJoiningGameId(null);
   };
 
-  // Motor Frontend PvP: Hit & Stand Sincronizados
   const handlePvPAction = async (action) => {
       setProcesando(true);
       try {
@@ -388,7 +478,14 @@ export default function BlackjackPage() {
       setIsInventoryOpen(true);
       const { data, error } = await supabase.from('inventory').select(`id, is_locked, items ( id, name, value, image_url, color )`).eq('user_id', currentUser.id).eq('is_locked', false);
       if (data && !error) {
-          const mascotas = data.map(inv => ({ inventarioId: inv.id, nombre: inv.items.name, valor: inv.items.value, imagen: inv.items.image_url, color: inv.items.color }));
+          const mascotas = data.map(inv => ({ 
+              inventarioId: inv.id, 
+              item_id: inv.items.id, // NECESARIO PARA RE-INSERTAR
+              nombre: inv.items.name, 
+              valor: inv.items.value, 
+              imagen: inv.items.image_url, 
+              color: inv.items.color 
+          }));
           setMyInventory(mascotas.sort((a,b) => b.valor - a.valor));
       }
   };
@@ -404,7 +501,8 @@ export default function BlackjackPage() {
           const gameToJoin = pvpLobbyGames.find(g => g.id === joiningGameId);
           joinPvPGame(gameToJoin, selectedPets);
       } else {
-          setBotPets(generateBotPets(totalPetsValue));
+          // AQUÍ GENERAMOS Y MOSTRAMOS LO QUE LA IA APUESTA AL INSTANTE
+          setBotPets(generateRealBotPets(totalPetsValue));
       }
   };
 
@@ -477,10 +575,9 @@ export default function BlackjackPage() {
           </div>
       )}
 
-      {/* LAYOUT PRINCIPAL: Reordenado para Móviles (Controles abajo de la mesa en móvil, lado izquierdo en PC) */}
       <div className={`w-full max-w-[1200px] relative z-10 flex flex-col lg:grid lg:grid-cols-3 gap-6 md:gap-8`}>
         
-        {/* ================= PANEL IZQUIERDO (CONTROLES / LOBBY) ================= */}
+        {/* ================= PANEL IZQUIERDO (CONTROLES) ================= */}
         <div className={`order-2 lg:order-1 lg:col-span-1 bg-[#14151f]/90 backdrop-blur-md border border-[#252839] rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col relative overflow-hidden ${activePvPGame ? 'lg:col-span-3 lg:flex-row lg:items-center justify-between' : ''}`}>
           <div className="absolute inset-0 bg-gradient-to-br from-[#6C63FF]/5 to-transparent pointer-events-none"></div>
           
@@ -528,7 +625,19 @@ export default function BlackjackPage() {
                               <p className="text-[#555b82] text-[10px] md:text-xs mb-3">No pets selected.</p>
                           )}
                           <div className="text-lg md:text-xl font-black text-[#ef4444] mb-3 flex items-center justify-center gap-1"><RedCoin /> {formatValue(totalPetsValue)}</div>
-                          {gameState === 'betting' && <button onClick={openInventoryModal} className="w-full py-2 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest">Edit Pets</button>}
+                          
+                          {/* MUESTRA CLARA DE LO QUE OFRECE LA IA ANTES DE APOSTAR */}
+                          {gameState === 'betting' && botPets.length > 0 && (
+                              <div className="mt-4 p-3 bg-[#1c1f2e] border border-[#ef4444]/30 rounded-xl shadow-inner">
+                                  <p className="text-[#ef4444] text-[10px] uppercase font-black mb-2 flex items-center justify-center gap-1">🤖 AI is matching with:</p>
+                                  <div className="flex justify-center flex-wrap gap-2">
+                                      {botPets.slice(0,3).map((p,i) => <img key={i} src={p.imagen} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" title={p.nombre}/>)}
+                                      {botPets.length > 3 && <span className="text-[#555b82] text-[10px] font-black self-center">+{botPets.length-3}</span>}
+                                  </div>
+                              </div>
+                          )}
+
+                          {gameState === 'betting' && <button onClick={openInventoryModal} className="w-full py-2 mt-3 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest">Edit Pets</button>}
                       </div>
                   )}
 
@@ -543,7 +652,7 @@ export default function BlackjackPage() {
                         <button onClick={standAI} disabled={procesando} className="py-3 md:py-4 bg-gradient-to-r from-[#ef4444] to-[#b91c1c] rounded-xl font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:-translate-y-1 transition-all text-xs md:text-base">Stand</button>
                       </div>
                     ) : (
-                      <button onClick={() => {setGameState('betting'); setPlayerHand([]); setDealerHand([]); setBotPets([]);}} className="w-full py-3 md:py-4 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md transition-all text-xs md:text-base">New Round</button>
+                      <button onClick={() => {setGameState('betting'); setPlayerHand([]); setDealerHand([]); setBotPets([]); setSelectedPets([]);}} className="w-full py-3 md:py-4 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md transition-all text-xs md:text-base">New Round</button>
                     )}
                   </div>
               </>
@@ -620,7 +729,6 @@ export default function BlackjackPage() {
 
         {/* ================= PANEL DERECHO (LA MESA) ================= */}
         <div className={`order-1 lg:order-2 bg-gradient-to-b from-[#0f111a] to-[#14151f] border-2 border-[#252839] rounded-3xl p-4 md:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col justify-between relative min-h-[400px] overflow-hidden ${activePvPGame ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
-          
           <div className="absolute inset-2 md:inset-4 border-2 border-dashed border-[#6C63FF]/20 rounded-2xl pointer-events-none"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl md:text-9xl opacity-5 grayscale pointer-events-none">🃏</div>
 
