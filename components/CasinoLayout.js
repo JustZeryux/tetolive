@@ -29,6 +29,7 @@ const menuSections = [
       { name: 'Coinflip', path: '/coinflip', iconImg: '/Coinflip.png' },
       { name: 'Mines', path: '/mines', iconImg: '/Mines.png' },
       { name: 'Jackpot', path: '/jackpot', iconImg: '/Jackpot.png' },
+      { name: 'Blackjack', path: '/blackjack', iconImg: '/Coinflip.png' }, // <-- AQUÍ ESTÁ EL NUEVO MINIJUEGO WEY (Cámbiale el icono si tienes uno de cartas)
     ]
   },
   {
@@ -244,12 +245,12 @@ export default function CasinoLayout({ children }) {
       {/* ÁREA CENTRAL */}
       <div className={`flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-300 md:ml-[70px] ${chatAbierto ? 'xl:mr-[320px]' : 'xl:mr-[70px]'}`}>
         
-        <header className="h-[80px] bg-[#14171f]/95 backdrop-blur-md border-b border-[#222630] flex items-center justify-between px-4 md:px-8 z-40 shrink-0 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setMenuMovilAbierto(true)} className="md:hidden text-[#7c8291] hover:text-white text-2xl">☰</button>
+        <header className="h-[70px] md:h-[80px] bg-[#14171f]/95 backdrop-blur-md border-b border-[#222630] flex items-center justify-between px-3 md:px-8 z-40 shrink-0 shadow-sm">
+          <div className="flex items-center gap-2 md:gap-4">
+            <button onClick={() => setMenuMovilAbierto(true)} className="md:hidden text-[#7c8291] hover:text-white text-2xl px-1">☰</button>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-5">
+          <div className="flex items-center gap-2 md:gap-5">
             <div className="hidden sm:flex bg-[#0b0e14] border border-[#222630] rounded-xl p-1.5 shadow-inner">
               <div className="px-4 py-1.5 flex items-center gap-2 border-r border-[#222630] hover:bg-[#14171f] transition-colors cursor-pointer rounded-l-lg" title="Green Balance">
                 <GreenCoin cls="w-4 h-4 floating"/> <span className="text-[#22c55e] font-black text-sm">{formatValue(saldoVerde)}</span>
@@ -259,33 +260,36 @@ export default function CasinoLayout({ children }) {
               </div>
             </div>
 
-            <button onClick={() => setCajeroAbierto(true)} className="animate-shine bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] text-[#0b0e14] font-black px-6 py-2.5 rounded-lg text-xs tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:-translate-y-0.5">
+            {/* Ocultamos el botón de depósito en celulares porque ya está en el menú de abajo */}
+            <button onClick={() => setCajeroAbierto(true)} className="hidden md:block animate-shine bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] text-[#0b0e14] font-black px-6 py-2.5 rounded-lg text-xs tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:-translate-y-0.5">
               DEPOSIT
             </button>
 
-            <div className="flex items-center gap-3 pl-2 md:pl-4 border-l border-[#222630]">
+            <div className="flex items-center gap-2 md:gap-3 pl-1 md:pl-4 border-l border-[#222630]">
               <LoginButton />
             </div>
 
-            <button onClick={() => setSettingsAbierto(true)} className="p-2 text-[#7c8291] hover:text-white hover:bg-[#1a1e29] transition-colors rounded-lg" title="Settings">
+            <button onClick={() => setSettingsAbierto(true)} className="p-2 text-[#7c8291] hover:text-white hover:bg-[#1a1e29] transition-colors rounded-lg hidden sm:block" title="Settings">
               ⚙️
             </button>
 
-            <button onClick={() => setChatAbierto(!chatAbierto)} className={`p-2 transition-colors rounded-lg ${chatAbierto ? 'text-white bg-[#222630]' : 'text-[#7c8291] hover:text-white hover:bg-[#1a1e29]'}`}>
+            {/* En celular el chat se abre con el menú de abajo, así que lo ocultamos del header superior para ahorrar espacio */}
+            <button onClick={() => setChatAbierto(!chatAbierto)} className={`hidden sm:block p-2 transition-colors rounded-lg ${chatAbierto ? 'text-white bg-[#222630]' : 'text-[#7c8291] hover:text-white hover:bg-[#1a1e29]'}`}>
               💬
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+        {/* Agregamos pb-[80px] en celulares para que el MobileBottomNav no tape el contenido de hasta abajo */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar relative pb-[80px] md:pb-0">
           {children}
         </main>
       </div>
 
       {/* SIDEBAR DERECHA (CHAT) */}
       <aside 
-        className={`fixed top-[80px] xl:top-0 right-0 h-[calc(100%-80px)] xl:h-full bg-[#171925] border-l border-[#222630] flex flex-col z-40 transition-all duration-300 overflow-hidden 
-        ${chatAbierto ? 'translate-x-0 w-[320px] shadow-[-10px_0_30px_rgba(0,0,0,0.5)] xl:shadow-none' : 'translate-x-full xl:translate-x-0 xl:w-[70px]'}`}
+        className={`fixed top-0 right-0 h-full bg-[#171925] border-l border-[#222630] flex flex-col z-[60] xl:z-40 transition-all duration-300 overflow-hidden 
+        ${chatAbierto ? 'translate-x-0 w-full sm:w-[320px] shadow-[-10px_0_30px_rgba(0,0,0,0.5)] xl:shadow-none' : 'translate-x-full xl:translate-x-0 xl:w-[70px]'}`}
       >
         {!chatAbierto && (
           <div className="hidden xl:flex flex-col items-center py-6 gap-4 overflow-y-auto custom-scrollbar h-full w-[70px]">
@@ -302,8 +306,8 @@ export default function CasinoLayout({ children }) {
         )}
 
         {chatAbierto && (
-          <div className="flex flex-col h-full w-[320px]">
-            <div className="p-4 shrink-0">
+          <div className="flex flex-col h-full w-full sm:w-[320px]">
+            <div className="p-4 shrink-0 bg-[#171925] pt-safe-top">
               <div className="bg-[#1c1f2e] border border-[#252839] rounded-xl overflow-hidden relative shadow-lg">
                 <div className="p-3 flex justify-between items-center relative z-10">
                   <div className="flex items-center gap-3">
@@ -316,6 +320,10 @@ export default function CasinoLayout({ children }) {
                   <div className="flex items-center gap-2">
                     <button className="bg-gradient-to-r from-[#6C63FF] to-[#5147D9] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-[0_2px_8px_rgba(108,99,255,0.25)]">
                       08:39
+                    </button>
+                    {/* Botón para cerrar el chat en celular */}
+                    <button onClick={() => setChatAbierto(false)} className="xl:hidden ml-1 p-1 text-[#7c8291] hover:text-white bg-[#14171f] rounded-lg">
+                      &times;
                     </button>
                   </div>
                 </div>
@@ -352,7 +360,7 @@ export default function CasinoLayout({ children }) {
               <div ref={chatEndRef} />
             </div>
 
-            <div className="p-4 pt-2 shrink-0">
+            <div className="p-4 pt-2 shrink-0 bg-[#171925] pb-safe-bottom">
               <form onSubmit={enviarMensaje} className="relative bg-[#141323] border border-[#252839] rounded-xl flex items-center p-1 focus-within:border-[#6C63FF] transition-colors shadow-inner">
                 <input 
                   type="text" 
