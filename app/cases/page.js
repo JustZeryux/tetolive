@@ -69,7 +69,7 @@ export default function CasesPage() {
   }, [casesData, searchTerm, sortBy]);
 
   const openCase = async () => {
-    if (!currentUser) return alert("Por favor inicia sesión.");
+    if (!currentUser || !userProfile) return alert("Por favor inicia sesión.");
     if (spinning) return;
 
     if (userProfile.saldo_verde < selectedCase.price) {
@@ -79,59 +79,68 @@ export default function CasesPage() {
     }
     
     setView('opening');
-    setSpinning(true); // Bloqueamos el botón inmediatamente
+    setSpinning(true); 
 
-    // 1. LLAMADA REAL AL BACKEND (Lo que habías borrado)
-    const { data: dbWinner, error } = await supabase.rpc('open_case', { case_id: selectedCase.id });
-    
-    if (error || dbWinner?.error) {
+    try {
+      // 1. COBRAR EL SALDO DIRECTO EN LA BASE DE DATOS
+      const nuevoSaldo = userProfile.saldo_verde - selectedCase.price;
+      const { error: cobroError } = await supabase
+        .from('profiles')
+        .update({ saldo_verde: nuevoSaldo })
+        .eq('id', currentUser.id);
+
+      if (cobroError) throw cobroError;
+
+      // 2. SELECCIONAR EL GANADOR POR PROBABILIDAD
+      const winner = getRandomVisualItem(selectedCase.items);
+
+      // 3. INSERTAR EL ITEM EN EL INVENTARIO DEL USUARIO
+      // Asumimos que winner.id coincide con el id de tu tabla public.items (ej: 'teto_pet_01')
+      const { error: invError } = await supabase
+        .from('inventory')
+        .insert({
+          user_id: currentUser.id,
+          item_id: winner.id // <-- Asegúrate de que tu JSON de cajas tiene un .id que coincida con public.items
+        });
+
+      if (invError) throw invError;
+
+      // 4. ACTUALIZAR LA UI
+      setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
+      setWinningItem(winner);
+
+      // 5. INICIAR LA RULETA VISUAL
+      const track = Array.from({length: 55}, (_, i) => 
+        i === WINNING_INDEX ? winner : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
+      );
+      setSpinnerItems(track);
+      
+      setTimeout(() => {
+        if (sliderRef.current) {
+          sliderRef.current.style.transition = 'none';
+          sliderRef.current.style.transform = `translateX(0px)`;
+          void sliderRef.current.offsetWidth; 
+
+          const centerOffset = REAL_ITEM_WIDTH / 2;
+          const randomOffset = (Math.floor(Math.random() * 100) - 50); 
+          const targetPx = -(WINNING_INDEX * REAL_ITEM_WIDTH) - centerOffset + randomOffset;
+
+          sliderRef.current.style.transition = 'transform 6s cubic-bezier(0.12, 0.8, 0.15, 1)';
+          sliderRef.current.style.transform = `translateX(${targetPx}px)`;
+        }
+
+        setTimeout(() => { 
+          setSpinning(false); 
+          setView('result'); 
+        }, 6200); 
+      }, 50);
+
+    } catch (err) {
+      console.error(err);
       setSpinning(false);
       setView('inspect');
-      return alert(dbWinner?.error || "Error al abrir la caja. ¿Tienes saldo?");
+      alert("Error de conexión al procesar la caja. Tu saldo no fue afectado.");
     }
-
-    // Actualizar saldo localmente para que se vea reflejado el cobro
-    setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - selectedCase.price}));
-    
-    // Buscar el item visual en base a lo que dictó el servidor
-    // (Asume que tu dbWinner trae el ID o nombre del item)
-    const winner = selectedCase.items.find(i => i.id === dbWinner.id || i.name === dbWinner.name) || selectedCase.items[0];
-    setWinningItem(winner);
-
-    // 2. PREPARAR LA RULETA
-    const track = Array.from({length: 55}, (_, i) => 
-      i === WINNING_INDEX ? winner : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
-    );
-    setSpinnerItems(track);
-    
-    // 3. EJECUTAR ANIMACIÓN PERFECTA SIN DEPENDER DE REACT
-    setTimeout(() => {
-      if (sliderRef.current) {
-        // Reseteamos posición a 0 instantáneamente
-        sliderRef.current.style.transition = 'none';
-        sliderRef.current.style.transform = `translateX(0px)`;
-        
-        // Forzamos al navegador a registrar el reseteo
-        void sliderRef.current.offsetWidth; 
-
-        // Calculamos distancia exacta para que el item 40 quede en el centro
-        const centerOffset = REAL_ITEM_WIDTH / 2;
-        // Un ligero desvío aleatorio para que no caiga siempre en el puro centro exacto del item
-        const randomOffset = (Math.floor(Math.random() * 100) - 50); 
-        const targetPx = -(WINNING_INDEX * REAL_ITEM_WIDTH) - centerOffset + randomOffset;
-
-        // Disparamos la transición cabrona
-        sliderRef.current.style.transition = 'transform 6s cubic-bezier(0.12, 0.8, 0.15, 1)';
-        sliderRef.current.style.transform = `translateX(${targetPx}px)`;
-      }
-
-      // Termina la animación
-      setTimeout(() => { 
-        setSpinning(false); 
-        setView('result'); 
-      }, 6200); 
-
-    }, 50);
   };
 
   if (cargando) return (
@@ -283,7 +292,7 @@ export default function CasesPage() {
             <div className="relative w-full max-w-[1000px] h-[240px] bg-[#0b0e14]/90 backdrop-blur-xl border-y-4 border-[#252839] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.8)] rounded-2xl z-10 flex items-center">
               
               <img 
-                src="/teto.png" 
+                src="/Cases.png" 
                 alt="Teto" 
                 className="absolute -right-8 -bottom-8 w-64 opacity-25 pointer-events-none drop-shadow-[0_0_20px_rgba(108,99,255,0.5)] z-0"
                 onError={(e) => e.target.style.display = 'none'}
