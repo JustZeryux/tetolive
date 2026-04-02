@@ -11,24 +11,6 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
-// --- DATA PARA LAS CAJAS (Con items para que el servidor pueda calcular) ---
-const [availableCases, setAvailableCases] = useState([]);
-
-useEffect(() => {
-  const loadCasesForBattles = async () => {
-    // Pedimos exactamente las columnas que creaste en tu tabla "cases"
-const { data, error } = await supabase.from('cases').select('id, name, price, image_url');
-    .from('cases')
-    if (data && !error) {
-      setAvailableCases(data);
-    } else {
-      console.error("Error al cargar cajas:", error);
-    }
-  };
-
-  loadCasesForBattles();
-}, []);
-
 export default function BattlesPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [view, setView] = useState('lobby'); // 'lobby' | 'create' | 'arena'
@@ -43,7 +25,18 @@ export default function BattlesPage() {
   const [currentRound, setCurrentRound] = useState(-1);
   const [battleResults, setBattleResults] = useState(null);
   const resolvingRef = useRef(false);
-
+const [availableCases, setAvailableCases] = useState([]);  
+  useEffect(() => {
+    const loadCasesForBattles = async () => {
+      const { data, error } = await supabase.from('cases').select('id, name, price, image_url, items, color');
+      if (data && !error) {
+        setAvailableCases(data);
+      }
+    };
+    loadCasesForBattles();
+  }, []);
+  
+  // -----
   useEffect(() => {
     // 1. Obtener Usuario
     const initUser = async () => {
