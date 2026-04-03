@@ -283,23 +283,42 @@ export default function BloxypotCoinflip() {
       }
   };
 
-  const cancelarPartida = async () => {
-      if (!partidaSeleccionada) return;
-      await supabase.from('partidas').delete().eq('id', partidaSeleccionada.id);
+const cancelarPartida = async (gameId) => {
+      if (!currentUser) return;
       
-      setMisPets(prev => {
-          const recuperadas = partidaSeleccionada.petsHost?.items || [];
-          const merged = [...prev, ...recuperadas];
-          const uniqueIds = new Set();
-          return merged.filter(pet => {
-              const isDuplicate = uniqueIds.has(pet.inventarioId);
-              uniqueIds.add(pet.inventarioId);
-              return !isDuplicate;
-          }).sort((a,b) => b.valor - a.valor);
-      });
+      try {
+          // 1. Buscamos la partida para saber qué devolver
+          const { data: partida } = await supabase.from('partidas').select('*').eq('id', gameId).single();
+          if (!partida || partida.estado !== 'waiting') {
+              alert("No se puede cancelar esta partida.");
+              return;
+          }
 
-      setVistaActual('lobby');
-      setPartidaSeleccionada(null);
+          // 2. Devolver el dinero o las pets
+          if (partida.datos_partida.currency === 'green') {
+              const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
+              await supabase.from('profiles').update({ 
+                  saldo_verde: profile.saldo_verde + partida.datos_partida.betAmount 
+              }).eq('id', currentUser.id);
+          } else if (partida.datos_partida.currency === 'pets') {
+              // Si apostó pets, las re-insertamos en su inventario
+              const petsParaDevolver = partida.apuesta_creador.map(pet => ({
+                  user_id: currentUser.id,
+                  item_id: pet.item_id
+              }));
+              if (petsParaDevolver.length > 0) {
+                  await supabase.from('inventory').insert(petsParaDevolver);
+              }
+          }
+
+          // 3. Borrar la partida
+          await supabase.from('partidas').delete().eq('id', gameId);
+          alert("Partida cancelada y apuesta devuelta.");
+          
+      } catch (err) {
+          console.error("Error cancelando:", err);
+          alert("Hubo un error al cancelar.");
+      }
   };
 
   // --- LÓGICA JOIN ---
