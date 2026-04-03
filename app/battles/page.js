@@ -315,64 +315,67 @@ export default function BattlesPage() {
             <div className="space-y-4">
               {battles.length === 0 && <p className="text-[#8f9ac6] text-center py-10">No active battles. Create one!</p>}
               
-              {battles.map((battle) => {
-                const isCompleted = battle.estado === 'completed';
-                const pData = battle.datos_partida;
-                
-                return (
-                <div key={battle.id} className={`bg-[#1c1f2e] border ${isCompleted ? 'border-[#252839] opacity-80' : 'border-[#252839] hover:border-[#ef4444]/50'} rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-6 transition-all shadow-lg group relative`}>
-                  
-                  {isCompleted && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
+{battles.map((battle) => {
+    const isCompleted = battle.estado === 'completed';
+    // ARMADURA ANTI-CRASH: Si no hay datos, le asignamos objetos o arreglos vacíos
+    const pData = battle.datos_partida || {};
+    const battleCases = pData.cases || [];
+    const battlePlayers = pData.players || [];
+    
+    return (
+    <div key={battle.id} className={`bg-[#1c1f2e] border ${isCompleted ? 'border-[#252839] opacity-80' : 'border-[#252839] hover:border-[#ef4444]/50'} rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-6 transition-all shadow-lg group relative`}>
+      
+      {isCompleted && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
 
-                  {/* Jugadores */}
-                  <div className="flex items-center gap-2 w-full xl:w-auto justify-center xl:justify-start pt-4 xl:pt-0">
-                    {Array.from({ length: pData.playerCount }).map((_, idx) => {
-                      const user = pData.players[idx];
-                      const isWinner = isCompleted && battle.resultado?.ganador_id === user?.id;
-                      
-                      return (
-                      <div key={idx} className="relative flex items-center">
-                        {isWinner && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl z-20 drop-shadow-md">👑</span>}
-                        {user ? (
-                          <div className={`w-12 h-12 rounded-full border-2 ${isWinner ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'border-[#ef4444]'} overflow-hidden bg-[#141323] z-10`}>
-                            <img src={user.avatar} className="w-full h-full object-cover" alt="player"/>
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-full border-2 border-dashed border-[#555b82] flex items-center justify-center bg-[#141323]/50 z-10">
-                            <span className="text-[#555b82] font-black">?</span>
-                          </div>
-                        )}
-                      </div>
-                    )})}
-                  </div>
+      {/* Jugadores */}
+      <div className="flex items-center gap-2 w-full xl:w-auto justify-center xl:justify-start pt-4 xl:pt-0">
+        {Array.from({ length: pData.playerCount || 2 }).map((_, idx) => {
+          const user = battlePlayers[idx];
+          const isWinner = isCompleted && battle.resultado?.ganador_id === user?.id;
+          
+          return (
+          <div key={idx} className="relative flex items-center">
+            {isWinner && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl z-20 drop-shadow-md">👑</span>}
+            {user ? (
+              <div className={`w-12 h-12 rounded-full border-2 ${isWinner ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'border-[#ef4444]'} overflow-hidden bg-[#141323] z-10`}>
+                <img src={user.avatar} className="w-full h-full object-cover" alt="player"/>
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full border-2 border-dashed border-[#555b82] flex items-center justify-center bg-[#141323]/50 z-10">
+                <span className="text-[#555b82] font-black">?</span>
+              </div>
+            )}
+          </div>
+        )})}
+      </div>
 
-                  {/* Cajas a abrir */}
-                  <div className="flex-1 w-full bg-[#141323] border border-[#252839] rounded-xl p-3 flex items-center gap-3 overflow-x-auto custom-scrollbar">
-                    {pData.cases.map((caja, idx) => (
-                      <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center">
-                        <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
-                        <img src={caja.image_url} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color}80)`}}/>
-                      </div>
-                    ))}
-                    <span className="text-[#555b82] font-black text-xs ml-2 shrink-0">{pData.cases.length} Rounds</span>
-                  </div>
+      {/* Cajas a abrir */}
+      <div className="flex-1 w-full bg-[#141323] border border-[#252839] rounded-xl p-3 flex items-center gap-3 overflow-x-auto custom-scrollbar">
+        {battleCases.map((caja, idx) => (
+          <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center">
+            <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${caja.color || '#fff'} 0%, transparent 70%)` }}></div>
+            <img src={caja.image_url} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color || '#fff'}80)`}}/>
+          </div>
+        ))}
+        <span className="text-[#555b82] font-black text-xs ml-2 shrink-0">{battleCases.length} Rounds</span>
+      </div>
 
-                  {/* Costo y Botón */}
-                  <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto justify-between xl:justify-end">
-                    <div className="text-center sm:text-right">
-                      <p className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest">Total Cost</p>
-                      <p className={`text-xl font-black flex items-center gap-1.5 ${isCompleted ? 'text-[#8f9ac6]' : 'text-white'}`}><GreenCoin cls="w-5 h-5"/> {formatValue(pData.cost)}</p>
-                    </div>
-                    <button 
-                      onClick={() => joinBattle(battle)}
-                      disabled={isJoining}
-                      className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md group-hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'} disabled:opacity-50`}
-                    >
-                      {isJoining ? 'Wait...' : (isCompleted ? 'View Battle' : (pData.players.some(p => p.id === currentUser?.id) ? 'View' : 'Join Battle'))}
-                    </button>
-                  </div>
-                </div>
-              )})}
+      {/* Costo y Botón */}
+      <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto justify-between xl:justify-end">
+        <div className="text-center sm:text-right">
+          <p className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest">Total Cost</p>
+          <p className={`text-xl font-black flex items-center gap-1.5 ${isCompleted ? 'text-[#8f9ac6]' : 'text-white'}`}><GreenCoin cls="w-5 h-5"/> {formatValue(pData.cost || 0)}</p>
+        </div>
+        <button 
+          onClick={() => joinBattle(battle)}
+          disabled={isJoining}
+          className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md group-hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'} disabled:opacity-50`}
+        >
+          {isJoining ? 'Wait...' : (isCompleted ? 'View Battle' : (battlePlayers.some(p => p.id === currentUser?.id) ? 'View' : 'Join Battle'))}
+        </button>
+      </div>
+    </div>
+  )})}
             </div>
           </div>
         )}
