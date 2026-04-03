@@ -216,7 +216,7 @@ export default function BloxypotCoinflip() {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
-  const handleCreateGame = async () => {
+const handleCreateGame = async () => {
       // 1. Validaciones
       if (!currentUser) return alert("Inicia sesión para jugar.");
       if (creatorSelectedPets.length === 0) return alert("Selecciona mascotas para apostar primero.");
@@ -226,7 +226,7 @@ export default function BloxypotCoinflip() {
       setIsCreating(true);
 
       try {
-          // 2. EL ANTI-SPAM 
+          // 2. EL ANTI-SPAM (Límite ESTRICTO de 1 partida en espera)
           const { data: activeGames } = await supabase
               .from('partidas')
               .select('id')
@@ -234,8 +234,9 @@ export default function BloxypotCoinflip() {
               .eq('modo_juego', 'coinflip')
               .eq('estado', 'waiting');
 
-          if (activeGames && activeGames.length >= 2) {
-              alert("¡Cálmate wey! 🛑 Ya tienes 2 partidas en espera. Deja que alguien se una a esas primero.");
+          // Si ya tiene 1 o más, lo bloqueamos
+          if (activeGames && activeGames.length >= 1) {
+              alert("¡Cálmate wey! 🛑 Ya tienes una partida en espera. Deja que alguien se una a esa primero o cancélala.");
               setIsCreating(false);
               return;
           }
@@ -253,21 +254,25 @@ export default function BloxypotCoinflip() {
               valor_total: totalCreatorValue
           };
 
-          // 5. INSERTAR EN BD
-          const { error } = await supabase.from('partidas').insert({
+          // 5. INSERTAR EN BD Y RECUPERAR LA PARTIDA (.select().single())
+          const { data: nuevaPartida, error } = await supabase.from('partidas').insert({
               modo_juego: 'coinflip',
               creador_id: currentUser.id,
               apuesta_creador: creatorSelectedPets, // Array de pets directo
               datos_partida: datosPartida,
               estado: 'waiting'
-          });
+          }).select().single(); // <--- IMPORTANTE: Pedimos la partida de vuelta
 
           if (error) throw error;
 
-          // 6. LIMPIAR
+          // 6. LIMPIAR Y MANDAR AL LOBBY DE ESPERA
           setCreatorSelectedPets([]);
           setCreatorSide(null);
-          alert("¡Coinflip creado con éxito! Esperando rival...");
+          
+          // Formateamos la partida recién creada para que la UI la entienda
+          const uiGame = formatGameToUI(nuevaPartida);
+          setPartidaSeleccionada(uiGame);
+          setVistaActual('esperando'); // <--- Te mandamos a la pantalla de espera
           
       } catch (err) {
           console.error("Error creando coinflip:", err);
