@@ -51,6 +51,7 @@ export default function BloxypotCoinflip() {
   const [currentUser, setCurrentUser] = useState(null);
   const [misPets, setMisPets] = useState([]);
   const [vistaActual, setVistaActual] = useState('lobby'); 
+  const [visiblePetsCount, setVisiblePetsCount] = useState(100); // Empezamos mostrando 60 para evitar lag
   
   // Estados de Animación y Partida
   const [cuentaRegresiva, setCuentaRegresiva] = useState(null);
@@ -129,7 +130,7 @@ export default function BloxypotCoinflip() {
         .eq('modo_juego', 'coinflip')
         .in('estado', ['waiting', 'in_progress', 'completed'])
         .order('creado_en', { ascending: false })
-        .limit(30); 
+        .limit(5000); 
       
       if (!error && data) {
         setLobbyGames(data.map(formatGameToUI));
