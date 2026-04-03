@@ -13,7 +13,7 @@ const formatValue = (val) => {
 
 const getAvatar = (url, name) => url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name || 'player'}&backgroundColor=8b0000,000000`;
 
-// SVG del Revólver Animado (Apunta a 0 grados = Derecha por defecto)
+// SVG del Revólver Animado
 const GunSVG = ({ targetAngle, isShaking, isFiring, isSpinningCylinder }) => (
     <div className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute inset-0 flex items-center justify-center ${isShaking ? 'animate-shake-hard' : ''}`} style={{ transform: `rotate(${targetAngle}deg)` }}>
         <div className={`relative ${isFiring ? 'scale-125 drop-shadow-[0_0_60px_rgba(255,0,0,1)]' : 'drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)]'} transition-transform duration-100`}>
@@ -53,26 +53,22 @@ export default function RussianRoulettePage() {
   const [view, setView] = useState('menu'); 
   const [mode, setMode] = useState('bot'); 
   
-  // APUESTAS
   const [betType, setBetType] = useState('coins');
   const [coinBet, setCoinBet] = useState(10);
   const [selectedPets, setSelectedPets] = useState([]);
   const [botPets, setBotPets] = useState([]); 
   
-  // LOBBIES
   const [lobbies, setLobbies] = useState([]);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [players, setPlayers] = useState([]); 
-  const channelRef = useRef(null);
 
-  // GAMEPLAY STATE
   const [turnId, setTurnId] = useState(null); 
   const [actionLog, setActionLog] = useState("WAITING...");
   const [isProcessing, setIsProcessing] = useState(false);
   const [potTotal, setPotTotal] = useState(0);
   
-  // EFECTOS Y ARMA
-  const [gunAngle, setGunAngle] = useState(90); // 90 = Apunta al jugador local
+  // EFECTOS
+  const [gunAngle, setGunAngle] = useState(-90); // Default apunta a la mesa
   const [gunShaking, setGunShaking] = useState(false);
   const [gunFiring, setGunFiring] = useState(false);
   const [screenFlash, setScreenFlash] = useState(false);
@@ -80,6 +76,7 @@ export default function RussianRoulettePage() {
 
   const chambersRef = useRef([]);
   const currentChamberRef = useRef(0);
+  const lastPayloadTsRef = useRef(0); // Evita duplicar acciones de la DB
   const [uiChamber, setUiChamber] = useState(0); 
 
   useEffect(() => {
@@ -97,7 +94,15 @@ export default function RussianRoulettePage() {
     init();
   }, []);
 
-  // --- REPRODUCTOR DE AUDIO CERO LATENCIA ---
+  // --- AUDIO ZERO-LATENCY ENGINE ---
+  const unlockAudio = () => {
+      // Fuerza al navegador a "autorizar" el audio cargándolo en memoria vacía
+      ['spin', 'click', 'bang', 'win'].forEach(id => {
+          const el = document.getElementById(`sfx-${id}`);
+          if (el && el.paused) { el.volume = 0; el.play().then(() => { el.pause(); el.currentTime = 0; el.volume = id === 'bang' ? 1 : 0.8; }).catch(()=>{}); }
+      });
+  };
+
   const playSFX = (type) => {
       const audioEl = document.getElementById(`sfx-${type}`);
       if (audioEl) {
@@ -112,23 +117,17 @@ export default function RussianRoulettePage() {
   };
   const calculateSelectedValue = () => selectedPets.reduce((sum, p) => sum + p.value, 0);
 
-  // --- MATEMÁTICA DE CÍRCULO PERFECTO PARA POSICIONES Y APUNTADO ---
+  // --- MATEMÁTICA TRIGONOMÉTRICA (POSICIONES Y ARMA) ---
   const getCircleMath = (index, total) => {
-      // Index 0 es el jugador local. Queremos que esté ABAJO (90 grados en un círculo estándar)
-      const startAngle = Math.PI / 2; 
+      const startAngle = Math.PI / 2; // 90 grados (Abajo en CSS)
       const angleStep = (2 * Math.PI) / total;
       const angle = startAngle + (index * angleStep);
       
-      // Radios para el óvalo de la mesa
-      const rx = 40; // 40% ancho
-      const ry = 35; // 35% alto
-      
+      const rx = 40; const ry = 35; // Radios del óvalo
       const left = 50 + Math.cos(angle) * rx;
       const top = 50 + Math.sin(angle) * ry;
       
-      // Ángulo de la pistola en grados
-      const gunDegrees = angle * (180 / Math.PI);
-      
+      const gunDegrees = angle * (180 / Math.PI); // Calcula donde apunta exactamente
       return { left: `${left}%`, top: `${top}%`, gunDegrees };
   };
 
@@ -147,8 +146,9 @@ export default function RussianRoulettePage() {
   }, [players, currentUser]);
 
 
-  // --- INICIO MODO LOCAL VS BOT ---
+  // --- LOCAL VS BOT ---
   const startBotMatch = async () => {
+      unlockAudio();
       const isCoin = betType === 'coins';
       const myBetVal = isCoin ? coinBet : calculateSelectedValue();
       
@@ -157,16 +157,13 @@ export default function RussianRoulettePage() {
       
       if (isCoin) await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
       
-      // Igualar Pets del Bot
       if (!isCoin) {
           const { data: allItems } = await supabase.from('items').select('*').gt('value', 0);
-          let tetoPets = [];
-          let currentVal = 0;
+          let tetoPets = []; let currentVal = 0;
           if (allItems) {
               while (currentVal < myBetVal && tetoPets.length < 4) {
                   const p = allItems[Math.floor(Math.random() * allItems.length)];
-                  tetoPets.push(p);
-                  currentVal += p.value;
+                  tetoPets.push(p); currentVal += p.value;
               }
           }
           setBotPets(tetoPets);
@@ -182,6 +179,7 @@ export default function RussianRoulettePage() {
       
       setView('playing');
       setActionLog("LOADING CYLINDER...");
+      setGunAngle(-90);
       setCylinderSpinning(true);
       playSFX('spin');
       
@@ -200,7 +198,6 @@ export default function RussianRoulettePage() {
       setIsProcessing(true);
       setActionLog("TETOBOT IS THINKING...");
       
-      // Bot está en el index 1. Su ángulo es 270 (arriba). Apunta a sí mismo = 270.
       const botVisual = visualCirclePlayers.find(p => p.id === 'bot');
       setGunAngle(botVisual.gunDegrees); 
       
@@ -240,7 +237,7 @@ export default function RussianRoulettePage() {
   }, [turnId, view, mode, cylinderSpinning]);
 
 
-  // --- MULTIPLAYER ONLINE ---
+  // --- MULTIPLAYER ONLINE (DB SYNC FIX) ---
   const fetchLobbies = async () => {
       const { data } = await supabase.from('roulette_lobbies').select('*').eq('status', 'waiting');
       if (data) setLobbies(data);
@@ -254,6 +251,7 @@ export default function RussianRoulettePage() {
   };
 
   const hostOnlineMatch = async () => {
+      unlockAudio();
       if (betType === 'pets') return alert("Online Pet Betting coming in the next security patch.");
       if (userProfile.saldo_verde < coinBet) return alert("Insufficient coins.");
       
@@ -276,13 +274,16 @@ export default function RussianRoulettePage() {
   };
 
   const joinOnlineMatch = async (lobby) => {
+      unlockAudio();
       if (userProfile.saldo_verde < lobby.bet_amount) return alert("No saldo.");
       await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - lobby.bet_amount }).eq('id', currentUser.id);
 
       const me = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
       const updatedPlayers = [...lobby.players, me];
+      
+      const joinPayload = { event: 'player_joined', ts: Date.now() };
 
-      await supabase.from('roulette_lobbies').update({ players: updatedPlayers }).eq('id', lobby.id);
+      await supabase.from('roulette_lobbies').update({ players: updatedPlayers, action_payload: joinPayload }).eq('id', lobby.id);
 
       setCurrentRoom(lobby);
       setPlayers(updatedPlayers);
@@ -293,80 +294,63 @@ export default function RussianRoulettePage() {
   };
 
   const connectToRoom = (roomId, isHost) => {
-      const channel = supabase.channel(`room_${roomId}`);
-      channelRef.current = channel;
-
-      channel.on('broadcast', { event: 'player_joined' }, payload => {
-          setPlayers(payload.players);
-          setPotTotal(currentRoom.bet_amount * payload.players.length);
-          playSFX('click'); // Sonidito cuando alguien entra
-      });
-      
-      channel.on('broadcast', { event: 'game_start' }, payload => {
-          setActionLog("SPINNING CYLINDER...");
-          setCylinderSpinning(true);
-          playSFX('spin');
+      supabase.channel(`room_${roomId}_updates`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roulette_lobbies', filter: `id=eq.${roomId}` }, (payload) => {
+          const newRow = payload.new;
           
-          setTimeout(() => {
-              chambersRef.current = payload.chambers;
-              currentChamberRef.current = 0;
-              setUiChamber(0);
-              setCylinderSpinning(false);
-              setTurnId(payload.turnId);
-              setActionLog(payload.turnId === currentUser.id ? "YOUR TURN." : "MATCH STARTED.");
-          }, 2000);
-      });
+          // Mantener los jugadores y pot sincronizados con la DB
+          setPlayers(newRow.players);
+          setPotTotal(newRow.bet_amount * newRow.players.length);
 
-      channel.on('broadcast', { event: 'shoot_action' }, payload => executeOnlineVisuals(payload.shooterId, payload.targetId, payload.isBullet));
-      
-      channel.on('broadcast', { event: 'reload_cylinder' }, payload => {
-          chambersRef.current = payload.chambers;
-          currentChamberRef.current = 0;
-          setUiChamber(0);
-          setActionLog("RELOADING...");
-          setCylinderSpinning(true);
-          playSFX('spin');
-          setTimeout(() => {
-              setCylinderSpinning(false);
-              setTurnId(payload.turnId);
-              setActionLog(payload.turnId === currentUser.id ? "YOUR TURN." : "CONTINUING.");
-              setIsProcessing(false);
-          }, 2000);
-      });
+          // PROCESADOR DE ACCIONES (LA MAGIA DE LA DB)
+          const action = newRow.action_payload;
+          if (action && action.ts !== lastPayloadTsRef.current) {
+              lastPayloadTsRef.current = action.ts;
 
-      channel.subscribe(async (status) => {
-          if (status === 'SUBSCRIBED' && isHost) {
-              supabase.channel('lobby_updates').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roulette_lobbies', filter: `id=eq.${roomId}` }, (payload) => {
-                  setPlayers(payload.new.players);
-                  setPotTotal(currentRoom.bet_amount * payload.new.players.length);
-                  channel.send({ type: 'broadcast', event: 'player_joined', payload: { players: payload.new.players } });
-              }).subscribe();
+              if (action.event === 'player_joined') {
+                  playSFX('click');
+              } else if (action.event === 'game_start') {
+                  setActionLog("SPINNING CYLINDER...");
+                  setCylinderSpinning(true);
+                  playSFX('spin');
+                  setTimeout(() => {
+                      chambersRef.current = action.chambers;
+                      currentChamberRef.current = 0;
+                      setUiChamber(0);
+                      setCylinderSpinning(false);
+                      setTurnId(action.turnId);
+                      setActionLog(action.turnId === currentUser.id ? "YOUR TURN." : "MATCH STARTED.");
+                  }, 2000);
+              } else if (action.event === 'shoot_action') {
+                  // Ejecuta visuales pero manda el nuevo estado de jugadores guardado en la DB
+                  executeOnlineVisuals(action, newRow.players); 
+              } else if (action.event === 'reload_cylinder') {
+                  chambersRef.current = action.chambers;
+                  currentChamberRef.current = 0;
+                  setUiChamber(0);
+                  setActionLog("RELOADING...");
+                  setCylinderSpinning(true);
+                  playSFX('spin');
+                  setTimeout(() => {
+                      setCylinderSpinning(false);
+                      setTurnId(action.turnId);
+                      setActionLog(action.turnId === currentUser.id ? "YOUR TURN." : "CONTINUING.");
+                      setIsProcessing(false);
+                  }, 2000);
+              }
           }
-      });
+      }).subscribe();
   };
 
   const startOnlineGameHost = async () => {
       if (players.length < 2) return alert("Need at least 2 players!");
-      await supabase.from('roulette_lobbies').update({ status: 'playing' }).eq('id', currentRoom.id);
       
       const newChambers = [false, false, false, false, false, false];
       newChambers[Math.floor(Math.random() * 6)] = true;
       const firstTurn = players[0].id;
       
-      setActionLog("SPINNING CYLINDER...");
-      setCylinderSpinning(true);
-      playSFX('spin');
-
-      setTimeout(() => {
-          chambersRef.current = newChambers;
-          currentChamberRef.current = 0;
-          setUiChamber(0);
-          setCylinderSpinning(false);
-          setTurnId(firstTurn);
-          setActionLog("YOUR TURN.");
-      }, 2000);
-
-      channelRef.current.send({ type: 'broadcast', event: 'game_start', payload: { chambers: newChambers, turnId: firstTurn } });
+      const startPayload = { event: 'game_start', chambers: newChambers, turnId: firstTurn, ts: Date.now() };
+      await supabase.from('roulette_lobbies').update({ status: 'playing', action_payload: startPayload }).eq('id', currentRoom.id);
   };
 
 
@@ -378,10 +362,12 @@ export default function RussianRoulettePage() {
       const isBullet = chambersRef.current[currentChamberRef.current];
 
       if (mode === 'online') {
-          channelRef.current.send({ type: 'broadcast', event: 'shoot_action', payload: { shooterId: currentUser.id, targetId, isBullet } });
-          executeOnlineVisuals(currentUser.id, targetId, isBullet);
+          // ONLINE: El disparador actualiza la DB
+          const newPlayers = players.map(p => p.id === targetId && isBullet ? {...p, isDead: true} : p);
+          const shootPayload = { event: 'shoot_action', shooterId: currentUser.id, targetId, isBullet, ts: Date.now() };
+          await supabase.from('roulette_lobbies').update({ action_payload: shootPayload, players: newPlayers }).eq('id', currentRoom.id);
       } else {
-          // Local Visuals
+          // LOCAL VISUALS
           const targetVisual = visualCirclePlayers.find(p => p.id === targetId);
           setGunAngle(targetVisual.gunDegrees); 
           setActionLog(targetId === currentUser.id ? "YOU AIM AT YOURSELF..." : "YOU AIM AT TETOBOT...");
@@ -402,7 +388,7 @@ export default function RussianRoulettePage() {
               setTimeout(() => endGame(isMeDead ? 'bot' : currentUser.id, isMeDead ? 0 : potTotal), 2000);
           } else {
               playSFX('click');
-              setActionLog("...CLICK. NOTHING HAPPENED.");
+              setActionLog("...CLICK.");
               setTimeout(() => {
                   currentChamberRef.current += 1;
                   setUiChamber(currentChamberRef.current);
@@ -413,31 +399,30 @@ export default function RussianRoulettePage() {
       }
   };
 
-  const executeOnlineVisuals = async (shooterId, targetId, isBullet) => {
-      const shooterName = players.find(p => p.id === shooterId)?.name;
-      const targetVisual = visualCirclePlayers.find(p => p.id === targetId);
+  const executeOnlineVisuals = async (action, newPlayersState) => {
+      const shooterName = players.find(p => p.id === action.shooterId)?.name;
+      const targetVisual = visualCirclePlayers.find(p => p.id === action.targetId);
       
-      // Aquí está la magia: La pistola gira EXACTAMENTE a los grados calculados del objetivo en la mesa.
+      // La pistola gira EXACTAMENTE a los grados calculados del objetivo.
       setGunAngle(targetVisual.gunDegrees);
 
-      setActionLog(shooterId === targetId ? `${shooterName} AIMS AT THEMSELVES...` : `${shooterName} AIMS AT TARGET...`);
+      setActionLog(action.shooterId === action.targetId ? `${shooterName} AIMS AT THEMSELVES...` : `${shooterName} AIMS AT TARGET...`);
       
       await new Promise(r => setTimeout(r, 1500));
       setGunShaking(true);
       await new Promise(r => setTimeout(r, 1500));
       setGunShaking(false);
 
-      if (isBullet) {
+      if (action.isBullet) {
           playSFX('bang');
           setGunFiring(true);
           setScreenFlash(true);
           setActionLog(`💥 BANG! 💥`);
           
-          setPlayers(prev => {
-              const newPlayers = prev.map(p => p.id === targetId ? {...p, isDead: true} : p);
-              checkOnlineWinCondition(newPlayers, targetId);
-              return newPlayers;
-          });
+          // Aplicamos la muerte y validamos
+          setTimeout(() => {
+              checkOnlineWinCondition(newPlayersState, action.targetId);
+          }, 1000);
       } else {
           playSFX('click');
           setActionLog("...CLICK.");
@@ -445,7 +430,7 @@ export default function RussianRoulettePage() {
               currentChamberRef.current += 1;
               setUiChamber(currentChamberRef.current);
               
-              let nextIdx = players.findIndex(p => p.id === shooterId) + 1;
+              let nextIdx = players.findIndex(p => p.id === action.shooterId) + 1;
               while (nextIdx < players.length * 2) {
                   const checkPlayer = players[nextIdx % players.length];
                   if (!checkPlayer.isDead) {
@@ -466,7 +451,7 @@ export default function RussianRoulettePage() {
       if (alivePlayers.length === 1) {
           setTimeout(() => endGame(alivePlayers[0].id, currentRoom.bet_amount * currentPlayers.length), 3000);
       } else {
-          setTimeout(() => {
+          setTimeout(async () => {
                setGunFiring(false);
                setScreenFlash(false);
                
@@ -484,20 +469,9 @@ export default function RussianRoulettePage() {
                if (currentRoom.host_id === currentUser.id) {
                    const newChambers = [false, false, false, false, false, false];
                    newChambers[Math.floor(Math.random() * 6)] = true;
-                   channelRef.current.send({ type: 'broadcast', event: 'reload_cylinder', payload: { chambers: newChambers, turnId: nextTurnId } });
                    
-                   chambersRef.current = newChambers;
-                   currentChamberRef.current = 0;
-                   setUiChamber(0);
-                   setActionLog("RELOADING...");
-                   setCylinderSpinning(true);
-                   playSFX('spin');
-                   setTimeout(() => {
-                       setCylinderSpinning(false);
-                       setTurnId(nextTurnId);
-                       setActionLog(nextTurnId === currentUser.id ? "YOUR TURN." : "CONTINUING.");
-                       setIsProcessing(false);
-                   }, 2000);
+                   const reloadPayload = { event: 'reload_cylinder', chambers: newChambers, turnId: nextTurnId, ts: Date.now() };
+                   await supabase.from('roulette_lobbies').update({ action_payload: reloadPayload }).eq('id', currentRoom.id);
                }
           }, 3000);
       }
@@ -507,10 +481,6 @@ export default function RussianRoulettePage() {
       if (winnerId === currentUser.id) {
           playSFX('win');
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde + prize }).eq('id', currentUser.id);
-          
-          if (betType === 'pets' && mode === 'bot') {
-              // Si ganas en pets, aquí se añaden a DB.
-          }
           setActionLog(`🏆 YOU WON ${formatValue(prize)}! 🏆`);
       } else {
           if (betType === 'pets' && mode === 'bot') {
@@ -521,7 +491,6 @@ export default function RussianRoulettePage() {
       }
       
       if (currentRoom && currentRoom.host_id === currentUser.id) await supabase.from('roulette_lobbies').update({ status: 'finished' }).eq('id', currentRoom.id);
-      if(channelRef.current) supabase.removeChannel(channelRef.current);
       
       setTimeout(() => setView('result'), 2500);
       setGunFiring(false);
@@ -532,7 +501,7 @@ export default function RussianRoulettePage() {
   return (
     <div className={`min-h-[calc(100vh-80px)] bg-[#050505] text-white font-sans overflow-hidden transition-colors duration-100 ${screenFlash ? 'bg-red-900' : ''}`}>
       
-      {/* AUDIOS PRECARGADOS (CERO LATENCIA) */}
+      {/* AUDIOS PRECARGADOS */}
       <audio id="sfx-spin" src="/sounds/spin.mp3" preload="auto" />
       <audio id="sfx-click" src="/sounds/click.mp3" preload="auto" />
       <audio id="sfx-bang" src="/sounds/bang.mp3" preload="auto" />
@@ -550,12 +519,12 @@ export default function RussianRoulettePage() {
                 <p className="text-gray-400 mb-16 tracking-[0.5em] uppercase font-bold border-b border-red-900/50 pb-4 z-10">High Stakes Survival</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl z-10">
-                    <button onClick={() => { setMode('bot'); setView('betting'); }} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-red-600 shadow-2xl flex flex-col items-center">
+                    <button onClick={() => { setMode('bot'); setView('betting'); unlockAudio(); }} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-red-600 shadow-2xl flex flex-col items-center">
                         <span className="text-7xl mb-4 group-hover:scale-125 transition-transform">🤖</span>
                         <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Local Duel</h3>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Coins & Pets vs Bot</p>
                     </button>
-                    <button onClick={openLobbies} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-blue-600 shadow-2xl flex flex-col items-center">
+                    <button onClick={() => { openLobbies(); unlockAudio(); }} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-blue-600 shadow-2xl flex flex-col items-center">
                         <span className="text-7xl mb-4 group-hover:scale-125 transition-transform">🌐</span>
                         <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Online Arena</h3>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Multiplayer Battle Royale</p>
@@ -601,7 +570,7 @@ export default function RussianRoulettePage() {
             </div>
         )}
 
-        {/* === SETUP APUESTA (CON PETS) === */}
+        {/* === SETUP APUESTA === */}
         {view === 'betting' && (
             <div className="animate-fade-in max-w-5xl mx-auto w-full py-10">
                 <div className="flex items-center justify-between mb-8">
@@ -668,7 +637,7 @@ export default function RussianRoulettePage() {
             </div>
         )}
 
-        {/* === LA MESA DE CASINO (GAMEPLAY) === */}
+        {/* === LA MESA DE CASINO === */}
         {view === 'playing' && (
             <div className="relative w-full h-[70vh] flex items-center justify-center animate-fade-in mt-10">
                 
@@ -677,7 +646,7 @@ export default function RussianRoulettePage() {
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 rounded-[500px]"></div>
                     <div className="absolute inset-6 rounded-[500px] border-[3px] border-red-900/40"></div>
                     
-                    {/* EL POT (DINERO/PETS) EN EL CENTRO DE LA MESA */}
+                    {/* EL POT EN EL CENTRO */}
                     <div className="absolute z-0 flex flex-col items-center justify-center bg-black/60 p-8 rounded-full border border-red-900/50 backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.8)]">
                         <span className="text-[10px] uppercase tracking-[0.4em] text-red-500/80 mb-2 font-black">Pot Total</span>
                         {betType === 'coins' ? (
@@ -698,14 +667,14 @@ export default function RussianRoulettePage() {
                     </div>
                 </div>
 
-                {/* TEXTO DE ACCIÓN FLOTANTE */}
+                {/* TEXTO DE ACCIÓN */}
                 <div className="absolute top-0 w-full text-center z-40 pointer-events-none">
                     <p className={`text-4xl md:text-5xl font-black italic transition-all duration-300 uppercase tracking-[0.2em] bg-black/80 backdrop-blur-xl inline-block px-12 py-5 rounded-full border border-white/10 shadow-2xl ${actionLog.includes('BANG') ? 'text-red-600 scale-125 drop-shadow-[0_0_50px_rgba(220,38,38,1)] border-red-500/50' : 'text-white'}`}>
                         {actionLog}
                     </p>
                 </div>
 
-                {/* --- JUGADORES SENTADOS EN CÍRCULO PERFECTO --- */}
+                {/* --- JUGADORES (CÍRCULO PERFECTO) --- */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
                     {visualCirclePlayers.map(p => {
                         const isMe = p.id === currentUser?.id;
@@ -722,11 +691,11 @@ export default function RussianRoulettePage() {
                                     {isMe ? 'YOU' : p.name}
                                 </div>
                                 
-                                {/* BOTONES (Solo se muestran abajo, en tu posición) */}
+                                {/* BOTONES */}
                                 {isMe && !p.isDead && turnId === currentUser.id && (
                                     <div className="absolute top-[-70px] w-max flex gap-4">
                                         <button disabled={isProcessing || cylinderSpinning} onClick={() => handleShoot(currentUser.id)} className="bg-white hover:bg-gray-200 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 border-4 border-white/20">Shoot Self</button>
-                                        <button disabled={isProcessing || cylinderSpinning} onClick={() => handleShoot('bot')} className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_30px_rgba(220,38,38,0.4)] active:scale-95">Shoot Foe</button>
+                                        <button disabled={isProcessing || cylinderSpinning || mode === 'online'} onClick={() => handleShoot('bot')} className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_30px_rgba(220,38,38,0.4)] active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed">Shoot Foe {mode === 'online' && '(Disabled)'}</button>
                                     </div>
                                 )}
                             </div>
