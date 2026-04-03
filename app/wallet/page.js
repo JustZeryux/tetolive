@@ -41,7 +41,7 @@ export default function WalletPage() {
   // Modal & Animation States
   const [confirmSellModal, setConfirmSellModal] = useState(false);
   const [confirmBuyModal, setConfirmBuyModal] = useState(null);
-  const [epicPurchaseData, setEpicPurchaseData] = useState(null); // For Rule 8 Animation
+  const [epicPurchaseData, setEpicPurchaseData] = useState(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -74,20 +74,24 @@ export default function WalletPage() {
   const loadInventory = async (uid) => {
     const { data, error } = await supabase
         .from('inventory')
-        .select(`id, item_id, serial_number, original_owner, locked, items (name, value, image_url, color, is_limited, is_shiny, is_mythic)`)
+        // Usamos items(*) para evitar que la consulta rechace la petición si te faltan columnas en la tabla items
+        .select(`id, item_id, serial_number, original_owner, locked, items (*)`)
         .eq('user_id', uid);
     
-    if (error) return;
+    if (error) {
+        console.error("Error cargando inventario:", error);
+        return;
+    }
 
     if (data) {
         setInventory(data.filter(row => row.items !== null).map(row => ({
             inventoryId: row.id,
             itemId: row.item_id,
             name: row.items.name,
-            value: row.items.value,
+            value: row.items.value || 0,
             image_url: row.items.image_url,
             color: row.items.color || '#9ca3af',
-            is_mythic: row.items.is_limited === true || row.items.is_mythic === true, // Mapping for PetCard
+            is_mythic: row.items.is_limited === true || row.items.is_mythic === true,
             is_shiny: row.items.is_shiny === true,
             serial_number: row.serial_number || 0,
             original_owner: row.original_owner || 'Unknown',
@@ -99,15 +103,21 @@ export default function WalletPage() {
   const loadMarket = async () => {
     const { data, error } = await supabase
         .from('marketplace')
-        .select(`id, price, items (id, name, image_url, color, is_limited, is_shiny, is_mythic)`);
+        // Igualmente usamos items(*) aquí por seguridad
+        .select(`id, price, items (*)`);
     
-    if (!error && data) {
+    if (error) {
+        console.error("Error cargando el mercado:", error);
+        return;
+    }
+
+    if (data) {
         setMarketItems(data.filter(row => row.items !== null).map(row => ({
             marketId: row.id,
             itemId: row.items.id,
             name: row.items.name,
             price: row.price,
-            value: row.price, // Used for generic sorting/display
+            value: row.price, 
             image_url: row.items.image_url,
             color: row.items.color || '#9ca3af',
             is_mythic: row.items.is_limited === true || row.items.is_mythic === true,
@@ -242,7 +252,6 @@ export default function WalletPage() {
       setGreenBalance(newBalance);
       setConfirmBuyModal(null);
       
-      // Trigger Epic Result Animation
       setEpicPurchaseData(pet);
       await fetchData(); 
     } catch (error) {
@@ -346,7 +355,6 @@ export default function WalletPage() {
               </div>
           </div>
       )}
-
 
       <div className="max-w-[1200px] mx-auto relative z-10">
         
