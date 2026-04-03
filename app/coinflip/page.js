@@ -337,7 +337,7 @@ export default function BloxypotCoinflip() {
     setSelectedPetsToJoin(selected);
   };
 
-  const confirmarUnionYJugar = async () => {
+const confirmarUnionYJugar = async () => {
     if (!dataJoinValidacion.valida) return alert("Las mascotas no están en el rango del 2% permitido.");
     if (isJoining) return; 
     setIsJoining(true);
@@ -349,28 +349,66 @@ export default function BloxypotCoinflip() {
           avatar_challenger: currentUser.avatar_url
       };
 
-      await supabase.from('partidas')
-        .update({ datos_partida: nuevosDatosPartida })
-        .eq('id', partidaSeleccionada.id);
-
       const apuestaParaServidor = {
         items: selectedPetsToJoin.map(p => p.inventarioId), 
         detalle_completo: selectedPetsToJoin 
       };
 
-      const { data: serverResponse, error } = await supabase.rpc('join_coinflip', {
-        p_partida_id: partidaSeleccionada.id,
-        p_retador_id: currentUser.id,
-        p_apuesta_retador: apuestaParaServidor
-      });
+      // ==========================================
+      // MAGIA 50/50 REAL (JUSTICIA ABSOLUTA)
+      // ==========================================
+      const resultadoMoneda = Math.random() < 0.5 ? 'Heads' : 'Tails'; // 50% de probabilidad real
+      const ganaCreador = resultadoMoneda === partidaSeleccionada.lado; // Gana el host si cae lo que eligió
+      
+      const ganadorId = ganaCreador ? partidaSeleccionada.creador_id : currentUser.id;
+      const ladoGanadorStatus = ganaCreador ? 'creador_gana' : 'retador_gana';
+
+      const resultadoPartida = {
+          ganador: ganadorId,
+          lado: ladoGanadorStatus,
+          cara_moneda: resultadoMoneda
+      };
+
+      // UN SOLO UPDATE A LA BASE DE DATOS (Sin usar el RPC amañado)
+      const { error } = await supabase.from('partidas')
+        .update({ 
+            retador_id: currentUser.id,
+            apuesta_retador: apuestaParaServidor,
+            estado: 'completed',
+            resultado: resultadoPartida,
+            datos_partida: nuevosDatosPartida 
+        })
+        .eq('id', partidaSeleccionada.id);
 
       if (error) {
         console.error("Error uniendo:", error);
-        alert("Esta partida ya no está disponible.");
+        alert("Esta partida ya no está disponible o hay un error de seguridad.");
         setIsJoining(false);
         return;
       }
 
+      // ==========================================
+      // LÓGICA DE PAGO (ENTREGAR LAS MASCOTAS AL GANADOR)
+      // ==========================================
+      const itemsAInsertar = [];
+      const petsDelHost = partidaSeleccionada.petsHost?.items || []; 
+      
+      if (!ganaCreador) {
+          // GANA EL RETADOR (TÚ): Recibes tus pets + las del host
+          selectedPetsToJoin.forEach(p => itemsAInsertar.push({ user_id: currentUser.id, item_id: p.item_id }));
+          petsDelHost.forEach(p => itemsAInsertar.push({ user_id: currentUser.id, item_id: p.item_id || p.id }));
+      } else {
+          // GANA EL CREADOR (HOST): Se lleva tus pets + las suyas
+          selectedPetsToJoin.forEach(p => itemsAInsertar.push({ user_id: partidaSeleccionada.creador_id, item_id: p.item_id }));
+          petsDelHost.forEach(p => itemsAInsertar.push({ user_id: partidaSeleccionada.creador_id, item_id: p.item_id || p.id }));
+      }
+
+      if (itemsAInsertar.length > 0) {
+          await supabase.from('inventory').insert(itemsAInsertar);
+      }
+      // ==========================================
+
+      // Bloquear mascotas visualmente de tu lado
       const idsA_Bloquear = selectedPetsToJoin.map(p => p.inventarioId);
       setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
       
@@ -382,10 +420,7 @@ export default function BloxypotCoinflip() {
           retador_id: currentUser.id,
           apuesta_retador: apuestaParaServidor,
           estado: 'completed',
-          resultado: {
-             ganador: serverResponse.ganador,
-             lado: serverResponse.lado
-          },
+          resultado: resultadoPartida,
           datos_partida: nuevosDatosPartida
       });
       
