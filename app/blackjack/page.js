@@ -192,41 +192,43 @@ export default function BlackjackPage() {
   const totalPetsValue = selectedPets.reduce((acc, curr) => acc + curr.valor, 0);
 
   // === IA REAL PET GENERATOR (Busca en la tabla items) ===
-  const generateRealBotPets = (targetValue) => {
+const generateRealBotPets = (targetValue) => {
       if (!allItemsDb || allItemsDb.length === 0) return [];
       let currentSum = 0;
       let aiSelected = [];
       
-      // Mezclar items para que sea al azar
-      let shuffled = [...allItemsDb].sort(() => 0.5 - Math.random());
+      // EL FIX: Filtramos TODO lo que valga 0 o no tenga valor antes de hacer nada
+      const itemsValidos = allItemsDb.filter(item => (item.value || 0) > 0);
+      
+      // Mezclar items válidos para que sea al azar
+      let shuffled = [...itemsValidos].sort(() => 0.5 - Math.random());
       
       for (let item of shuffled) {
-          if (currentSum + (item.value || 0) <= targetValue) {
+          if (currentSum + item.value <= targetValue) {
               aiSelected.push({
                  item_id: item.id,
                  nombre: item.name,
-                 valor: item.value || 0,
+                 valor: item.value,
                  imagen: item.image_url,
                  color: item.color || '#ffffff'
               });
-              currentSum += (item.value || 0);
+              currentSum += item.value;
           }
       }
       
-      // Si no logró sumar nada (porque todo es muy caro), fuerza el más barato
+      // Si no logró sumar nada (porque todo es muy caro), fuerza el más barato disponible
       if (aiSelected.length === 0 && shuffled.length > 0) {
-           let cheapest = [...shuffled].sort((a,b) => (a.value||0) - (b.value||0))[0];
+           let cheapest = [...shuffled].sort((a,b) => a.value - b.value)[0];
            aiSelected.push({
                item_id: cheapest.id,
                nombre: cheapest.name,
-               valor: cheapest.value || 0,
+               valor: cheapest.value,
                imagen: cheapest.image_url,
                color: cheapest.color || '#ffffff'
            });
       }
       return aiSelected;
   };
-
   // ==========================================
   // LÓGICA MODO VS AI (PvE) CON BD REAL
   // ==========================================
@@ -365,30 +367,58 @@ export default function BlackjackPage() {
   // ==========================================
   // LÓGICA MODO MULTIJUGADOR (PvP)
   // ==========================================
-  const createPvPGame = async () => {
+ const createPvPGame = async () => {
       if (!currentUser) return alert("Log in to play.");
       if (currency === 'green' && (betAmount <= 0 || betAmount > saldoVerde)) return alert("Invalid Green Coin amount.");
       if (currency === 'pets' && selectedPets.length === 0) return alert("Select pets to bet.");
       
       setProcesando(true);
       try {
-          const { data, error } = await supabase.rpc('create_blackjack_pvp', {
-              p_user_id: currentUser.id,
-              p_bet_amount: currency === 'green' ? betAmount : totalPetsValue,
-              p_currency: currency,
-              p_pets: currency === 'pets' ? selectedPets : [],
-              p_host_name: userProfile.username || 'Player 1',
-              p_host_avatar: userProfile.avatar_url || '/default-avatar.png'
-          });
+          // Cobro en vivo desde el Frontend
+          if (currency === 'green') {
+              const nuevoSaldo = saldoVerde - betAmount;
+              await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
+              setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
+          } else {
+              const petIds = selectedPets.map(p => p.inventarioId);
+              await supabase.from('inventory').delete().in('id', petIds);
+          }
+
+          const datosPartida = {
+              currency: currency,
+              betAmount: currency === 'green' ? betAmount : totalPetsValue,
+              p1: { 
+                  id: currentUser.id, 
+                  name: userProfile.username || 'Player 1', 
+                  avatar: userProfile.avatar_url || '/default-avatar.png',
+                  hand: [], 
+                  score: 0, 
+                  status: 'playing', 
+                  pets: currency === 'pets' ? selectedPets : [] 
+              },
+              p2: null,
+              dealerHand: [],
+              dealerScore: 0,
+              currentTurn: 'waiting',
+              deck: []
+          };
+
+          // Inserción directa enviando un Array vacío en apuesta_creador
+          const { data: newRoom, error } = await supabase.from('partidas').insert({
+              modo_juego: 'blackjack',
+              creador_id: currentUser.id,
+              apuesta_creador: [], // <--- ESTO EVITA EL ERROR DE BATTLES
+              datos_partida: datosPartida,
+              estado: 'waiting'
+          }).select().single();
+
           if (error) throw error;
-          
-          if(currency === 'green') setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - betAmount}));
-          const { data: newRoom } = await supabase.from('partidas').select('*').eq('id', data.game_id).single();
           setActivePvPGame(newRoom);
-      } catch(err) { alert("Error: " + err.message); }
+      } catch(err) { 
+          alert("Error: " + err.message); 
+      }
       setProcesando(false);
   };
-
   const handleJoinClick = (game) => {
       if(!currentUser) return alert("Log in first.");
       if(game.datos_partida.currency === 'green') {
@@ -400,22 +430,52 @@ export default function BlackjackPage() {
       }
   };
 
-  const joinPvPGame = async (gameToJoin, petsToBet) => {
+ const joinPvPGame = async (gameToJoin, petsToBet) => {
       setProcesando(true);
       try {
+          // Cobro
+          if(gameToJoin.datos_partida.currency === 'green') {
+              const nuevoSaldo = saldoVerde - gameToJoin.datos_partida.betAmount;
+              await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
+              setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
+          } else {
+              const petIds = petsToBet.map(p => p.inventarioId);
+              await supabase.from('inventory').delete().in('id', petIds);
+          }
+
           const freshDeck = createDeck(); 
-          const { error } = await supabase.rpc('join_blackjack_pvp', {
-              p_game_id: gameToJoin.id, p_user_id: currentUser.id, p_player_name: userProfile.username || 'Player 2',
-              p_player_avatar: userProfile.avatar_url || '/default-avatar.png', p_pets: petsToBet, p_initial_deck: freshDeck
-          });
+          
+          const p2Data = {
+              id: currentUser.id,
+              name: userProfile.username || 'Player 2',
+              avatar: userProfile.avatar_url || '/default-avatar.png',
+              hand: [],
+              score: 0,
+              status: 'playing',
+              pets: petsToBet || []
+          };
+
+          const dp = {
+              ...gameToJoin.datos_partida,
+              p2: p2Data,
+              deck: freshDeck,
+              currentTurn: 'p1'
+          };
+
+          // Update enviando array vacío al retador
+          const { data: activeRoom, error } = await supabase.from('partidas').update({
+              retador_id: currentUser.id,
+              apuesta_retador: [], // <--- ESTO EVITA EL ERROR DE BATTLES
+              datos_partida: dp,
+              estado: 'playing' // Dispara la repartición de cartas automáticamente en el useEffect
+          }).eq('id', gameToJoin.id).select().single();
+
           if (error) throw error;
           
-          if(gameToJoin.datos_partida.currency === 'green') {
-              setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - gameToJoin.datos_partida.betAmount}));
-          }
-          const { data: activeRoom } = await supabase.from('partidas').select('*').eq('id', gameToJoin.id).single();
           setActivePvPGame(activeRoom);
-      } catch(err) { alert("Join Error: " + err.message); }
+      } catch(err) { 
+          alert("Join Error: " + err.message); 
+      }
       setProcesando(false);
       setJoiningGameId(null);
   };
