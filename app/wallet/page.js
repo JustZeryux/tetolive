@@ -35,7 +35,7 @@ export default function WalletPage() {
   // Estados de UI y Multi-Sell
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false); 
-  const [selectedIds, setSelectedIds] = useState(new Set()); // Para el Multi-Sell
+  const [selectedIds, setSelectedIds] = useState(new Set()); 
 
   // Filtros
   const [search, setSearch] = useState('');
@@ -107,7 +107,6 @@ export default function WalletPage() {
     }
   };
 
-  // --- LÓGICA DE VENTA MULTIPLE & COMISIONES ---
   const calcularVenta = (valorOriginal) => {
     let feePercentage = 0.10; 
     if (valorOriginal > 1000000) feePercentage = 0.02; 
@@ -134,6 +133,7 @@ export default function WalletPage() {
     else setSelectedIds(new Set(filteredInventory.map(p => p.inventarioId)));
   };
 
+  // VENTA MÚLTIPLE BLINDADA CONTRA GLITCHES
   const venderSeleccionadas = async () => {
     if (procesando || selectedIds.size === 0) return;
     
@@ -152,46 +152,41 @@ export default function WalletPage() {
     setProcesando(true);
     
     try {
-      // 1. PRIMERO BORRAMOS EN LOTES PEQUEÑOS (15 máximo para no romper la URL de Supabase)
+      // 1. PRIMERO BORRAMOS EN LOTES PEQUEÑOS
       const idsToDelete = Array.from(selectedIds);
       const deleteChunks = chunkArray(idsToDelete, 15);
       
       for (const chunk of deleteChunks) {
           const { error: delError } = await supabase.from('inventory').delete().in('id', chunk);
           if (delError) {
-              console.error("Error al borrar chunk:", delError);
               throw new Error("La base de datos rechazó el borrado. Transacción cancelada por seguridad.");
           }
       }
 
-      // 2. INSERTAMOS AL MERCADO (Aquí no hay límite de URL, pero 50 es buen número)
+      // 2. INSERTAMOS AL MERCADO
       const insertChunks = chunkArray(marketInserts, 50);
       for (const chunk of insertChunks) {
-          const { error: insError } = await supabase.from('marketplace').insert(chunk);
-          if (insError) console.error("Error insertando al mercado:", insError);
+          await supabase.from('marketplace').insert(chunk);
       }
 
-      // 3. LA RECOMPENSA AL FINAL (Solo llega aquí si las mascotas se borraron con éxito)
+      // 3. DAR DINERO AL FINAL
       const nuevoSaldo = saldoVerde + totalSellPrice;
       const { error: saldoError } = await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
       
       if (saldoError) throw new Error("Tus mascotas se vendieron pero hubo un error actualizando tu saldo.");
 
-      // 4. Actualizamos la Interfaz
       setSaldoVerde(nuevoSaldo);
       setSelectedIds(new Set());
       alert(`¡Venta Múltiple Exitosa!\nRecibiste: ${totalSellPrice.toLocaleString()} 🟢`);
       
-      // Recargamos los datos para limpiar las mascotas vendidas de la pantalla
       await fetchData(); 
       
     } catch (error) {
-      alert(`❌ Algo salió mal: ${error.message}\nRevisa la consola para más detalles.`);
+      alert(`❌ Algo salió mal: ${error.message}`);
     }
     
     setProcesando(false);
   };
-
 
   const comprarDelMarket = async (marketId, petName, precio, itemId) => {
     if (procesando) return;
@@ -365,7 +360,7 @@ export default function WalletPage() {
                     <p className="text-[#555b82] text-sm font-bold text-center px-4">No one is selling anything right now. Check back later.</p>
                 </div>
             ) : (
-              /* GRID DE ITEMS CON DISEÑO CABRÓN Y MULTI-SELL */
+                /* GRID DE ITEMS CON DISEÑO ÉPICO Y MULTI-SELL */
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 max-h-[650px] overflow-y-auto custom-scrollbar pr-2 pb-6 relative z-10 p-2">
                     
                     {tab === 'inventory' && filteredInventory.map((pet, i) => {
@@ -382,40 +377,32 @@ export default function WalletPage() {
                            `} 
                            style={{animationDelay: `${i * 30}ms`}}
                         >
-                            {/* FONDO DINÁMICO CON EL COLOR DE LA PET */}
                             <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
                                 <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${pet.color} 0%, transparent 70%)` }}></div>
                             </div>
 
-                            {/* EFECTO HOLOGRÁFICO PARA LIMITADOS */}
                             {pet.isLimited && (
                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-10" style={{ backgroundSize: '200% 200%', animation: 'shimmer 3s infinite linear' }}></div>
                             )}
 
-                            {/* CHECKBOX DE MULTI-SELL */}
                             <div className={`absolute top-3 left-3 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all z-20 shadow-lg
                                ${isSelected ? 'bg-[#22c55e] border-[#22c55e]' : 'bg-[#0a0a0a]/80 border-[#374151] backdrop-blur-sm group-hover:border-cyan-500/50'}
                             `}>
                                {isSelected && <span className="text-[#0a0a0a] text-sm font-black">✓</span>}
                             </div>
 
-                            {/* BADGE LIMITADO Y NÚMERO DE SERIE */}
                             {pet.isLimited && (
                               <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-yellow-600 text-[#0a0a0a] font-black text-[10px] px-3 py-1 rounded-bl-xl rounded-tr-xl shadow-lg z-20 border-b-2 border-l-2 border-yellow-400">
                                 #{pet.serial}
                               </div>
                             )}
 
-                            {/* CONTENEDOR DE IMAGEN CON GLOW */}
                             <div className="relative w-full flex-1 flex items-center justify-center mt-6 mb-2 z-10">
-                                {/* Glow detrás de la mascota */}
                                 <div className="absolute w-20 h-20 rounded-full blur-[20px] opacity-40 group-hover:opacity-70 transition-opacity duration-300" style={{ backgroundColor: pet.color }}></div>
                                 <img src={pet.img} className={`w-24 h-24 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 relative z-10 ${isSelected ? 'scale-110' : 'group-hover:scale-125 group-hover:-translate-y-2'}`} alt={pet.nombre}/>
                             </div>
                             
-                            {/* TARJETA DE INFO INFERIOR */}
                             <div className="w-full text-center z-10 bg-[#111827]/90 rounded-b-xl rounded-t-sm py-3 px-2 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden">
-                                {/* Brillo sutil arriba del texto */}
                                 <div className="absolute top-0 left-0 w-full h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${pet.color}, transparent)` }}></div>
                                 
                                 <div className="text-[12px] truncate text-white font-black uppercase tracking-widest px-1 mb-1" style={{textShadow: `0 2px 4px rgba(0,0,0,0.8)`}}>{pet.nombre}</div>
@@ -460,32 +447,6 @@ export default function WalletPage() {
                                 className="absolute bottom-[-15px] left-1/2 -translate-x-1/2 w-[80%] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-[11px] font-black uppercase tracking-widest py-2 rounded-xl transition-all duration-300 z-20 shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_20px_rgba(6,182,212,0.6)] disabled:opacity-50 opacity-0 group-hover:opacity-100 group-hover:bottom-3"
                             >
                                 COMPRAR
-                            </button>
-                        </div>
-                    ))}
-                </div>
-
-                    {tab === 'market' && filteredMarket.map((m, i) => (
-                        <div key={m.marketId} className="relative bg-[#0b0e14] border-2 border-[#252839] hover:border-[#22c55e]/50 rounded-2xl p-4 flex flex-col items-center justify-between transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(34,197,94,0.15)] group overflow-hidden h-[250px] animate-fade-in-up" style={{animationDelay: `${i * 30}ms`}}>
-                            
-                            <div className="absolute inset-0 opacity-10 group-hover:opacity-30 transition-opacity duration-500" style={{ background: `radial-gradient(circle at center, ${m.color} 0%, transparent 80%)` }}></div>
-                            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-[#0b0e14] text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-md z-20">SALE</div>
-
-                            <img src={m.img} className="w-20 h-20 object-contain mt-4 mb-3 z-10 drop-shadow-[0_10px_15px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-transform duration-500" alt="pet" style={{filter: `drop-shadow(0 0 15px ${m.color}40)`}}/>
-                            
-                            <div className="w-full text-center z-10 mt-auto bg-[#14151f]/60 rounded-xl py-2 px-1 backdrop-blur-sm border border-[#252839]/50">
-                                <div className="text-[11px] truncate text-white font-black uppercase tracking-wide px-1" style={{textShadow: `0 0 10px ${m.color}80`}}>{m.nombre}</div>
-                                <div className="text-sm font-black text-[#22c55e] flex items-center justify-center gap-1 mt-1 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]">
-                                    <GreenCoin cls="w-4 h-4"/> {formatValue(m.precio)}
-                                </div>
-                            </div>
-
-                            <button 
-                                onClick={() => comprarDelMarket(m.marketId, m.nombre, m.precio, m.itemId)}
-                                disabled={procesando}
-                                className="w-full mt-3 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-[#0b0e14] text-[11px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all duration-300 z-10 shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50"
-                            >
-                                BUY PET
                             </button>
                         </div>
                     ))}
