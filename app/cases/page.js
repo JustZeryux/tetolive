@@ -31,9 +31,12 @@ export default function CasesPage() {
   const [winningItems, setWinningItems] = useState([]);
   const [spinning, setSpinning] = useState(false);
   const slidersRef = useRef([]);
-  const [hasLimitedWin, setHasLimitedWin] = useState(false); // Para la animación épica
+  const [hasLimitedWin, setHasLimitedWin] = useState(false); 
   
   const WINNING_INDEX = 40; 
+
+  // Guardamos un mapa de items limitados para la UI de inspección
+  const [dbItemsMap, setDbItemsMap] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,6 +46,14 @@ export default function CasesPage() {
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
         setUserProfile(profile);
       }
+
+      // Cargar items de la DB para saber cuáles son limitados desde la inspección
+      const { data: itemsDbData } = await supabase.from('items').select('name, is_limited, max_quantity');
+      const itemMap = {};
+      if(itemsDbData) {
+          itemsDbData.forEach(i => itemMap[i.name] = i);
+      }
+      setDbItemsMap(itemMap);
 
       const { data: dbCases } = await supabase.from('cases').select('*');
       if (dbCases) {
@@ -93,7 +104,7 @@ export default function CasesPage() {
     
     setView('opening');
     setSpinning(true); 
-    setHasLimitedWin(false); // Resetear estado de limitado
+    setHasLimitedWin(false);
 
     try {
       const nuevoSaldo = userProfile.saldo_verde - totalCost;
@@ -105,13 +116,15 @@ export default function CasesPage() {
       const inventoryInserts = [];
       let foundLimited = false;
       
-      const { data: allItemsDB } = await supabase.from('items').select('id, name, is_limited');
+      const { data: allItemsDB } = await supabase.from('items').select('id, name, is_limited, max_quantity');
       const mapNameToId = {};
       const mapNameToLimited = {};
+      const mapNameToMaxQ = {};
       if (allItemsDB) {
           allItemsDB.forEach(i => {
               mapNameToId[i.name] = i.id;
               mapNameToLimited[i.name] = i.is_limited;
+              mapNameToMaxQ[i.name] = i.max_quantity;
           });
       }
 
@@ -126,7 +139,7 @@ export default function CasesPage() {
                  realItemId = itemData.id;
                  if (itemData.is_limited) foundLimited = true;
              }
-             else throw new Error(`No encontramos el ID real de "${winner.name}" en la tabla items.`);
+             else throw new Error(`No encontramos el ID real de "${winner.name}" en la base de datos.`);
           } else {
              if (mapNameToLimited[winner.name] || winner.is_limited) foundLimited = true;
           }
@@ -134,18 +147,27 @@ export default function CasesPage() {
           inventoryInserts.push({ 
               user_id: currentUser.id, 
               item_id: realItemId,
-              // Asumiendo que la lógica de asignar serials la maneja Supabase por triggers o la omites aquí
           });
       }
 
-      const { error: invError } = await supabase.from('inventory').insert(inventoryInserts);
+      // .select() AQUÍ ES CLAVE PARA RECUPERAR EL SERIAL QUE GENERA LA BASE DE DATOS
+      const { data: insertedInv, error: invError } = await supabase.from('inventory').insert(inventoryInserts).select();
 
       if (invError) throw new Error("Fallo al insertar en el inventario: " + invError.message);
 
       setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
       
-      // Marcar ganadores limitados para la animación
-      const finalWinners = winners.map(w => ({...w, isLimited: mapNameToLimited[w.name] || w.is_limited}));
+      // Mapear los ganadores e incrustarles el serial que devolvió Supabase
+      const finalWinners = winners.map((w, idx) => {
+          const isLtd = mapNameToLimited[w.name] || w.is_limited;
+          return {
+              ...w, 
+              isLimited: isLtd,
+              maxQuantity: mapNameToMaxQ[w.name] || '???',
+              serial: isLtd && insertedInv ? (insertedInv[idx]?.serial_number || '???') : null
+          }
+      });
+
       setWinningItems(finalWinners);
       if(foundLimited) setHasLimitedWin(true);
 
@@ -210,7 +232,7 @@ export default function CasesPage() {
             <div className="bg-[#0b0e14] rounded-2xl p-4 mb-6 border border-[#252839]">
               <div className="flex justify-between mb-2">
                 <span className="text-xs font-bold uppercase text-[#4a506b]">Tu Saldo:</span>
-                <span className="font-bold text-white"><GreenCoin/> {userProfile?.saldo_verde.toLocaleString()}</span>
+                <span className="font-bold text-white"><GreenCoin/> {userProfile?.saldo_verde?.toLocaleString() || 0}</span>
               </div>
               <div className="flex justify-between border-t border-[#252839] pt-2">
                 <span className="text-xs font-bold uppercase text-[#4a506b]">Precio Total:</span>
@@ -232,26 +254,22 @@ export default function CasesPage() {
               <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e0e5ff] to-[#8f9ac6] uppercase tracking-widest drop-shadow-[0_0_15px_rgba(108,99,255,0.4)] mb-3">
                 Premium Cases
               </h1>
-              <p className="text-[#8f9ac6] font-bold text-lg md:text-xl tracking-wide">Abre las cajas y consigue los items más raros.</p>
+              <p className="text-[#8f9ac6] font-bold text-lg md:text-xl tracking-wide">Abre cajas y consigue los items más raros.</p>
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-center bg-[#14151f]/80 backdrop-blur-md border border-[#252839] rounded-2xl p-4 mb-10 gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
               <div className="relative w-full md:w-1/3">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8f9ac6]">🔍</span>
                 <input 
-                  type="text" 
-                  placeholder="Buscar caja..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-[#6C63FF] focus:shadow-[0_0_15px_rgba(108,99,255,0.3)] transition-all font-semibold placeholder:text-[#4a506b]"
+                  type="text" placeholder="Buscar caja..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-[#6C63FF] focus:shadow-[0_0_15px_rgba(108,99,255,0.3)] transition-all font-semibold"
                 />
               </div>
               <div className="flex items-center gap-3 w-full md:w-auto">
                 <span className="text-[#8f9ac6] font-bold uppercase text-sm tracking-wider">Ordenar:</span>
                 <select 
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#6C63FF] font-semibold cursor-pointer outline-none w-full md:w-auto hover:bg-[#1a1e29] transition-colors"
+                  value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#6C63FF] font-semibold cursor-pointer w-full md:w-auto"
                 >
                   <option value="price_asc">Precio: Menor a Mayor</option>
                   <option value="price_desc">Precio: Mayor a Menor</option>
@@ -261,26 +279,19 @@ export default function CasesPage() {
             </div>
 
             {filteredAndSortedCases.length === 0 ? (
-              <div className="text-center py-20 text-[#8f9ac6] text-xl font-bold bg-[#14151f]/50 rounded-3xl border border-[#252839] border-dashed">
-                😔 No se encontraron cajas.
-              </div>
+              <div className="text-center py-20 text-[#8f9ac6] text-xl font-bold bg-[#14151f]/50 rounded-3xl border border-[#252839] border-dashed">😔 No se encontraron cajas.</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {filteredAndSortedCases.map(caja => (
-                  <div 
-                    key={caja.id} onClick={() => { setSelectedCase(caja); setQuantity(1); setView('inspect'); }}
-                    className="bg-[#0a0a0a] rounded-3xl p-1 flex flex-col items-center cursor-pointer transition-all duration-300 hover:-translate-y-2 border-2 border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] group relative overflow-hidden h-full"
-                  >
+                  <div key={caja.id} onClick={() => { setSelectedCase(caja); setQuantity(1); setView('inspect'); }} className="bg-[#0a0a0a] rounded-3xl p-1 flex flex-col items-center cursor-pointer transition-all duration-300 hover:-translate-y-2 border-2 border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] group relative overflow-hidden h-full">
                     <div className="absolute inset-1 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
                         <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
                     </div>
-                    
                     <div className="w-full flex-1 flex flex-col items-center justify-center p-6 bg-[#111827]/60 rounded-t-2xl z-10 relative">
                         <div className="absolute inset-0 rounded-full blur-2xl opacity-20 group-hover:opacity-60 group-hover:scale-110 transition-all duration-500" style={{ backgroundColor: caja.color }}></div>
                         <img src={caja.img} alt={caja.name} className="w-40 h-40 object-contain relative z-10 drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500" />
                         <h3 className="text-xl font-black text-white uppercase tracking-widest z-10 mt-6 text-center line-clamp-1 w-full" style={{textShadow: `0 2px 4px rgba(0,0,0,0.8)`}}>{caja.name}</h3>
                     </div>
-                    
                     <div className="w-full bg-[#111827]/90 rounded-b-2xl py-4 px-4 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors z-10">
                         <button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-6 py-2 rounded-xl text-lg font-black flex items-center justify-center gap-2 transition-all duration-300 w-full shadow-[0_5px_15px_rgba(6,182,212,0.4)] group-hover:shadow-[0_8px_20px_rgba(6,182,212,0.6)]">
                           <GreenCoin cls="w-5 h-5"/> {formatValue(caja.price)}
@@ -310,14 +321,12 @@ export default function CasesPage() {
                 
                 <h2 className="text-3xl font-black text-white uppercase tracking-widest z-10 mb-8 text-center" style={{textShadow: `0 2px 10px ${selectedCase.color}80`}}>{selectedCase.name}</h2>
                 
-                {/* SELECTOR DE CANTIDAD (1 a 10) */}
                 <div className="w-full mb-6 z-10">
                     <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest text-center mb-3">Cantidad a abrir</p>
                     <div className="grid grid-cols-5 gap-2">
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(q => (
                             <button
-                                key={q}
-                                onClick={() => setQuantity(q)}
+                                key={q} onClick={() => setQuantity(q)}
                                 className={`py-2 rounded-lg font-black transition-all text-sm ${quantity === q ? 'bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.5)] scale-105 border border-cyan-400' : 'bg-[#111827] text-[#8f9ac6] border border-[#374151] hover:border-cyan-500/50 hover:text-white'}`}
                             >
                                 {q}
@@ -332,36 +341,46 @@ export default function CasesPage() {
               </div>
 
               <div className="w-full lg:w-2/3 bg-[#0a0a0a] border-2 border-[#1f2937] rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none"></div>
                 <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] uppercase tracking-widest mb-6 border-b border-[#374151] pb-4">
                   Contenido de la Caja
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {selectedCase.items.map((item, idx) => (
-                    <div key={idx} className="bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40" style={{ borderColor: `${item.color}40` }}>
-                      <div className="absolute inset-1 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ background: `radial-gradient(circle at center, ${item.color} 0%, transparent 70%)` }}></div>
+                  {selectedCase.items.map((item, idx) => {
+                    const isLimitedItem = dbItemsMap[item.name]?.is_limited || item.is_limited;
+
+                    return (
+                    <div key={idx} className={`bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40 ${isLimitedItem ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : ''}`} style={!isLimitedItem ? { borderColor: `${item.color}40` } : {}}>
+                      <div className="absolute inset-1 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ background: `radial-gradient(circle at center, ${isLimitedItem ? '#facc15' : item.color} 0%, transparent 70%)` }}></div>
                       
-                      {/* Porcentaje Visible y Destacado */}
+                      {/* CHANCE PERCENTAGE VISIBLE */}
                       <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-20">
-                          <span className="text-[10px] font-black uppercase text-white/50 bg-black/40 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
-                             Chance
+                          <span className="text-[10px] font-black uppercase text-white/50 bg-black/60 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
+                              Chance
                           </span>
-                          <span className="text-xs font-black px-2 py-0.5 rounded-full shadow-sm border" style={{ backgroundColor: `${item.color}20`, color: item.color, borderColor: `${item.color}50` }}>
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-full shadow-sm border ${isLimitedItem ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : ''}`} style={!isLimitedItem ? { backgroundColor: `${item.color}20`, color: item.color, borderColor: `${item.color}50` } : {}}>
                             {item.chance}%
                           </span>
                       </div>
                       
+                      {isLimitedItem && (
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center z-0 opacity-20 pointer-events-none">
+                              <span className="text-4xl">🌟</span>
+                          </div>
+                      )}
+
                       <div className="relative w-full flex-1 flex items-center justify-center mt-6">
-                         <div className="absolute w-12 h-12 rounded-full blur-[15px] opacity-30 group-hover:opacity-60 transition-opacity" style={{ backgroundColor: item.color }}></div>
+                         <div className="absolute w-12 h-12 rounded-full blur-[15px] opacity-30 group-hover:opacity-60 transition-opacity" style={{ backgroundColor: isLimitedItem ? '#facc15' : item.color }}></div>
                          <img src={item.img} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform z-10 relative" alt={item.name} />
                       </div>
                       
                       <div className="w-full text-center mt-auto border-t border-[#374151]/50 bg-[#0a0a0a]/50 py-2 px-1 z-10 rounded-b-lg">
-                        <p className="font-black text-[11px] uppercase tracking-wide w-full truncate" style={{color: item.color}}>{item.name}</p>
-                        <p className="text-gray-400 text-[10px] font-bold mt-0.5 flex items-center justify-center gap-1"><GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(item.valor || 0)}</p>
+                        <p className={`font-black text-[11px] uppercase tracking-wide w-full truncate ${isLimitedItem ? 'text-yellow-400' : ''}`} style={!isLimitedItem ? {color: item.color} : {}}>{item.name}</p>
+                        <p className="text-gray-400 text-[10px] font-bold mt-0.5 flex items-center justify-center gap-1">
+                            <GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(item.valor || 0)}
+                        </p>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
 
@@ -387,21 +406,12 @@ export default function CasesPage() {
                         <div key={trackIdx} className={`relative w-full ${containerHeight} bg-[#0a0a0a] border-y-4 border-[#1f2937] overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] rounded-xl flex items-center`}>
                           <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0a0a0a] to-transparent z-20 pointer-events-none"></div>
                           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0a0a0a] to-transparent z-20 pointer-events-none"></div>
-
                           <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-cyan-400 z-30 shadow-[0_0_25px_rgba(34,211,238,1)] -translate-x-1/2"></div>
-                          <div className="absolute left-1/2 top-0 bottom-0 w-[200px] -translate-x-1/2 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent z-10 pointer-events-none"></div>
-
+                          
                           <div className="absolute top-0 bottom-0 left-1/2 flex items-center w-max z-10">
-                            <div 
-                                ref={el => slidersRef.current[trackIdx] = el}
-                                className="flex items-center h-full will-change-transform"
-                            >
+                            <div ref={el => slidersRef.current[trackIdx] = el} className="flex items-center h-full will-change-transform">
                               {track.map((item, idx) => (
-                                <div 
-                                  key={idx} 
-                                  className={`${itemWidthClass} shrink-0 border border-[#374151]/50 bg-[#111827] rounded-lg mx-1 flex flex-col items-center justify-center relative overflow-hidden`} 
-                                  style={{ boxShadow: `inset 0 0 30px ${item.color}10` }}
-                                >
+                                <div key={idx} className={`${itemWidthClass} shrink-0 border border-[#374151]/50 bg-[#111827] rounded-lg mx-1 flex flex-col items-center justify-center relative overflow-hidden`} style={{ boxShadow: `inset 0 0 30px ${item.color}10` }}>
                                   <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${item.color} 0%, transparent 60%)`}}></div>
                                   <img src={item.img} className={`${imgClass} object-contain mb-1 drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] relative z-10`} alt={item.name} />
                                   <div className="w-full text-center border-t border-[#374151]/50 pt-1 pb-1 relative z-10 bg-[#0a0a0a]/60 mt-auto">
@@ -421,7 +431,7 @@ export default function CasesPage() {
         {view === 'result' && winningItems.length > 0 && (
           <div className={`w-full flex flex-col items-center justify-center min-h-[70vh] relative ${hasLimitedWin ? 'animate-epic-reveal' : 'animate-bounce-in'}`}>
             
-            {/* FONDO OSCURO Y DESTELLO PARA LIMITED */}
+            {/* FONDO Y DESTELLO MYTHIC */}
             {hasLimitedWin && (
                 <>
                     <div className="fixed inset-0 bg-black/90 z-0 animate-fade-in pointer-events-none"></div>
@@ -437,11 +447,11 @@ export default function CasesPage() {
             </h2>
             
             {quantity === 1 ? (
-                // DISEÑO ORIGINAL PARA 1 CAJA
+                // RESULTADO 1 CAJA
                 <div className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative ${hasLimitedWin ? 'border-yellow-500 animate-shake shadow-[0_0_100px_rgba(234,179,8,0.5)] scale-110' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, boxShadow: `0 0 50px ${winningItems[0].color}40` } : {}}>
                   <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${hasLimitedWin ? '#eab308' : winningItems[0].color} 0%, transparent 60%)`}}></div>
                   <div className={`absolute -top-6 bg-[#0a0a0a] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg ${hasLimitedWin ? 'border-yellow-400 text-yellow-400 animate-pulse' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, color: winningItems[0].color } : {}}>
-                    {hasLimitedWin ? '⭐ LIMITED ⭐' : 'NUEVO ITEM'}
+                    {hasLimitedWin ? '⭐ MYTHIC ⭐' : 'NUEVO ITEM'}
                   </div>
                   
                   <div className="relative">
@@ -452,9 +462,23 @@ export default function CasesPage() {
                   <h3 className="text-3xl font-black uppercase text-center mb-2 tracking-widest relative z-10" style={hasLimitedWin ? { color: '#facc15', textShadow: `0 0 30px rgba(250,204,21,0.8)` } : { color: winningItems[0].color, textShadow: `0 0 20px ${winningItems[0].color}80` }}>
                     {winningItems[0].name}
                   </h3>
-                  <p className="text-gray-300 font-bold text-lg flex items-center gap-2 mb-10 bg-[#111827] px-4 py-2 rounded-lg border border-[#374151] relative z-10 shadow-inner">
+
+                  {/* INFO DEL SERIAL SI ES LIMITADO */}
+                  {hasLimitedWin && (
+                    <div className="bg-[#0a0a0a]/80 border-2 border-yellow-500 px-8 py-3 rounded-xl mb-4 relative z-10 shadow-[0_0_20px_rgba(234,179,8,0.4)] backdrop-blur-md text-center w-full">
+                        <p className="text-yellow-400 font-black text-sm uppercase tracking-widest mb-1">
+                            Owner: <span className="text-white">{userProfile?.username || userProfile?.name || 'Tú'}</span>
+                        </p>
+                        <p className="text-gray-400 text-xs font-bold">
+                            Serial: <span className="text-white font-black text-lg">#{winningItems[0].serial}</span> <span className="text-[10px]">/ {winningItems[0].maxQuantity}</span>
+                        </p>
+                    </div>
+                  )}
+
+                  <p className="text-gray-300 font-bold text-lg flex items-center gap-2 mb-10 bg-[#111827] px-4 py-2 rounded-lg border border-[#374151] relative z-10 shadow-inner mt-2">
                     Valor: <GreenCoin cls="w-5 h-5 grayscale opacity-80"/> {formatValue(winningItems[0].valor || 0)}
                   </p>
+                  
                   <div className="flex gap-4 w-full relative z-10">
                     <button onClick={() => setView('store')} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
                       Tienda
@@ -465,13 +489,13 @@ export default function CasesPage() {
                   </div>
                 </div>
             ) : (
-                // DISEÑO CUADRÍCULA PARA MÚLTIPLES CAJAS
+                // RESULTADO MULTIPLES CAJAS
                 <div className="flex flex-col items-center w-full max-w-[1200px] z-10">
                     <div className="flex flex-wrap justify-center gap-6 mb-10 w-full">
                         {winningItems.map((winItem, idx) => (
                             <div key={idx} className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-2xl p-4 flex flex-col items-center shadow-2xl relative transition-transform hover:scale-110 w-[140px] md:w-[180px] ${winItem.isLimited ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.5)] animate-float' : ''}`} style={!winItem.isLimited ? { borderColor: winItem.color, boxShadow: `0 0 20px ${winItem.color}20` } : {}}>
                                 {winItem.isLimited && (
-                                   <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-black px-2 py-1 rounded-bl-lg rounded-tr-lg z-20 shadow-md">LTD</div>
+                                   <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-black px-2 py-1 rounded-bl-lg rounded-tr-lg z-20 shadow-md">#{winItem.serial}</div>
                                 )}
                                 <div className="absolute inset-0 pointer-events-none opacity-20 rounded-2xl" style={{ background: `radial-gradient(circle at center, ${winItem.isLimited ? '#eab308' : winItem.color} 0%, transparent 70%)`}}></div>
                                 <img src={winItem.img} className="w-24 h-24 object-contain drop-shadow-xl mb-3 relative z-10" alt={winItem.name} />
