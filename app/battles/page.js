@@ -8,7 +8,47 @@ const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" 
 const formatValue = (val) => {
   if (val >= 1000000) return parseFloat((val / 1000000).toFixed(2)) + 'M';
   if (val >= 1000) return parseFloat((val / 1000).toFixed(2)) + 'K';
-  return val.toLocaleString();
+  return val?.toLocaleString() || '0';
+};
+
+// --- FUNCIÓN PURA: GENERAR RESULTADOS ---
+const generateBattleResult = (battleCases, battlePlayers) => {
+    const rounds = [];
+    const playerTotals = {};
+    
+    battlePlayers.forEach(p => playerTotals[p.id] = 0);
+
+    battleCases.forEach((caja, roundIdx) => {
+        battlePlayers.forEach(p => {
+            const randomItem = caja.items[Math.floor(Math.random() * caja.items.length)];
+            const valorItem = randomItem.price || randomItem.value || randomItem.valor || 0;
+            
+            rounds.push({
+                round: roundIdx,
+                player_id: p.id,
+                item: { 
+                    name: randomItem.name, 
+                    valor: valorItem, 
+                    img: randomItem.image_url || randomItem.img || '/default-pet.png', 
+                    color: randomItem.color || '#374151', 
+                    chance: randomItem.chance || 10 
+                }
+            });
+            playerTotals[p.id] += valorItem;
+        });
+    });
+
+    let ganador_id = battlePlayers[0].id;
+    let maxVal = playerTotals[ganador_id];
+    
+    battlePlayers.forEach(p => {
+        if (playerTotals[p.id] > maxVal) {
+            maxVal = playerTotals[p.id];
+            ganador_id = p.id;
+        }
+    });
+
+    return { ganador_id, rounds, totals: playerTotals };
 };
 
 export default function BattlesPage() {
@@ -16,6 +56,7 @@ export default function BattlesPage() {
   const [view, setView] = useState('lobby'); // 'lobby' | 'create' | 'arena'
   const [activeBattle, setActiveBattle] = useState(null);
   const [battles, setBattles] = useState([]);
+  
   // Estados Creador
   const [selectedCases, setSelectedCases] = useState([]);
   const [playerCount, setPlayerCount] = useState(2); 
@@ -33,36 +74,33 @@ export default function BattlesPage() {
   useEffect(() => {
     const loadCasesForBattles = async () => {
       const { data, error } = await supabase.from('cases').select('id, name, price, image_url, items, color');
-      if (data && !error) {
-        setAvailableCases(data);
-      }
+      if (data && !error) setAvailableCases(data);
     };
     loadCasesForBattles();
   }, []);
   
   useEffect(() => {
-    // 1. Obtener Usuario
     const initUser = async () => {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
             const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('id', authData.user.id).single();
             setCurrentUser({ id: authData.user.id, username: profile?.username || 'Player', avatar_url: profile?.avatar_url || '/default-avatar.png' });
-        } else {
-            let tempId = localStorage.getItem('temp_user_id');
-            if (!tempId) { tempId = crypto.randomUUID(); localStorage.setItem('temp_user_id', tempId); }
-            setCurrentUser({ id: tempId, username: 'Guest_' + tempId.substring(0,4), avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + tempId });
         }
     };
     initUser();
 
-    // 2. Cargar Batallas
     const cargarPartidas = async () => {
-      const { data } = await supabase.from('partidas').select('*').eq('modo_juego', 'battles').in('estado', ['waiting', 'in_progress', 'completed']).order('creado_en', { ascending: false }).limit(20);
+      const { data } = await supabase.from('partidas')
+        .select('*')
+        .eq('modo_juego', 'battles')
+        .in('estado', ['waiting', 'in_progress', 'completed'])
+        .order('creado_en', { ascending: false })
+        .limit(20);
       if (data) setBattles(data);
     };
     cargarPartidas();
 
-    // 3. Suscripción a Realtime
+    // SUSCRIPCIÓN REALTIME MEJORADA (Evita colisiones)
     const channel = supabase.channel('battles_lobby')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.battles" }, 
         (payload) => {
@@ -76,14 +114,13 @@ export default function BattlesPage() {
                 return arr;
             });
             
-            // Si la partida que estamos viendo en la Arena se actualiza
             setActiveBattle(prev => {
                 if (prev && prev.id === payload.new.id) {
-                    if (prev.estado === 'waiting' && payload.new.estado === 'in_progress') {
-                        iniciarResolucionBatalla(payload.new);
+                    // Si pasó a in_progress, animamos sin procesar nada en la BD
+                    if (prev.estado === 'waiting' && payload.new.estado === 'in_progress' && payload.new.resultado) {
+                        animarBatalla(payload.new, false);
                     } else if (payload.new.estado === 'completed' && !resolvingRef.current) {
                         setBattleResults(payload.new.resultado);
-                        // ARMADURA ANTI-CRASH:
                         setCurrentRound((payload.new.datos_partida?.cases || []).length); 
                     }
                     return payload.new;
@@ -97,6 +134,30 @@ export default function BattlesPage() {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // --- MOTOR DE ANIMACIÓN ---
+  const animarBatalla = (battle, isResolver = false) => {
+      if (resolvingRef.current) return;
+      resolvingRef.current = true;
+
+      setBattleResults(battle.resultado);
+
+      let r = 0;
+      const totalRounds = (battle.datos_partida?.cases || []).length;
+      
+      const interval = setInterval(async () => {
+          setCurrentRound(r);
+          r++;
+          if (r > totalRounds) {
+              clearInterval(interval);
+              resolvingRef.current = false;
+              // Solo el que generó los resultados marca la sala como completada en la DB
+              if (isResolver) {
+                  await supabase.from('partidas').update({ estado: 'completed' }).eq('id', battle.id);
+              }
+          }
+      }, 1500);
+  };
 
   // --- LÓGICA DE CREACIÓN ---
   const addCase = (caja) => {
@@ -149,15 +210,14 @@ export default function BattlesPage() {
     }
   };
 
+  // --- LÓGICA DE UNIRSE (ONLINE SANO) ---
   const joinBattle = async (battle) => {
-    // ARMADURA ANTI-CRASH:
-    const battleCases = battle.datos_partida?.cases || [];
     const currentPlayers = battle.datos_partida?.players || [];
 
     if (battle.estado === 'completed' || battle.estado === 'in_progress') {
         setActiveBattle(battle);
         if(battle.resultado) setBattleResults(battle.resultado);
-        setCurrentRound(battleCases.length);
+        setCurrentRound((battle.datos_partida?.cases || []).length);
         setView('arena'); return;
     }
     
@@ -174,102 +234,108 @@ export default function BattlesPage() {
           alert("Saldo Verde insuficiente para unirse.");
           setIsJoining(false); return;
       }
+      
       await supabase.from('profiles').update({ saldo_verde: profile.saldo_verde - (battle.datos_partida?.cost || 0) }).eq('id', currentUser.id);
 
       const userInfo = { id: currentUser.id, name: currentUser.username, avatar: currentUser.avatar_url };
       const newPlayers = [...currentPlayers, userInfo];
       const isFull = newPlayers.length === (battle.datos_partida?.playerCount || 2);
 
-      const { data: updatedBattle, error } = await supabase.from('partidas').update({
+      let updatePayload = {
           datos_partida: { ...battle.datos_partida, players: newPlayers },
           retador_id: currentUser.id,
-          apuesta_retador: [], 
           estado: isFull ? 'in_progress' : 'waiting'
-      }).eq('id', battle.id).select().single();
+      };
 
+      // Si la sala se llenó, TÚ calculas los resultados para todos y pagas al ganador
+      if (isFull) {
+          const generatedResult = generateBattleResult(battle.datos_partida?.cases || [], newPlayers);
+          updatePayload.resultado = generatedResult;
+          
+          const winnerId = generatedResult.ganador_id;
+          let totalGanancia = Object.values(generatedResult.totals).reduce((a,b) => a+b, 0);
+
+          const { data: winnerProf } = await supabase.from('profiles').select('saldo_verde').eq('id', winnerId).single();
+          if (winnerProf) {
+              await supabase.from('profiles').update({ saldo_verde: winnerProf.saldo_verde + totalGanancia }).eq('id', winnerId);
+          }
+      }
+
+      const { data: updatedBattle, error } = await supabase.from('partidas').update(updatePayload).eq('id', battle.id).select().single();
       if (error) throw error;
 
       setActiveBattle(updatedBattle);
       setView('arena');
-      setBattleResults(null);
+      setBattleResults(updatedBattle.resultado || null);
       setCurrentRound(-1);
 
       if (isFull) {
-          iniciarResolucionBatalla(updatedBattle);
+          animarBatalla(updatedBattle, true); // true = Eres el "Resolver"
       }
     } catch (err) {
       console.error(err);
+      alert("Error al unirse a la partida.");
     } finally {
       setIsJoining(false);
     }
   };
 
-  const iniciarResolucionBatalla = async (battle) => {
-      if (resolvingRef.current) return;
-      resolvingRef.current = true;
+  // --- LÓGICA DE BOTS (PUNTO 20) ---
+  const callBots = async () => {
+    if (!activeBattle || activeBattle.estado !== 'waiting' || isJoining) return;
+    setIsJoining(true);
 
-      const rounds = [];
-      const playerTotals = {};
+    try {
+      const currentPlayers = activeBattle.datos_partida?.players || [];
+      const totalPlayersNeeded = activeBattle.datos_partida?.playerCount || 2;
+      const botsNeeded = totalPlayersNeeded - currentPlayers.length;
       
-      // ARMADURA ANTI-CRASH:
-      const battlePlayers = battle.datos_partida?.players || [];
-      const battleCases = battle.datos_partida?.cases || [];
-
-      if (battlePlayers.length === 0 || battleCases.length === 0) {
-          resolvingRef.current = false;
-          return;
+      let newPlayers = [...currentPlayers];
+      
+      for (let i = 0; i < botsNeeded; i++) {
+          newPlayers.push({
+              id: `bot_${crypto.randomUUID()}`,
+              name: `TetoBot_${Math.floor(Math.random() * 1000)}`,
+              avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${Math.random()}`,
+              isBot: true
+          });
       }
 
-      battlePlayers.forEach(p => playerTotals[p.id] = 0);
+      const generatedResult = generateBattleResult(activeBattle.datos_partida?.cases || [], newPlayers);
+      const winnerId = generatedResult.ganador_id;
+      let totalGanancia = Object.values(generatedResult.totals).reduce((a,b) => a+b, 0);
 
-      battleCases.forEach((caja, roundIdx) => {
-          battlePlayers.forEach(p => {
-              const randomItem = caja.items[Math.floor(Math.random() * caja.items.length)];
-              const valorItem = randomItem.price || randomItem.value || 0;
-              
-              rounds.push({
-                  round: roundIdx,
-                  player_id: p.id,
-                  item: { name: randomItem.name, valor: valorItem, img: randomItem.image_url, color: randomItem.color, chance: randomItem.chance || 10 }
-              });
-              playerTotals[p.id] += valorItem;
-          });
-      });
-
-      let ganador_id = battlePlayers[0].id;
-      let maxVal = playerTotals[ganador_id];
-      battlePlayers.forEach(p => {
-          if (playerTotals[p.id] > maxVal) {
-              maxVal = playerTotals[p.id];
-              ganador_id = p.id;
+      // Solo pagamos si el ganador NO es un bot
+      if (!winnerId.startsWith('bot_')) {
+          const { data: winnerProf } = await supabase.from('profiles').select('saldo_verde').eq('id', winnerId).single();
+          if (winnerProf) {
+              await supabase.from('profiles').update({ saldo_verde: winnerProf.saldo_verde + totalGanancia }).eq('id', winnerId);
           }
-      });
+      }
 
-      const resultado = { ganador_id, rounds, totals: playerTotals };
+      const { data: updatedBattle, error } = await supabase.from('partidas').update({
+          datos_partida: { ...activeBattle.datos_partida, players: newPlayers },
+          estado: 'in_progress',
+          resultado: generatedResult
+      }).eq('id', activeBattle.id).select().single();
 
-      await supabase.from('partidas').update({
-          estado: 'completed',
-          resultado: resultado
-      }).eq('id', battle.id);
+      if (error) throw error;
 
-      const { data: winnerProf } = await supabase.from('profiles').select('saldo_verde').eq('id', ganador_id).single();
-      let totalGanancia = 0;
-      Object.values(playerTotals).forEach(v => totalGanancia += v);
-      await supabase.from('profiles').update({ saldo_verde: winnerProf.saldo_verde + totalGanancia }).eq('id', ganador_id);
-
-      setBattleResults(resultado);
-      let r = 0;
-      const totalRounds = battleCases.length;
-      const interval = setInterval(() => {
-          setCurrentRound(r);
-          r++;
-          if (r > totalRounds) {
-              clearInterval(interval);
-              resolvingRef.current = false;
-          }
-      }, 1500);
+      setActiveBattle(updatedBattle);
+      setBattleResults(generatedResult);
+      setCurrentRound(-1);
+      
+      animarBatalla(updatedBattle, true);
+      
+    } catch (err) {
+      console.error("Error llamando bots:", err);
+      alert("Error al invocar a los TetoBots.");
+    } finally {
+      setIsJoining(false);
+    }
   };
 
+  // --- UTILIDADES VISUALES ARENA ---
   const getPlayerItemForRound = (playerId, roundIndex) => {
       if (!battleResults || !battleResults.rounds) return null;
       const roll = battleResults.rounds.find(r => r.round === roundIndex && r.player_id === playerId);
@@ -315,7 +381,6 @@ export default function BattlesPage() {
               
               {battles.map((battle) => {
                   const isCompleted = battle.estado === 'completed';
-                  // ARMADURA ANTI-CRASH APLICADA AQUÍ:
                   const pData = battle.datos_partida || {};
                   const battleCases = pData.cases || [];
                   const battlePlayers = pData.players || [];
@@ -477,11 +542,23 @@ export default function BattlesPage() {
             
             <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-2xl flex-1 flex flex-col overflow-hidden">
                 
+                {/* BOTÓN PARA LLAMAR BOTS (PUNTO 20) */}
+                {activeBattle.estado === 'waiting' && activeBattle.creador_id === currentUser?.id && (
+                    <div className="flex justify-center mb-8 w-full animate-bounce-in">
+                        <button 
+                            onClick={callBots} 
+                            disabled={isJoining}
+                            className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-black px-8 py-4 rounded-2xl uppercase tracking-widest transition-transform hover:scale-105 shadow-[0_0_30px_rgba(168,85,247,0.4)] flex items-center gap-3 border-2 border-purple-400/50 disabled:opacity-50"
+                        >
+                            <span className="text-2xl">🤖</span> Llenar con TetoBots (Local Mode)
+                        </button>
+                    </div>
+                )}
+
                 {/* HEADER ARENA */}
                 <div className="flex justify-between items-center mb-8 border-b border-[#252839] pb-6">
                     <div>
                         <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-1">Battle Arena</h2>
-                        {/* ARMADURA ANTI-CRASH APLICADA AQUÍ */}
                         <p className="text-[#8f9ac6] font-bold text-sm">{(activeBattle.datos_partida?.cases || []).length} Rounds • Total Value: <span className="text-[#3AFF4E]"><GreenCoin/> {formatValue(activeBattle.datos_partida?.cost || 0)}</span></p>
                     </div>
                     {activeBattle.estado === 'waiting' && (
