@@ -99,11 +99,70 @@ export default function CasesPage() {
       return;
     }
     
+const openCase = async () => {
+    if (!currentUser || !userProfile) return alert("Por favor inicia sesión.");
+    if (spinning) return;
+
+    const totalCost = selectedCase.price * quantity;
+
+    if (userProfile.saldo_verde < totalCost) {
+      setMoneyNeeded(totalCost);
+      setShowNoMoneyModal(true);
+      return;
+    }
+    
     setView('opening');
     setSpinning(true); 
     setHasLimitedWin(false);
 
     try {
+      const { data: allItemsDB } = await supabase.from('items').select('id, name, is_limited, max_quantity');
+      const mapNameToId = {};
+      const mapNameToLimited = {};
+      const mapNameToMaxQ = {};
+      
+      if (allItemsDB) {
+          allItemsDB.forEach(i => {
+              mapNameToId[i.name] = i.id;
+              mapNameToLimited[i.name] = i.is_limited;
+              mapNameToMaxQ[i.name] = i.max_quantity;
+          });
+      }
+
+      // --- SISTEMA ANTI-BYPASS DE MASCOTAS LIMITADAS ---
+      const validItemsToRoll = [];
+      let totalChance = 0;
+
+      for (let item of selectedCase.items) {
+          const isLim = mapNameToLimited[item.name] || item.is_limited;
+          const maxQ = mapNameToMaxQ[item.name] || item.max_quantity;
+          
+          if (isLim && maxQ) {
+              const itemId = mapNameToId[item.name] || item.id || item.item_id;
+              if (itemId) {
+                  const { count } = await supabase
+                      .from('inventory')
+                      .select('*', { count: 'exact', head: true })
+                      .eq('item_id', itemId);
+                  
+                  if (count >= maxQ) {
+                      continue; // El límite global se alcanzó, la mascota es eliminada de la caja
+                  }
+              }
+          }
+          validItemsToRoll.push(item);
+          totalChance += item.chance;
+      }
+
+      if (validItemsToRoll.length === 0) throw new Error("No hay items disponibles en esta caja (todos alcanzaron su límite).");
+
+      // Recalcular probabilidades (chance) para los items restantes
+      const normalizedItems = validItemsToRoll.map(item => ({
+          ...item,
+          chance: (item.chance / totalChance) * 100
+      }));
+      // ---------------------------------------------------
+
       const nuevoSaldo = userProfile.saldo_verde - totalCost;
       const { error: cobroError } = await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
 
@@ -113,20 +172,8 @@ export default function CasesPage() {
       const inventoryInserts = [];
       let foundLimited = false;
       
-      const { data: allItemsDB } = await supabase.from('items').select('id, name, is_limited, max_quantity');
-      const mapNameToId = {};
-      const mapNameToLimited = {};
-      const mapNameToMaxQ = {};
-      if (allItemsDB) {
-          allItemsDB.forEach(i => {
-              mapNameToId[i.name] = i.id;
-              mapNameToLimited[i.name] = i.is_limited;
-              mapNameToMaxQ[i.name] = i.max_quantity;
-          });
-      }
-
       for (let i = 0; i < quantity; i++) {
-          const winner = getRandomVisualItem(selectedCase.items);
+          const winner = getRandomVisualItem(normalizedItems);
           winners.push(winner);
 
           let realItemId = winner.id || winner.item_id || mapNameToId[winner.name];
@@ -151,62 +198,48 @@ export default function CasesPage() {
 
       if (invError) throw new Error("Fallo al insertar en el inventario: " + invError.message);
 
-      setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
-      
-      const finalWinners = winners.map((w, idx) => {
-          const isLtd = mapNameToLimited[w.name] === true || w.is_limited === true || w.limited === true;
-          return {
-              ...w, 
-              isLimited: isLtd,
-              maxQuantity: mapNameToMaxQ[w.name] || '???',
-              serial: isLtd && insertedInv ? (insertedInv[idx]?.serial_number || insertedInv[idx]?.serial || '???') : null
-          }
-      });
+      setWinningItems(winners);
+      if (foundLimited) setHasLimitedWin(true);
 
-      setWinningItems(finalWinners);
-      
-      if (finalWinners.some(winner => winner.isLimited === true)) {
-          setHasLimitedWin(true);
+      const tracks = [];
+      for (let i = 0; i < quantity; i++) {
+        const t = [];
+        for (let j = 0; j < 80; j++) t.push(getRandomVisualItem(normalizedItems));
+        t[WINNING_INDEX] = winners[i];
+        tracks.push(t);
       }
+      setSpinnerTracks(tracks);
 
-      const newTracks = finalWinners.map(w => 
-        Array.from({length: 55}, (_, i) => 
-          i === WINNING_INDEX ? w : selectedCase.items[Math.floor(Math.random() * selectedCase.items.length)]
-        )
-      );
-      setSpinnerTracks(newTracks);
-      
-      slidersRef.current = new Array(quantity).fill(null);
-
-      const REAL_ITEM_WIDTH = quantity > 1 ? 128 : 188; 
-      
       setTimeout(() => {
-        slidersRef.current.forEach(slider => {
-            if (slider) {
-              slider.style.transition = 'none';
-              slider.style.transform = `translateX(0px)`;
-              void slider.offsetWidth; 
-
-              const centerOffset = REAL_ITEM_WIDTH / 2;
-              const randomOffset = (Math.floor(Math.random() * (REAL_ITEM_WIDTH * 0.8)) - (REAL_ITEM_WIDTH * 0.4)); 
-              const targetPx = -(WINNING_INDEX * REAL_ITEM_WIDTH) - centerOffset + randomOffset;
-
-              slider.style.transition = 'transform 6s cubic-bezier(0.12, 0.8, 0.15, 1)';
-              slider.style.transform = `translateX(${targetPx}px)`;
+        if (slidersRef.current) {
+          slidersRef.current.forEach(el => {
+            if (el) {
+              el.style.transition = 'none';
+              el.style.transform = `translateX(0px)`;
+              setTimeout(() => {
+                el.style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.15, 1)';
+                const itemWidth = window.innerWidth < 768 ? 130 : 160;
+                el.style.transform = `translateX(-${(WINNING_INDEX * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)}px)`;
+              }, 50);
             }
+          });
+        }
+      }, 100);
+
+      setTimeout(() => {
+        setSpinning(false);
+        supabase.auth.getUser().then(res => {
+             supabase.from('profiles').select('*').eq('id', res.data.user.id).single().then(p => {
+                 if(p.data) setUserProfile(p.data);
+             });
         });
+      }, 6500);
 
-        setTimeout(() => { 
-          setSpinning(false); 
-          setView('result'); 
-        }, 6200); 
-      }, 50);
-
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
       setSpinning(false);
-      setView('inspect');
-      alert("Error al procesar: " + err.message);
+      setView('store');
     }
   };
 
