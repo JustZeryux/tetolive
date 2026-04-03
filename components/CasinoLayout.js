@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/utils/Supabase'; // Conexión a DB
 import LoginButton from './LoginButton'; 
-import TetoPlayer from './TetoPlayer';
 // Importa las bellezas que creamos
 import EpicToasts from '@/components/EpicToasts';
 import SettingsModal from '@/components/SettingsModal';
@@ -521,8 +520,6 @@ export default function CasinoLayout({ children }) {
           </div>
         </div>
       )}
-
-      <TetoPlayer isMobileVisible={musicMovilAbierto} setIsMobileVisible={setMusicMovilAbierto} />
   
       {cajeroAbierto && (
         <div className="fixed inset-0 bg-[#0b0e14]/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md animate-fade-in">
