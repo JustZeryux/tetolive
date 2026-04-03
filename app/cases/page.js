@@ -21,7 +21,6 @@ export default function CasesPage() {
   const [view, setView] = useState('store'); 
   const [selectedCase, setSelectedCase] = useState(null);
   
-  // Hasta 10 cajas a la vez
   const [quantity, setQuantity] = useState(1);
 
   const [showNoMoneyModal, setShowNoMoneyModal] = useState(false);
@@ -35,7 +34,6 @@ export default function CasesPage() {
   
   const WINNING_INDEX = 40; 
 
-  // Guardamos un mapa de items limitados para la UI de inspección
   const [dbItemsMap, setDbItemsMap] = useState({});
 
   useEffect(() => {
@@ -47,7 +45,6 @@ export default function CasesPage() {
         setUserProfile(profile);
       }
 
-      // Cargar items de la DB para saber cuáles son limitados desde la inspección
       const { data: itemsDbData } = await supabase.from('items').select('name, is_limited, max_quantity');
       const itemMap = {};
       if(itemsDbData) {
@@ -150,20 +147,14 @@ export default function CasesPage() {
           });
       }
 
-      // .select() AQUÍ ES CLAVE PARA RECUPERAR EL SERIAL QUE GENERA LA BASE DE DATOS
       const { data: insertedInv, error: invError } = await supabase.from('inventory').insert(inventoryInserts).select();
 
       if (invError) throw new Error("Fallo al insertar en el inventario: " + invError.message);
 
       setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
       
-      // Mapear los ganadores e incrustarles el serial que devolvió Supabase
-      // Mapear los ganadores e incrustarles el serial que devolvió Supabase
       const finalWinners = winners.map((w, idx) => {
-          // Revisamos estrictamente si el item en la BD es TRUE, o si en el JSON de la caja dice TRUE.
-          // (Agrego w.limited por si en el JSON de tu caja lo escribiste como "limited" en vez de "is_limited")
           const isLtd = mapNameToLimited[w.name] === true || w.is_limited === true || w.limited === true;
-          
           return {
               ...w, 
               isLimited: isLtd,
@@ -174,11 +165,8 @@ export default function CasesPage() {
 
       setWinningItems(finalWinners);
       
-      // Si alguno de los resultados estrictamente tiene isLimited === true, activamos la pantalla épica
       if (finalWinners.some(winner => winner.isLimited === true)) {
           setHasLimitedWin(true);
-      } else {
-          setHasLimitedWin(false);
       }
 
       const newTracks = finalWinners.map(w => 
@@ -355,17 +343,13 @@ export default function CasesPage() {
                   Contenido de la Caja
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {selectedCase.items.map((item, idx) => {
-          
-                    // LECTURA ESTRICTA: Lee de la Base de datos o del JSON de la caja
                     const isLimitedItem = dbItemsMap[item.name]?.is_limited === true || item.is_limited === true || item.limited === true;
 
                     return (
                     <div key={idx} className={`bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40 ${isLimitedItem ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : ''}`} style={!isLimitedItem ? { borderColor: `${item.color}40` } : {}}>
                       <div className="absolute inset-1 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ background: `radial-gradient(circle at center, ${isLimitedItem ? '#facc15' : item.color} 0%, transparent 70%)` }}></div>
                       
-                      {/* CHANCE PERCENTAGE VISIBLE */}
                       <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-20">
                           <span className="text-[10px] font-black uppercase text-white/50 bg-black/60 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
                               Chance
@@ -444,7 +428,6 @@ export default function CasesPage() {
         {view === 'result' && winningItems.length > 0 && (
           <div className={`w-full flex flex-col items-center justify-center min-h-[70vh] relative ${hasLimitedWin ? 'animate-epic-reveal' : 'animate-bounce-in'}`}>
             
-            {/* FONDO Y DESTELLO MYTHIC */}
             {hasLimitedWin && (
                 <>
                     <div className="fixed inset-0 bg-black/90 z-0 animate-fade-in pointer-events-none"></div>
@@ -460,7 +443,6 @@ export default function CasesPage() {
             </h2>
             
             {quantity === 1 ? (
-                // RESULTADO 1 CAJA
                 <div className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative ${hasLimitedWin ? 'border-yellow-500 animate-shake shadow-[0_0_100px_rgba(234,179,8,0.5)] scale-110' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, boxShadow: `0 0 50px ${winningItems[0].color}40` } : {}}>
                   <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${hasLimitedWin ? '#eab308' : winningItems[0].color} 0%, transparent 60%)`}}></div>
                   <div className={`absolute -top-6 bg-[#0a0a0a] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg ${hasLimitedWin ? 'border-yellow-400 text-yellow-400 animate-pulse' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, color: winningItems[0].color } : {}}>
@@ -476,11 +458,10 @@ export default function CasesPage() {
                     {winningItems[0].name}
                   </h3>
 
-                  {/* INFO DEL SERIAL SI ES LIMITADO */}
                   {hasLimitedWin && (
                     <div className="bg-[#0a0a0a]/80 border-2 border-yellow-500 px-8 py-3 rounded-xl mb-4 relative z-10 shadow-[0_0_20px_rgba(234,179,8,0.4)] backdrop-blur-md text-center w-full">
                         <p className="text-yellow-400 font-black text-sm uppercase tracking-widest mb-1">
-                            Owner: <span className="text-white">{userProfile?.username || userProfile?.name || 'Tú'}</span>
+                            Owner: <span className="text-white">{userProfile?.username || currentUser?.email?.split('@')[0] || 'Player'}</span>
                         </p>
                         <p className="text-gray-400 text-xs font-bold">
                             Serial: <span className="text-white font-black text-lg">#{winningItems[0].serial}</span> <span className="text-[10px]">/ {winningItems[0].maxQuantity}</span>
@@ -502,7 +483,6 @@ export default function CasesPage() {
                   </div>
                 </div>
             ) : (
-                // RESULTADO MULTIPLES CAJAS
                 <div className="flex flex-col items-center w-full max-w-[1200px] z-10">
                     <div className="flex flex-wrap justify-center gap-6 mb-10 w-full">
                         {winningItems.map((winItem, idx) => (
