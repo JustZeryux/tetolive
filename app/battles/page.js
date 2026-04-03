@@ -269,8 +269,6 @@ export default function BattlesPage() {
           }
       }, 1500);
   };
-      }, 1000);
-  };
 
   // Helper para buscar el item sacado en una ronda
   const getPlayerItemForRound = (playerId, roundIndex) => {
