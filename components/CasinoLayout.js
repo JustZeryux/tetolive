@@ -12,7 +12,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 
 const RedCoin = ({cls="w-4 h-4"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
 const GreenCoin = ({cls="w-4 h-4"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
-
+//yes
 const formatValue = (val) => {
   if (typeof val !== 'number') return val;
   if (val >= 1000000) return parseFloat((val / 1000000).toFixed(2)) + 'M';
