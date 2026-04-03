@@ -29,6 +29,7 @@ const menuSections = [
       { name: 'Mines', path: '/mines', iconImg: '/Mines.png' },
       { name: 'Jackpot', path: '/jackpot', iconImg: '/Jackpot.png' },
       { name: 'Blackjack', path: '/blackjack', iconImg: '/Coinflip.png' }, 
+      { name: 'Roullete', path: '/roullete', iconImg: '/TetoGun.png' },
     ]
   },
   {
