@@ -143,10 +143,33 @@ export default function CasinoLayout({ children }) {
     };
   }, []);
 
- const enviarTip = async () => {
+  // === SISTEMA DE TIPS (PROPINAS) ===
+  const [isTipOpen, setIsTipOpen] = useState(false);
+  const [tipUsername, setTipUsername] = useState('');
+  const [tipCurrency, setTipCurrency] = useState('green');
+  const [tipAmount, setTipAmount] = useState('');
+  const [tipMyPets, setTipMyPets] = useState([]);
+  const [tipSelectedPets, setTipSelectedPets] = useState([]);
+  const [isTipping, setIsTipping] = useState(false);
+
+  const abrirModalTip = async () => {
+      setIsTipOpen(true);
+      setTipUsername('');
+      setTipAmount('');
+      setTipSelectedPets([]);
+      if (currentUser && !currentUser.username?.startsWith('Guest')) {
+           const { data } = await supabase.from('inventory').select(`id, items ( id, name, value, image_url, color )`).eq('user_id', currentUser.id).eq('is_locked', false).limit(3000);
+           if (data) {
+               setTipMyPets(data.map(inv => ({ inventarioId: inv.id, ...inv.items })).sort((a,b) => b.value - a.value));
+           }
+      } else {
+           setTipMyPets([]); // Limpiar para guests
+      }
+  };
+
+  const enviarTip = async () => {
       if (!tipUsername) return alert("Ingresa el username del jugador.");
       
-      // 🚨 CORRECCIÓN VITAL: Convertir la cantidad a número entero para evitar bugs de suma de textos
       const amount = parseInt(tipAmount); 
 
       if (tipCurrency === 'green' && (isNaN(amount) || amount <= 0 || amount > saldoVerde)) {
@@ -158,19 +181,16 @@ export default function CasinoLayout({ children }) {
 
       setIsTipping(true);
       try {
-          // 1. Buscar al destinatario primero
           const { data: receiver, error: errRec } = await supabase
               .from('profiles')
-              .select('id, saldo_verde, username') // Traemos el username real
+              .select('id, saldo_verde, username') 
               .ilike('username', tipUsername)
               .single();
               
           if (errRec || !receiver) throw new Error("❌ No se encontró ningún jugador con ese nombre. Tu saldo está a salvo.");
           if (receiver.id === currentUser.id) throw new Error("❌ No puedes enviarte propinas a ti mismo xd.");
 
-          // === FLUJO DE SALDO VERDE ===
           if (tipCurrency === 'green') {
-              // 2. Descontar al que envía
               const myNewBalance = saldoVerde - amount;
               const { error: errDeduct } = await supabase
                   .from('profiles')
@@ -179,33 +199,26 @@ export default function CasinoLayout({ children }) {
                   
               if (errDeduct) throw new Error("❌ Hubo un error al iniciar la transacción.");
 
-              // Actualizamos la UI localmente rápido
               setSaldoVerde(myNewBalance);
 
-              // 3. Sumar al destinatario
               const receiverNewBalance = (receiver.saldo_verde || 0) + amount;
               const { error: errAdd } = await supabase
                   .from('profiles')
                   .update({ saldo_verde: receiverNewBalance })
                   .eq('id', receiver.id);
 
-              // 🛡️ SISTEMA ANTI-ROBOS (ROLLBACK)
               if (errAdd) {
                   console.error("Fallo al entregar el dinero, regresando el saldo...", errAdd);
-                  // Devolvemos el dinero a la DB
                   await supabase.from('profiles').update({ saldo_verde: saldoVerde }).eq('id', currentUser.id);
-                  // Devolvemos el dinero visualmente
                   setSaldoVerde(saldoVerde);
                   throw new Error("❌ Hubo un error de red al entregar el Tip. Tu dinero fue devuelto automáticamente.");
               }
 
               alert(`✅ ¡Le has enviado ${amount.toLocaleString()} 🟢 a ${receiver.username}!`);
               
-          // === FLUJO DE MASCOTAS ===
           } else if (tipCurrency === 'pets') {
               const petIds = tipSelectedPets.map(p => p.inventarioId);
               
-              // En mascotas es una sola operación, si falla, no se mueve nada.
               const { error: errPets } = await supabase
                   .from('inventory')
                   .update({ user_id: receiver.id })
@@ -213,12 +226,10 @@ export default function CasinoLayout({ children }) {
                   
               if (errPets) throw new Error("❌ Error al transferir las mascotas. Siguen en tu inventario.");
               
-              // Removemos las mascotas de la UI para que desaparezcan al instante
               setTipMyPets(prev => prev.filter(p => !petIds.includes(p.inventarioId)));
               alert(`✅ ¡Le has enviado ${tipSelectedPets.length} mascotas a ${receiver.username} 🎁!`);
           }
           
-          // Cerramos modal y limpiamos todo
           setIsTipOpen(false);
           setTipUsername('');
           setTipAmount('');
@@ -228,10 +239,6 @@ export default function CasinoLayout({ children }) {
           alert(e.message);
       }
       setIsTipping(false);
-  };
-  const toggleTipPet = (pet) => {
-      if (tipSelectedPets.find(p => p.inventarioId === pet.inventarioId)) setTipSelectedPets(prev => prev.filter(p => p.inventarioId !== pet.inventarioId));
-      else setTipSelectedPets(prev => [...prev, pet]);
   };
 
   // Auto-scroll del chat
