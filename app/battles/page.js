@@ -16,7 +16,8 @@ export default function BattlesPage() {
   const [view, setView] = useState('lobby'); // 'lobby' | 'create' | 'arena'
   const [activeBattle, setActiveBattle] = useState(null);
   const [battles, setBattles] = useState([]);
-
+const [modalTipAbierto, setModalTipAbierto] = useState(false);
+const abrirModalTip = () => setModalTipAbierto(true);
   // Estados Creador
   const [selectedCases, setSelectedCases] = useState([]);
   const [playerCount, setPlayerCount] = useState(2); 
