@@ -13,6 +13,15 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
+// Función auxiliar para partir arrays grandes en pedacitos (chunks)
+const chunkArray = (array, size) => {
+  const chunked = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunked.push(array.slice(i, i + size));
+  }
+  return chunked;
+};
+
 export default function WalletPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [tab, setTab] = useState('inventory'); // 'inventory' | 'market'
@@ -42,9 +51,6 @@ export default function WalletPage() {
     }
     setCurrentUser(user);
 
-    // Mantenemos la reparación por si acaso
-    await supabase.rpc('reparar_pet_35k', { p_user_id: user.id });
-
     const { data: profile } = await supabase.from('profiles').select('saldo_verde, saldo_rojo').eq('id', user.id).single();
     if (profile) {
         setSaldoVerde(profile.saldo_verde || 0);
@@ -62,16 +68,12 @@ export default function WalletPage() {
   }, []);
 
   const cargarInventario = async (uid) => {
-    // CORRECCIÓN: Quitamos max_quantity de la tabla items porque no existe ahí.
     const { data, error } = await supabase
         .from('inventory')
         .select(`id, item_id, is_limited, serial_number, original_owner, items (name, value, image_url, color)`)
         .eq('user_id', uid);
     
-    if (error) {
-        console.error("Error al cargar inventario:", error);
-        return;
-    }
+    if (error) return;
 
     if (data) {
         setInventario(data.filter(row => row.items !== null).map(row => ({
@@ -150,19 +152,28 @@ export default function WalletPage() {
     setProcesando(true);
     
     try {
+      // 1. Actualizar el dinero (Esto sigue siendo una sola operación)
       const nuevoSaldo = saldoVerde + totalSellPrice;
       await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
 
+      // 2. Borrar del inventario en lotes de 50 para evitar el error de URL larga (400 Bad Request)
       const idsToDelete = Array.from(selectedIds);
-      await supabase.from('inventory').delete().in('id', idsToDelete);
-      await supabase.from('marketplace').insert(marketInserts);
+      const deleteChunks = chunkArray(idsToDelete, 50);
+      for (const chunk of deleteChunks) {
+          await supabase.from('inventory').delete().in('id', chunk);
+      }
+
+      // 3. Insertar en el mercado en lotes de 50
+      const insertChunks = chunkArray(marketInserts, 50);
+      for (const chunk of insertChunks) {
+          await supabase.from('marketplace').insert(chunk);
+      }
 
       alert(`¡Venta Múltiple Exitosa!\nRecibiste: ${totalSellPrice.toLocaleString()} 🟢\nTus items ahora están en el mercado.`);
       setSelectedIds(new Set());
       await fetchData(); 
     } catch (error) {
-      console.error("Error al vender múltiples:", error);
-      alert("Error al intentar vender las mascotas.");
+      alert("Hubo un error al procesar tu venta. Intenta vender menos cantidad de una vez.");
     }
     
     setProcesando(false);
@@ -340,8 +351,8 @@ export default function WalletPage() {
                     <p className="text-[#555b82] text-sm font-bold text-center px-4">No one is selling anything right now. Check back later.</p>
                 </div>
             ) : (
-                /* GRID DE ITEMS CON DISEÑO CABRÓN Y MULTI-SELL */
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5 max-h-[650px] overflow-y-auto custom-scrollbar pr-2 pb-6 relative z-10">
+              /* GRID DE ITEMS CON DISEÑO CABRÓN Y MULTI-SELL */
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 max-h-[650px] overflow-y-auto custom-scrollbar pr-2 pb-6 relative z-10 p-2">
                     
                     {tab === 'inventory' && filteredInventory.map((pet, i) => {
                       const { sellPrice } = calcularVenta(pet.valor);
@@ -351,50 +362,94 @@ export default function WalletPage() {
                         <div 
                            key={pet.inventarioId} 
                            onClick={() => toggleSelect(pet.inventarioId)}
-                           className={`cursor-pointer relative bg-[#0b0e14] border-2 rounded-2xl p-4 flex flex-col items-center justify-between transition-all duration-300 group overflow-hidden h-[250px] animate-fade-in-up
-                            ${pet.isLimited ? 'border-[#facc15]' : isSelected ? 'border-[#22c55e]' : 'border-[#252839] hover:border-white/20'}
-                            ${isSelected ? 'shadow-[0_0_20px_rgba(34,197,94,0.4)] scale-[1.02] -translate-y-2' : 'hover:-translate-y-1'}
+                           className={`cursor-pointer relative bg-[#0a0a0a] rounded-2xl p-1 flex flex-col items-center justify-between transition-all duration-300 group h-[260px] animate-fade-in-up border-2
+                            ${pet.isLimited ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : isSelected ? 'border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)]'}
+                            ${isSelected ? 'scale-105 -translate-y-2' : 'hover:-translate-y-1'}
                            `} 
                            style={{animationDelay: `${i * 30}ms`}}
                         >
+                            {/* FONDO DINÁMICO CON EL COLOR DE LA PET */}
+                            <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
+                                <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${pet.color} 0%, transparent 70%)` }}></div>
+                            </div>
+
                             {/* EFECTO HOLOGRÁFICO PARA LIMITADOS */}
                             {pet.isLimited && (
-                               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-30 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-0" style={{ backgroundSize: '200% 200%', animation: 'shimmer 3s infinite linear' }}></div>
+                               <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-10" style={{ backgroundSize: '200% 200%', animation: 'shimmer 3s infinite linear' }}></div>
                             )}
 
                             {/* CHECKBOX DE MULTI-SELL */}
-                            <div className={`absolute top-2 left-2 w-5 h-5 rounded border-2 flex items-center justify-center transition-all z-20
-                               ${isSelected ? 'bg-[#22c55e] border-[#22c55e]' : 'bg-[#0b0e14] border-[#4a506b]'}
+                            <div className={`absolute top-3 left-3 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all z-20 shadow-lg
+                               ${isSelected ? 'bg-[#22c55e] border-[#22c55e]' : 'bg-[#0a0a0a]/80 border-[#374151] backdrop-blur-sm group-hover:border-cyan-500/50'}
                             `}>
-                               {isSelected && <span className="text-[#0b0e14] text-xs font-black">✓</span>}
+                               {isSelected && <span className="text-[#0a0a0a] text-sm font-black">✓</span>}
                             </div>
 
                             {/* BADGE LIMITADO Y NÚMERO DE SERIE */}
                             {pet.isLimited && (
-                              <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-yellow-600 text-[#0b0e14] font-black text-[9px] px-2 py-1 rounded-bl-lg rounded-tr-lg shadow-md z-20">
+                              <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-yellow-600 text-[#0a0a0a] font-black text-[10px] px-3 py-1 rounded-bl-xl rounded-tr-xl shadow-lg z-20 border-b-2 border-l-2 border-yellow-400">
                                 #{pet.serial}
                               </div>
                             )}
 
-                            {/* Gradiente dinámico de fondo */}
-                            <div className="absolute inset-0 opacity-10 group-hover:opacity-30 transition-opacity duration-500 z-0" style={{ background: `radial-gradient(circle at center, ${pet.color} 0%, transparent 80%)` }}></div>
-
-                            <img src={pet.img} className={`w-20 h-20 object-contain mt-5 mb-3 z-10 drop-shadow-[0_10px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 ${isSelected ? 'scale-110' : 'group-hover:scale-110 group-hover:-rotate-3'}`} alt="pet"/>
+                            {/* CONTENEDOR DE IMAGEN CON GLOW */}
+                            <div className="relative w-full flex-1 flex items-center justify-center mt-6 mb-2 z-10">
+                                {/* Glow detrás de la mascota */}
+                                <div className="absolute w-20 h-20 rounded-full blur-[20px] opacity-40 group-hover:opacity-70 transition-opacity duration-300" style={{ backgroundColor: pet.color }}></div>
+                                <img src={pet.img} className={`w-24 h-24 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 relative z-10 ${isSelected ? 'scale-110' : 'group-hover:scale-125 group-hover:-translate-y-2'}`} alt={pet.nombre}/>
+                            </div>
                             
-                            <div className="w-full text-center z-10 mt-auto bg-[#14151f]/60 rounded-xl py-2 px-1 backdrop-blur-sm border border-[#252839]/50 group-hover:border-[#252839] transition-colors">
-                                <div className="text-[11px] truncate text-white font-black uppercase tracking-wide px-1" style={{textShadow: `0 0 10px ${pet.color}80`}}>{pet.nombre}</div>
+                            {/* TARJETA DE INFO INFERIOR */}
+                            <div className="w-full text-center z-10 bg-[#111827]/90 rounded-b-xl rounded-t-sm py-3 px-2 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden">
+                                {/* Brillo sutil arriba del texto */}
+                                <div className="absolute top-0 left-0 w-full h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${pet.color}, transparent)` }}></div>
+                                
+                                <div className="text-[12px] truncate text-white font-black uppercase tracking-widest px-1 mb-1" style={{textShadow: `0 2px 4px rgba(0,0,0,0.8)`}}>{pet.nombre}</div>
                                 
                                 {pet.isLimited && (
-                                   <div className="text-[8px] font-bold text-[#8f9ac6] truncate px-1 mt-0.5 uppercase">Minter: {pet.originalOwner}</div>
+                                   <div className="text-[9px] font-bold text-yellow-500/80 truncate px-1 mb-1 uppercase tracking-wider">Original: {pet.originalOwner}</div>
                                 )}
 
-                                <div className="text-xs font-black text-[#8f9ac6] flex items-center justify-center gap-1 mt-1">
-                                    <RedCoin cls="w-3 h-3 grayscale opacity-70"/> {formatValue(pet.valor)}
+                                <div className="text-sm font-black text-gray-300 flex items-center justify-center gap-1.5 bg-[#0a0a0a]/50 py-1 rounded-lg border border-[#1f2937]">
+                                    <RedCoin cls="w-4 h-4 grayscale opacity-80"/> {formatValue(pet.valor)}
                                 </div>
                             </div>
                         </div>
                       );
                     })}
+
+                    {tab === 'market' && filteredMarket.map((m, i) => (
+                        <div key={m.marketId} className="relative bg-[#0a0a0a] rounded-2xl p-1 flex flex-col items-center justify-between transition-all duration-300 group h-[260px] animate-fade-in-up border-2 border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:-translate-y-2" style={{animationDelay: `${i * 30}ms`}}>
+                            
+                            <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
+                                <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${m.color} 0%, transparent 70%)` }}></div>
+                            </div>
+                            
+                            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-[#0a0a0a] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg shadow-lg z-20 border border-green-400">EN VENTA</div>
+
+                            <div className="relative w-full flex-1 flex items-center justify-center mt-6 mb-2 z-10">
+                                <div className="absolute w-20 h-20 rounded-full blur-[20px] opacity-40 group-hover:opacity-70 transition-opacity duration-300" style={{ backgroundColor: m.color }}></div>
+                                <img src={m.img} className="w-24 h-24 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 relative z-10 group-hover:scale-125 group-hover:-translate-y-2" alt={m.nombre}/>
+                            </div>
+                            
+                            <div className="w-full text-center z-10 bg-[#111827]/90 rounded-b-xl rounded-t-sm py-2 px-2 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors">
+                                <div className="absolute top-0 left-0 w-full h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${m.color}, transparent)` }}></div>
+                                <div className="text-[12px] truncate text-white font-black uppercase tracking-widest px-1 mb-1">{m.nombre}</div>
+                                <div className="text-[15px] font-black text-[#22c55e] flex items-center justify-center gap-1.5 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]">
+                                    <GreenCoin cls="w-5 h-5"/> {formatValue(m.precio)}
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={() => comprarDelMarket(m.marketId, m.nombre, m.precio, m.itemId)}
+                                disabled={procesando}
+                                className="absolute bottom-[-15px] left-1/2 -translate-x-1/2 w-[80%] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-[11px] font-black uppercase tracking-widest py-2 rounded-xl transition-all duration-300 z-20 shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_20px_rgba(6,182,212,0.6)] disabled:opacity-50 opacity-0 group-hover:opacity-100 group-hover:bottom-3"
+                            >
+                                COMPRAR
+                            </button>
+                        </div>
+                    ))}
+                </div>
 
                     {tab === 'market' && filteredMarket.map((m, i) => (
                         <div key={m.marketId} className="relative bg-[#0b0e14] border-2 border-[#252839] hover:border-[#22c55e]/50 rounded-2xl p-4 flex flex-col items-center justify-between transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(34,197,94,0.15)] group overflow-hidden h-[250px] animate-fade-in-up" style={{animationDelay: `${i * 30}ms`}}>
