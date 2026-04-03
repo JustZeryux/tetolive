@@ -16,12 +16,12 @@ const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" clas
 const imgMonedaHeads = '/heads.png';
 const imgMonedaTails = '/tails.png';
 
-// Helper para extraer las pets sin importar cómo las guardó la base de datos (viejo o nuevo formato)
+// Helper para extraer las pets sin importar el formato viejo o nuevo de la BD
 const extractPets = (apuesta) => {
     if (!apuesta) return [];
-    if (Array.isArray(apuesta)) return apuesta; // Si es el formato nuevo (Array directo)
-    if (apuesta.detalle_completo && Array.isArray(apuesta.detalle_completo)) return apuesta.detalle_completo; // Formato viejo
-    if (apuesta.items && Array.isArray(apuesta.items) && typeof apuesta.items[0] === 'object') return apuesta.items; // Otro formato viejo
+    if (Array.isArray(apuesta)) return apuesta; 
+    if (apuesta.detalle_completo && Array.isArray(apuesta.detalle_completo)) return apuesta.detalle_completo; 
+    if (apuesta.items && Array.isArray(apuesta.items) && typeof apuesta.items[0] === 'object') return apuesta.items; 
     return [];
 };
 
@@ -33,13 +33,11 @@ const formatGameToUI = (dbGame) => {
         host: dbGame.datos_partida?.host_name || 'Player',
         avatar: dbGame.datos_partida?.avatar_creador || '/default-avatar.png',
         lado: dbGame.datos_partida?.lado_creador || 'Heads',
-        // AQUÍ APLICAMOS EL FILTRO SALVAVIDAS:
         petsHost: extractPets(dbGame.apuesta_creador),
         valorTotalHost: dbGame.datos_partida?.valor_total || 0,
         estado: dbGame.estado,
         challenger: dbGame.datos_partida?.challenger_name || 'Challenger',
         avatarChallenger: dbGame.datos_partida?.avatar_challenger || '/default-avatar.png',
-        // AQUÍ TAMBIÉN:
         petsChallenger: extractPets(dbGame.apuesta_retador),
         resultado: dbGame.resultado || null,
         creado_en: dbGame.creado_en,
@@ -51,7 +49,9 @@ export default function BloxypotCoinflip() {
   const [currentUser, setCurrentUser] = useState(null);
   const [misPets, setMisPets] = useState([]);
   const [vistaActual, setVistaActual] = useState('lobby'); 
-  const [visiblePetsCount, setVisiblePetsCount] = useState(100); // Empezamos mostrando 60 para evitar lag
+  
+  // ANTI-LAG: Cuántas mascotas mostrar al inicio
+  const [visiblePetsCount, setVisiblePetsCount] = useState(60);
   
   // Estados de Animación y Partida
   const [cuentaRegresiva, setCuentaRegresiva] = useState(null);
@@ -75,14 +75,7 @@ export default function BloxypotCoinflip() {
 
   // Lobby
   const [lobbyGames, setLobbyGames] = useState([]);
-const handleScrollInventario = (e) => {
-      const { scrollTop, clientHeight, scrollHeight } = e.target;
-      // Si el usuario scrollea y llega casi al final, cargamos 60 pets más
-      if (scrollHeight - scrollTop <= clientHeight + 100) {
-          setVisiblePetsCount(prev => prev + 60);
-      }
-  };
-  
+
   useEffect(() => {
     // 1. INICIALIZAR USUARIO Y MASCOTAS
     const initUserAndInventory = async () => {
@@ -101,6 +94,7 @@ const handleScrollInventario = (e) => {
                 avatar_url: profile?.avatar_url || '/default-avatar.png'
             });
 
+            // LÍMITE SUBIDO A 3000 PARA QUE LEA TODO TU INVENTARIO
             const { data: inventoryData, error } = await supabase
                 .from('inventory')
                 .select(`
@@ -109,7 +103,8 @@ const handleScrollInventario = (e) => {
                     items ( id, name, value, image_url, color )
                 `)
                 .eq('user_id', authData.user.id)
-                .eq('is_locked', false);
+                .eq('is_locked', false)
+                .limit(3000); 
 
             if (inventoryData && !error) {
                 const mascotasReales = inventoryData.map(inv => ({
@@ -137,7 +132,7 @@ const handleScrollInventario = (e) => {
         .eq('modo_juego', 'coinflip')
         .in('estado', ['waiting', 'in_progress', 'completed'])
         .order('creado_en', { ascending: false })
-        .limit(5000); 
+        .limit(30); 
       
       if (!error && data) {
         setLobbyGames(data.map(formatGameToUI));
@@ -202,6 +197,14 @@ const handleScrollInventario = (e) => {
     return () => { supabase.removeChannel(channel); };
   }, [currentUser?.id]);
 
+  // --- FUNCIÓN ANTI-LAG (Infinite Scroll) ---
+  const handleScrollInventario = (e) => {
+      const { scrollTop, clientHeight, scrollHeight } = e.target;
+      if (scrollHeight - scrollTop <= clientHeight + 100) {
+          setVisiblePetsCount(prev => prev + 60);
+      }
+  };
+
   // --- LÓGICA DE CREACIÓN ---
   const creatorFilteredPets = useMemo(() => {
     let items = [...misPets];
@@ -224,8 +227,7 @@ const handleScrollInventario = (e) => {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
-const handleCreateGame = async () => {
-      // 1. Validaciones
+  const handleCreateGame = async () => {
       if (!currentUser) return alert("Inicia sesión para jugar.");
       if (creatorSelectedPets.length === 0) return alert("Selecciona mascotas para apostar primero.");
       if (!creatorSide) return alert("Selecciona Heads o Tails.");
@@ -234,7 +236,7 @@ const handleCreateGame = async () => {
       setIsCreating(true);
 
       try {
-          // 2. EL ANTI-SPAM (Límite ESTRICTO de 1 partida en espera)
+          // Límite ESTRICTO de 1 partida en espera
           const { data: activeGames } = await supabase
               .from('partidas')
               .select('id')
@@ -242,19 +244,16 @@ const handleCreateGame = async () => {
               .eq('modo_juego', 'coinflip')
               .eq('estado', 'waiting');
 
-          // Si ya tiene 1 o más, lo bloqueamos
           if (activeGames && activeGames.length >= 1) {
-              alert("¡Cálmate wey! 🛑 Ya tienes una partida en espera. Deja que alguien se una a esa primero o cancélala.");
+              alert("¡Cálmate wey! 🛑 Ya tienes una partida en espera. Deja que alguien se una a esa primero.");
               setIsCreating(false);
               return;
           }
 
-          // 3. COBRO DE PETS
           const petIds = creatorSelectedPets.map(p => p.inventarioId);
           const { error: errDel } = await supabase.from('inventory').delete().in('id', petIds);
           if (errDel) throw new Error("Error al retirar las pets de tu inventario.");
 
-          // 4. DATOS DE LA PARTIDA
           const datosPartida = {
               host_name: currentUser.username, 
               avatar_creador: currentUser.avatar_url,
@@ -262,25 +261,22 @@ const handleCreateGame = async () => {
               valor_total: totalCreatorValue
           };
 
-          // 5. INSERTAR EN BD Y RECUPERAR LA PARTIDA (.select().single())
           const { data: nuevaPartida, error } = await supabase.from('partidas').insert({
               modo_juego: 'coinflip',
               creador_id: currentUser.id,
-              apuesta_creador: creatorSelectedPets, // Array de pets directo
+              apuesta_creador: creatorSelectedPets, 
               datos_partida: datosPartida,
               estado: 'waiting'
-          }).select().single(); // <--- IMPORTANTE: Pedimos la partida de vuelta
+          }).select().single();
 
           if (error) throw error;
 
-          // 6. LIMPIAR Y MANDAR AL LOBBY DE ESPERA
           setCreatorSelectedPets([]);
           setCreatorSide(null);
           
-          // Formateamos la partida recién creada para que la UI la entienda
           const uiGame = formatGameToUI(nuevaPartida);
           setPartidaSeleccionada(uiGame);
-          setVistaActual('esperando'); // <--- Te mandamos a la pantalla de espera
+          setVistaActual('esperando'); 
           
       } catch (err) {
           console.error("Error creando coinflip:", err);
@@ -300,7 +296,6 @@ const handleCreateGame = async () => {
               return;
           }
 
-          // Devolver pets al inventario
           const petsParaDevolver = partida.apuesta_creador.map(pet => ({
               user_id: currentUser.id,
               item_id: pet.item_id
@@ -323,6 +318,7 @@ const handleCreateGame = async () => {
   // --- LÓGICA JOIN ---
   const abrirModalJoin = (juego) => { 
       setSelectedPetsToJoin([]); 
+      setVisiblePetsCount(60); // Reseteamos el contador de pets visibles al abrir
       setPartidaSeleccionada(juego); 
       setModalJoinAbierto(true); 
   };
@@ -333,7 +329,6 @@ const handleCreateGame = async () => {
       animacionIniciada.current = false;
       setCuentaRegresiva(null);
       
-      // FIX VIEW ESPECTADOR: Sincronización perfecta del lado de la moneda
       if (juego.estado === 'completed' && juego.resultado) {
           const caraFinal = juego.resultado.cara_moneda || (juego.resultado.lado === 'creador_gana' ? juego.lado : (juego.lado === 'Heads' ? 'Tails' : 'Heads'));
           
@@ -398,7 +393,6 @@ const handleCreateGame = async () => {
           avatar_challenger: currentUser.avatar_url
       };
 
-      // MAGIA 50/50 REAL
       const resultadoMoneda = Math.random() < 0.5 ? 'Heads' : 'Tails';
       const ganaCreador = resultadoMoneda === partidaSeleccionada.lado;
       
@@ -414,7 +408,7 @@ const handleCreateGame = async () => {
       const { error } = await supabase.from('partidas')
         .update({ 
             retador_id: currentUser.id,
-            apuesta_retador: selectedPetsToJoin, // Array directo
+            apuesta_retador: selectedPetsToJoin, 
             estado: 'completed',
             resultado: resultadoPartida,
             datos_partida: nuevosDatosPartida 
@@ -423,7 +417,6 @@ const handleCreateGame = async () => {
 
       if (error) throw error;
 
-      // PAGAR MASCOTAS AL GANADOR
       const itemsAInsertar = [];
       const petsDelHost = partidaSeleccionada.petsHost || []; 
       
@@ -439,7 +432,6 @@ const handleCreateGame = async () => {
           await supabase.from('inventory').insert(itemsAInsertar);
       }
 
-      // Bloquear visualmente
       const idsA_Bloquear = selectedPetsToJoin.map(p => p.inventarioId);
       setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
       
@@ -485,7 +477,6 @@ const handleCreateGame = async () => {
             clearInterval(intervalo);
             setCuentaRegresiva(null);
             
-            // Usamos directamente la cara que dictó el servidor
             const caraFinal = datosPartida.resultado?.cara_moneda || (datosPartida.resultado?.lado === 'creador_gana' ? datosPartida.lado : (datosPartida.lado === 'Heads' ? 'Tails' : 'Heads'));
 
             setGirando(true);
@@ -527,18 +518,13 @@ const handleCreateGame = async () => {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white font-sans p-4 md:p-8 relative overflow-hidden">
       
-      {/* Background FX Fijo */}
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#6C63FF] opacity-10 blur-[150px] pointer-events-none z-0"></div>
       <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#ef4444] opacity-5 blur-[150px] pointer-events-none z-0"></div>
 
       <div className="max-w-[1200px] mx-auto relative z-10">
         
-        {/* =========================================
-            VISTA 1: LOBBY
-        ========================================= */}
         {vistaActual === 'lobby' && (
           <div className="w-full animate-fade-in">
-            {/* Header / Stats */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
               <div className="flex items-center gap-4 rounded-2xl p-6 border border-[#252839] bg-[#14151f] shadow-lg relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#6C63FF]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -565,7 +551,7 @@ const handleCreateGame = async () => {
 
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-[#14151f] p-4 rounded-2xl border border-[#252839]">
                <h2 className="text-xl font-black uppercase tracking-widest text-white ml-2">Live Coinflip</h2>
-               <button onClick={() => setVistaActual('crear')} className="w-full md:w-auto cursor-pointer py-3 px-8 text-sm font-black rounded-xl border border-[#5E55D9]/50 bg-gradient-to-r from-[#6C63FF] to-[#5147D9] text-white shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:shadow-[0_0_30px_rgba(108,99,255,0.6)] transition-all uppercase tracking-widest hover:scale-105 active:scale-95">
+               <button onClick={() => {setVistaActual('crear'); setVisiblePetsCount(60);}} className="w-full md:w-auto cursor-pointer py-3 px-8 text-sm font-black rounded-xl border border-[#5E55D9]/50 bg-gradient-to-r from-[#6C63FF] to-[#5147D9] text-white shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:shadow-[0_0_30px_rgba(108,99,255,0.6)] transition-all uppercase tracking-widest hover:scale-105 active:scale-95">
                  CREATE GAME
                </button>
             </div>
@@ -637,9 +623,6 @@ const handleCreateGame = async () => {
           </div>
         )}
 
-        {/* =========================================
-            VISTA 2: CREATE GAME
-        ========================================= */}
         {vistaActual === 'crear' && (
            <div className="w-full animate-fade-in">
              <button onClick={() => {setVistaActual('lobby'); setCreatorSelectedPets([]);}} className="text-[#8f9ac6] hover:text-white font-black text-xs tracking-widest uppercase flex items-center gap-2 transition-colors mb-6 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b]">
@@ -647,7 +630,6 @@ const handleCreateGame = async () => {
              </button>
              
              <div className="flex flex-col md:flex-row gap-8">
-                {/* Lado Izquierdo: Inventario */}
                 <div className="w-full md:w-2/3 flex flex-col gap-4">
                     <div className="bg-[#14151f] border border-[#252839] rounded-2xl p-6 shadow-xl h-full flex flex-col">
                         <div className="flex justify-between items-center mb-6">
@@ -658,8 +640,9 @@ const handleCreateGame = async () => {
                         </div>
                         <input type="text" placeholder="Search items..." value={creatorSearch} onChange={e => setCreatorSearch(e.target.value)} className="w-full bg-[#0b0e14] border border-[#252839] rounded-xl px-5 py-3 text-sm text-white focus:outline-none focus:border-[#6C63FF] mb-6 transition-colors" />
                         
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2 flex-1 content-start">
-                            {creatorFilteredPets.map(pet => {
+                        {/* AQUÍ VA EL onScroll Y EL slice() PARA EL ANTI-LAG */}
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2 flex-1 content-start" onScroll={handleScrollInventario}>
+                            {creatorFilteredPets.slice(0, visiblePetsCount).map(pet => {
                                 const isSelected = creatorSelectedPets.some(p => p.inventarioId === pet.inventarioId);
                                 return (
                                     <div key={pet.inventarioId} onClick={() => toggleCreatorPet(pet)} className={`relative bg-[#0b0e14] border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all hover:-translate-y-1 ${isSelected ? 'border-[#6C63FF] shadow-[0_0_20px_rgba(108,99,255,0.3)] bg-gradient-to-b from-[#6C63FF]/10 to-transparent' : 'border-[#252839] hover:border-[#4a506b]'}`}>
@@ -677,7 +660,6 @@ const handleCreateGame = async () => {
                     </div>
                 </div>
 
-                {/* Lado Derecho: Controles */}
                 <div className="w-full md:w-1/3 flex flex-col gap-4">
                     <div className="bg-[#14151f] border border-[#252839] rounded-2xl p-6 shadow-xl sticky top-4">
                         <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2">Total Bet Value</h3>
@@ -710,13 +692,9 @@ const handleCreateGame = async () => {
            </div>
         )}
 
-        {/* =========================================
-            VISTA DE ESPERA (MODAL CREATOR)
-        ========================================= */}
         {vistaActual === 'esperando' && partidaSeleccionada && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4">
                 <div className="bg-[#14151f] border-2 border-[#252839] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-10 max-w-sm w-full flex flex-col items-center text-center">
-                    
                     <div className="relative w-32 h-32 mb-8">
                         <div className="absolute inset-0 rounded-full border-4 border-[#252839] border-t-[#6C63FF] animate-spin shadow-[0_0_20px_#6C63FF]"></div>
                         <img src={partidaSeleccionada.avatar} className="w-full h-full rounded-full object-cover p-2" alt="Tú" />
@@ -724,10 +702,8 @@ const handleCreateGame = async () => {
                             <img src={partidaSeleccionada.lado === 'Heads' ? imgMonedaHeads : imgMonedaTails} className="w-full h-full object-contain p-1" alt="Side" />
                         </div>
                     </div>
-
                     <h2 className="text-3xl font-black text-white uppercase tracking-widest mb-2 drop-shadow-md">Waiting</h2>
                     <p className="text-[#8f9ac6] mb-10 font-bold text-sm">Waiting for a challenger to match your bet of <span className="text-white"><RedCoin/> {formatValue(partidaSeleccionada.valorTotalHost)}</span></p>
-                    
                     <button 
                         onClick={() => cancelarPartida(partidaSeleccionada.id)} 
                         className="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500 hover:text-black text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
@@ -738,32 +714,24 @@ const handleCreateGame = async () => {
             </div>
         )}
 
-        {/* =========================================
-            VISTA 3: ARENA (LA MONEDA EN 3D)
-        ========================================= */}
         {vistaActual === 'arena' && partidaSeleccionada && (
           <div className="w-full flex flex-col items-center animate-fade-in mt-4">
             <button onClick={() => {setVistaActual('lobby'); animacionIniciada.current = false;}} className="self-start text-[#8f9ac6] hover:text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors mb-8 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b]">
               ← Exit Arena
             </button>
-            
-            {/* Cabecera de Versus */}
             <div className="flex items-center justify-between w-full max-w-3xl bg-[#14151f] p-8 rounded-[2rem] border border-[#252839] shadow-2xl mb-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#facc15]/5 via-transparent to-[#a855f7]/5"></div>
-                
                 <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
                     <AvatarVS img={partidaSeleccionada.avatar} side={partidaSeleccionada.lado} />
                     <span className="text-white font-black text-lg text-center truncate w-full">{partidaSeleccionada.host}</span>
                     <span className="text-[#facc15] font-black text-xs uppercase tracking-widest">Host</span>
                 </div>
-                
                 <div className="flex flex-col items-center w-1/3 relative z-10">
                     <div className="text-4xl font-black text-[#252839] italic">VS</div>
                     <div className="mt-4 flex items-center gap-2 text-2xl font-black text-white bg-[#0b0e14] px-4 py-2 rounded-xl border border-[#252839]">
                        <RedCoin cls="w-6 h-6"/> {formatValue(partidaSeleccionada.valorTotalHost * 2)}
                     </div>
                 </div>
-
                 <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
                     {partidaSeleccionada.estado === 'in_progress' || partidaSeleccionada.estado === 'completed' ? (
                         <>
@@ -779,20 +747,13 @@ const handleCreateGame = async () => {
                     )}
                 </div>
             </div>
-
-            {/* CONTENEDOR PRINCIPAL DE ANIMACIÓN Y FÍSICAS */}
             <div className="relative flex justify-center items-center h-64 mb-16 w-full">
-              
               {cuentaRegresiva !== null && (
                   <div className="absolute inset-0 flex items-center justify-center z-50 animate-pulse">
-                      <span className="text-[150px] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.5)] opacity-90">
-                          {cuentaRegresiva}
-                      </span>
+                      <span className="text-[150px] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.5)] opacity-90">{cuentaRegresiva}</span>
                   </div>
               )}
-
               <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[100px] rounded-full transition-all duration-700 ease-out z-0 ${mostrarImpacto ? 'opacity-40 scale-[2]' : 'opacity-0 scale-50'}`}></div>
-
               <div className={`relative w-48 h-48 md:w-64 md:h-64 perspective-[1200px] z-10 ${cuentaRegresiva !== null ? 'opacity-20 blur-sm' : 'opacity-100'}`}
                    style={{
                      transform: girando ? 'translateY(-100px) scale(1.2)' : 'translateY(0px) scale(1)',
@@ -806,12 +767,9 @@ const handleCreateGame = async () => {
                     transform: `rotateY(${rotacion}deg)`
                   }}
                 >
-                  {/* Cara Heads */}
                   <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] bg-[#14151f] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_80px_rgba(250,204,21,1)]' : 'border-[#252839] shadow-2xl'}`}>
                     <img src={imgMonedaHeads} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Heads" />
                   </div>
-                  
-                  {/* Cara Tails */}
                   <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] bg-[#14151f] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_80px_rgba(168,85,247,1)]' : 'border-[#252839] shadow-2xl'}`}
                        style={{ transform: 'rotateY(180deg)' }}>
                     <img src={imgMonedaTails} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Tails" />
@@ -819,7 +777,6 @@ const handleCreateGame = async () => {
                 </div>
               </div>
             </div>
-
             <h2 className={`text-4xl font-black uppercase tracking-[0.3em] min-h-[50px] transition-all duration-500 ${mostrarImpacto ? (ganador === 'Heads' ? 'text-[#facc15] drop-shadow-[0_0_20px_#facc15]' : 'text-[#a855f7] drop-shadow-[0_0_20px_#a855f7]') : 'text-white'}`}>
               {cuentaRegresiva !== null ? 'PREPARING' : (ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING' : (partidaSeleccionada.estado === 'waiting' ? 'WAITING' : 'READY')))}
             </h2>
@@ -828,25 +785,19 @@ const handleCreateGame = async () => {
 
       </div>
 
-      {/* =========================================
-          MODAL JOIN
-      ========================================= */}
       {modalJoinAbierto && partidaSeleccionada && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-[#14151f] border border-[#252839] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
-            
             <div className="flex justify-between items-center p-6 border-b border-[#252839] bg-[#0b0e14]">
               <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
                 ⚔️ JOIN MATCH <span className="text-[#555b82] text-xs">#{partidaSeleccionada.id.toString().substring(0,6)}</span>
               </h2>
-              <button onClick={() => setModalJoinAbierto(false)} className="text-[#555b82] hover:text-white transition-colors text-2xl">
-                &times;
-              </button>
+              <button onClick={() => setModalJoinAbierto(false)} className="text-[#555b82] hover:text-white transition-colors text-2xl">&times;</button>
             </div>
             
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-                {/* Inventario para Unirse */}
-                <div className="w-full md:w-2/3 p-6 overflow-y-auto custom-scrollbar border-r border-[#252839] bg-[#14151f]">
+                {/* AQUÍ VA EL onScroll Y EL slice() PARA EL ANTI-LAG */}
+                <div className="w-full md:w-2/3 p-6 overflow-y-auto custom-scrollbar border-r border-[#252839] bg-[#14151f]" onScroll={handleScrollInventario}>
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-[#8f9ac6] text-sm font-black uppercase tracking-widest">Your Inventory</h3>
                         <button onClick={handleAutoSelectJoin} className="text-[10px] bg-[#0b0e14] hover:bg-[#252839] text-[#8f9ac6] hover:text-white px-4 py-2 rounded-lg border border-[#252839] transition-colors font-black uppercase tracking-widest">
@@ -854,7 +805,7 @@ const handleCreateGame = async () => {
                         </button>
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                        {misPets.map(pet => {
+                        {misPets.slice(0, visiblePetsCount).map(pet => {
                             const isSelected = selectedPetsToJoin.some(p => p.inventarioId === pet.inventarioId);
                             return (
                                 <div key={pet.inventarioId} onClick={() => toggleSelectPetJoin(pet)} className={`relative bg-[#0b0e14] border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all hover:-translate-y-1 ${isSelected ? 'border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)] bg-gradient-to-b from-[#22c55e]/10 to-transparent' : 'border-[#252839] hover:border-[#4a506b]'}`}>
@@ -871,7 +822,6 @@ const handleCreateGame = async () => {
                     </div>
                 </div>
 
-                {/* Panel lateral de confirmación */}
                 <div className="w-full md:w-1/3 p-8 bg-[#0b0e14] flex flex-col justify-between">
                     <div>
                         <div className="text-center mb-8">
@@ -879,12 +829,10 @@ const handleCreateGame = async () => {
                             <p className="text-white font-black text-lg">{partidaSeleccionada.host}</p>
                             <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mt-1">is waiting with <span className="text-white">{partidaSeleccionada.lado}</span></p>
                         </div>
-
                         <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2">Target Value to Match</h3>
                         <div className="text-2xl font-black text-white flex items-center justify-center gap-2 py-4 bg-[#14151f] rounded-xl border border-[#252839] mb-8 shadow-inner">
                             <RedCoin cls="w-6 h-6"/> {formatValue(partidaSeleccionada.valorTotalHost)}
                         </div>
-
                         <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2">Your Selected Value</h3>
                         <div className={`text-3xl font-black flex items-center justify-center gap-2 py-5 rounded-xl border-2 transition-colors mb-2 ${dataJoinValidacion.valida ? 'text-[#22c55e] bg-[#22c55e]/10 border-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.2)]' : 'text-white bg-[#14151f] border-[#252839]'}`}>
                             <RedCoin cls="w-8 h-8"/> {formatValue(totalSeleccionadoToJoin)}
@@ -893,7 +841,6 @@ const handleCreateGame = async () => {
                             {dataJoinValidacion.diferenciaPrc > 0 ? '+' : ''}{dataJoinValidacion.diferenciaPrc}% Difference
                         </div>
                     </div>
-
                     <button 
                         onClick={confirmarUnionYJugar} 
                         disabled={!dataJoinValidacion.valida || isJoining}
