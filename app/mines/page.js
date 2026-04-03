@@ -48,8 +48,27 @@ export default function MinesPage() {
     for (let i = 0; i < hits; i++) {
       mult *= (25 - i) / (25 - mines - i);
     }
-    // Retenemos un 5% (House Edge) para que la página no quiebre
-    return parseFloat((mult * 0.95).toFixed(2));
+    
+    // --- SISTEMA DE NERFEO (HOUSE EDGE DINÁMICO) ---
+    // Retención base de la casa aumentada al 10% (0.90) en lugar del 5% original
+    let houseEdge = 0.90; 
+
+    // Penalización drástica si el usuario elige una cantidad alta de minas (Ej: 20-24 minas)
+    if (mines >= 10 && mines <= 19) {
+      houseEdge = 0.80; // Retiene 20%
+    } else if (mines >= 20) {
+      houseEdge = 0.65; // Retiene 35% (Nerf masivo para los que juegan con 23 minas)
+    }
+
+    // Penalización adicional progresiva por cada acierto consecutivo
+    // Hace que intentar sacar multiplicadores infinitos sea estadísticamente más difícil
+    houseEdge -= (hits * 0.01); 
+
+    // Calculamos el multiplicador final
+    let finalMultiplier = parseFloat((mult * houseEdge).toFixed(2));
+
+    // Garantizamos que el multiplicador nunca se rompa dando menos de 1x si ya hubo un acierto
+    return finalMultiplier <= 1.00 ? 1.01 : finalMultiplier;
   };
 
   // === INICIAR JUEGO (COBRA A LA BASE DE DATOS) ===
