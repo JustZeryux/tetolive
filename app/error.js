@@ -21,7 +21,7 @@ export default function ErrorBoundary({ error, reset }) {
           <div className="absolute inset-0 bg-[#ef4444] rounded-full opacity-20 blur-2xl animate-pulse"></div>
           {/* OJO: Asegúrate de tener una imagen llamada teto-error.png en tu carpeta public */}
           <img 
-            src="/Case.png" 
+            src="/favicon.ico" 
             alt="Teto Error" 
             className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition-transform"
             onError={(e) => { 
