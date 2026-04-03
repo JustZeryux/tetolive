@@ -45,6 +45,14 @@ const formatGameToUI = (dbGame) => {
     };
 };
 
+const playAudio = (src, vol = 0.5) => {
+    try {
+        const audio = new Audio(src);
+        audio.volume = vol;
+        audio.play().catch(() => {});
+    } catch (e) {}
+};
+
 export default function BloxypotCoinflip() {
   const [currentUser, setCurrentUser] = useState(null);
   const [misPets, setMisPets] = useState([]);
@@ -94,7 +102,6 @@ export default function BloxypotCoinflip() {
                 avatar_url: profile?.avatar_url || '/default-avatar.png'
             });
 
-            // LÍMITE SUBIDO A 3000 PARA QUE LEA TODO TU INVENTARIO
             const { data: inventoryData, error } = await supabase
                 .from('inventory')
                 .select(`
@@ -228,15 +235,14 @@ export default function BloxypotCoinflip() {
   };
 
   const handleCreateGame = async () => {
-      if (!currentUser) return alert("Inicia sesión para jugar.");
-      if (creatorSelectedPets.length === 0) return alert("Selecciona mascotas para apostar primero.");
-      if (!creatorSide) return alert("Selecciona Heads o Tails.");
+      if (!currentUser) return alert("Please log in to play.");
+      if (creatorSelectedPets.length === 0) return alert("Please select pets to bet first.");
+      if (!creatorSide) return alert("Select Heads or Tails.");
       
       if (isCreating) return;
       setIsCreating(true);
 
       try {
-          // Límite ESTRICTO de 1 partida en espera
           const { data: activeGames } = await supabase
               .from('partidas')
               .select('id')
@@ -245,14 +251,14 @@ export default function BloxypotCoinflip() {
               .eq('estado', 'waiting');
 
           if (activeGames && activeGames.length >= 1) {
-              alert("¡Cálmate wey! 🛑 Ya tienes una partida en espera. Deja que alguien se una a esa primero.");
+              alert("Woah there! 🛑 You already have a game waiting. Let someone join that one first.");
               setIsCreating(false);
               return;
           }
 
           const petIds = creatorSelectedPets.map(p => p.inventarioId);
           const { error: errDel } = await supabase.from('inventory').delete().in('id', petIds);
-          if (errDel) throw new Error("Error al retirar las pets de tu inventario.");
+          if (errDel) throw new Error("Error removing pets from your inventory.");
 
           const datosPartida = {
               host_name: currentUser.username, 
@@ -279,7 +285,7 @@ export default function BloxypotCoinflip() {
           setVistaActual('esperando'); 
           
       } catch (err) {
-          console.error("Error creando coinflip:", err);
+          console.error("Error creating coinflip:", err);
           alert("Error: " + err.message);
       } finally {
           setIsCreating(false);
@@ -292,7 +298,7 @@ export default function BloxypotCoinflip() {
       try {
           const { data: partida } = await supabase.from('partidas').select('*').eq('id', gameId).single();
           if (!partida || partida.estado !== 'waiting') {
-              alert("No se puede cancelar esta partida.");
+              alert("You cannot cancel this game anymore.");
               return;
           }
 
@@ -307,18 +313,18 @@ export default function BloxypotCoinflip() {
           await supabase.from('partidas').delete().eq('id', gameId);
           
           setVistaActual('lobby');
-          alert("Partida cancelada y mascotas devueltas.");
+          alert("Game canceled and pets returned to inventory.");
           
       } catch (err) {
-          console.error("Error cancelando:", err);
-          alert("Hubo un error al cancelar.");
+          console.error("Cancel error:", err);
+          alert("An error occurred while canceling.");
       }
   };
 
   // --- LÓGICA JOIN ---
   const abrirModalJoin = (juego) => { 
       setSelectedPetsToJoin([]); 
-      setVisiblePetsCount(60); // Reseteamos el contador de pets visibles al abrir
+      setVisiblePetsCount(60);
       setPartidaSeleccionada(juego); 
       setModalJoinAbierto(true); 
   };
@@ -382,7 +388,7 @@ export default function BloxypotCoinflip() {
   };
 
   const confirmarUnionYJugar = async () => {
-    if (!dataJoinValidacion.valida) return alert("Las mascotas no están en el rango permitido.");
+    if (!dataJoinValidacion.valida) return alert("Pets are not within the allowed value range.");
     if (isJoining) return; 
     setIsJoining(true);
 
@@ -451,13 +457,13 @@ export default function BloxypotCoinflip() {
       iniciarCinematicaMoneda(uiData);
 
     } catch (err) {
-      console.error("Error fatal:", err);
+      console.error("Fatal Error:", err);
     } finally {
       setIsJoining(false);
     }
   };
 
-  // --- ANIMACIONES ARENA ---
+  // --- ANIMACIONES ÉPICAS ARENA ---
   const iniciarCinematicaMoneda = (datosPartida) => {
     if (animacionIniciada.current) return; 
     animacionIniciada.current = true;
@@ -468,11 +474,13 @@ export default function BloxypotCoinflip() {
     
     setCuentaRegresiva(3);
     let contador = 3;
+    playAudio('/sounds/click.mp3', 0.5);
     
     const intervalo = setInterval(() => {
         contador -= 1;
         if (contador > 0) {
             setCuentaRegresiva(contador);
+            playAudio('/sounds/click.mp3', 0.5);
         } else {
             clearInterval(intervalo);
             setCuentaRegresiva(null);
@@ -480,17 +488,30 @@ export default function BloxypotCoinflip() {
             const caraFinal = datosPartida.resultado?.cara_moneda || (datosPartida.resultado?.lado === 'creador_gana' ? datosPartida.lado : (datosPartida.lado === 'Heads' ? 'Tails' : 'Heads'));
 
             setGirando(true);
+            playAudio('/sounds/spin.mp3', 0.7);
             
             setTimeout(() => {
               setRotacion(prevRotacion => {
                 const ganaHeadsVisual = caraFinal === 'Heads';
-                const vueltasBase = prevRotacion + 3600; 
+                const vueltasBase = prevRotacion + 3600; // 10 vueltas locas
                 const nuevaRot = ganaHeadsVisual ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
                 
                 setTimeout(() => { 
                     setGirando(false); 
                     setGanador(caraFinal); 
-                    setTimeout(() => setMostrarImpacto(true), 150);
+                    playAudio('/sounds/win.mp3', 0.8);
+                    
+                    // Flash screen effect
+                    const flash = document.createElement('div');
+                    flash.className = "fixed inset-0 bg-white z-[999] pointer-events-none transition-opacity duration-300 opacity-0";
+                    document.body.appendChild(flash);
+                    setTimeout(() => flash.style.opacity = "0.6", 10);
+                    setTimeout(() => {
+                      flash.style.opacity = "0";
+                      setTimeout(() => flash.remove(), 300);
+                    }, 150);
+
+                    setTimeout(() => setMostrarImpacto(true), 50);
                 }, 4000);
 
                 return nuevaRot;
@@ -502,14 +523,18 @@ export default function BloxypotCoinflip() {
 
 
   // --- COMPONENTES VISUALES ---
-  const AvatarVS = ({ img, side, isWaiting = false }) => (
-    <div className={`relative box-border h-12 w-12 md:h-14 md:w-14 rounded-full border-2 md:border-[3px] border-solid bg-[#1C1F2E] transition-colors shrink-0 ${isWaiting ? 'border-[#2F3347] border-dashed opacity-60' : side === 'Heads' ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.3)]' : 'border-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,0.3)]'}`}>
+  const AvatarVS = ({ img, side, isWaiting = false, isWinner = false, isLoser = false }) => (
+    <div className={`relative box-border h-16 w-16 md:h-20 md:w-20 rounded-full border-2 md:border-[4px] border-solid bg-[#1C1F2E] transition-all duration-500 shrink-0 
+        ${isWaiting ? 'border-[#2F3347] border-dashed opacity-60' : 
+          isWinner ? (side === 'Heads' ? 'border-[#facc15] shadow-[0_0_40px_rgba(250,204,21,0.8)] scale-110 z-20' : 'border-[#a855f7] shadow-[0_0_40px_rgba(168,85,247,0.8)] scale-110 z-20') : 
+          isLoser ? 'border-[#252839] opacity-40 scale-90 grayscale' :
+          (side === 'Heads' ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.3)]' : 'border-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,0.3)]')}`}>
       <div className="block h-full w-full overflow-hidden rounded-full bg-[#141323] flex items-center justify-center text-xl">
         {isWaiting ? '?' : <img src={img} className="block w-full h-full object-cover" alt="avatar"/>}
       </div>
       {!isWaiting && (
-        <div className="absolute right-0 top-0 h-5 w-5 md:h-6 md:w-6 overflow-hidden rounded-full translate-x-1/4 -translate-y-1/4 shadow-md bg-[#0b0e14]">
-          <img className="block w-full h-full object-contain p-0.5" src={side === 'Heads' ? imgMonedaHeads : imgMonedaTails} alt={side} />
+        <div className={`absolute right-0 top-0 h-6 w-6 md:h-8 md:w-8 overflow-hidden rounded-full translate-x-1/4 -translate-y-1/4 shadow-md bg-[#0b0e14] border-2 ${side === 'Heads' ? 'border-[#facc15]' : 'border-[#a855f7]'}`}>
+          <img className="block w-full h-full object-contain p-1" src={side === 'Heads' ? imgMonedaHeads : imgMonedaTails} alt={side} />
         </div>
       )}
     </div>
@@ -523,6 +548,7 @@ export default function BloxypotCoinflip() {
 
       <div className="max-w-[1200px] mx-auto relative z-10">
         
+        {/* LOBBY VIEW */}
         {vistaActual === 'lobby' && (
           <div className="w-full animate-fade-in">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
@@ -563,8 +589,8 @@ export default function BloxypotCoinflip() {
               {lobbyGames.map((game, idx) => (
                 <div key={game.id} className={`relative grid grid-cols-1 xl:grid-cols-[auto_1fr_auto_auto] items-center gap-4 md:gap-6 rounded-2xl border py-4 px-6 transition-all animate-fade-in ${game.estado === 'completed' ? 'border-[#252839] bg-[#0b0e14] opacity-70 grayscale-[30%]' : 'border-[#252839] bg-[#14151f] hover:border-[#3f4354] shadow-lg hover:shadow-xl'}`} style={{animationDelay: `${idx * 0.05}s`}}>
                   
-                  {game.estado === 'completed' && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-3 py-1 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
-                  {game.estado === 'in_progress' && <div className="absolute top-0 left-0 bg-[#6C63FF] text-white text-[9px] font-black uppercase px-3 py-1 rounded-tl-2xl rounded-br-lg tracking-widest shadow-[0_0_10px_rgba(108,99,255,0.5)]">Rolling...</div>}
+                  {game.estado === 'completed' && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-3 py-1 rounded-tl-2xl rounded-br-lg tracking-widest z-10">Finished</div>}
+                  {game.estado === 'in_progress' && <div className="absolute top-0 left-0 bg-[#6C63FF] text-white text-[9px] font-black uppercase px-3 py-1 rounded-tl-2xl rounded-br-lg tracking-widest shadow-[0_0_10px_rgba(108,99,255,0.5)] z-10 animate-pulse">Rolling...</div>}
 
                   <div className="flex items-center gap-4 justify-center xl:justify-start mt-2 xl:mt-0">
                     <AvatarVS img={game.avatar} side={game.lado} />
@@ -608,12 +634,12 @@ export default function BloxypotCoinflip() {
 
                   <div className="flex justify-center xl:justify-end gap-3 w-full mt-2 xl:mt-0">
                     {game.estado === 'waiting' && currentUser && game.creador_id !== currentUser.id && (
-                        <button onClick={() => abrirModalJoin(game)} className="w-full xl:w-28 cursor-pointer py-3 text-xs font-black rounded-xl border border-[#22c55e]/50 bg-[#22c55e]/10 text-[#4ade80] hover:bg-[#22c55e] hover:text-[#0b0e14] shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all uppercase tracking-widest">
+                        <button onClick={() => abrirModalJoin(game)} className="w-full xl:w-28 cursor-pointer py-3 text-xs font-black rounded-xl border border-[#22c55e]/50 bg-[#22c55e]/10 text-[#4ade80] hover:bg-[#22c55e] hover:text-[#0b0e14] shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all uppercase tracking-widest hover:scale-105 active:scale-95">
                           JOIN
                         </button>
                     )}
                     
-                    <button onClick={() => verPartida(game)} className="w-full xl:w-28 cursor-pointer py-3 text-xs font-black rounded-xl border border-[#252839] bg-[#0b0e14] text-[#8f9ac6] hover:bg-[#252839] hover:text-white transition-all uppercase tracking-widest">
+                    <button onClick={() => verPartida(game)} className="w-full xl:w-28 cursor-pointer py-3 text-xs font-black rounded-xl border border-[#252839] bg-[#0b0e14] text-[#8f9ac6] hover:bg-[#252839] hover:text-white transition-all uppercase tracking-widest hover:scale-105 active:scale-95">
                       VIEW
                     </button>
                   </div>
@@ -623,6 +649,7 @@ export default function BloxypotCoinflip() {
           </div>
         )}
 
+        {/* CREATE VIEW */}
         {vistaActual === 'crear' && (
            <div className="w-full animate-fade-in">
              <button onClick={() => {setVistaActual('lobby'); setCreatorSelectedPets([]);}} className="text-[#8f9ac6] hover:text-white font-black text-xs tracking-widest uppercase flex items-center gap-2 transition-colors mb-6 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b]">
@@ -640,7 +667,6 @@ export default function BloxypotCoinflip() {
                         </div>
                         <input type="text" placeholder="Search items..." value={creatorSearch} onChange={e => setCreatorSearch(e.target.value)} className="w-full bg-[#0b0e14] border border-[#252839] rounded-xl px-5 py-3 text-sm text-white focus:outline-none focus:border-[#6C63FF] mb-6 transition-colors" />
                         
-                        {/* AQUÍ VA EL onScroll Y EL slice() PARA EL ANTI-LAG */}
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2 flex-1 content-start" onScroll={handleScrollInventario}>
                             {creatorFilteredPets.slice(0, visiblePetsCount).map(pet => {
                                 const isSelected = creatorSelectedPets.some(p => p.inventarioId === pet.inventarioId);
@@ -684,7 +710,7 @@ export default function BloxypotCoinflip() {
                           disabled={isCreating || creatorSelectedPets.length === 0 || !creatorSide}
                           className="w-full py-4 rounded-xl font-black text-white uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:shadow-[0_0_30px_rgba(108,99,255,0.6)] hover:scale-[1.02] bg-gradient-to-r from-[#6C63FF] to-[#5147D9] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            {isCreating ? 'Creating...' : 'CREATE MATCH'}
+                            {isCreating ? 'CREATING...' : 'CREATE MATCH'}
                         </button>
                     </div>
                 </div>
@@ -692,6 +718,7 @@ export default function BloxypotCoinflip() {
            </div>
         )}
 
+        {/* WAITING VIEW */}
         {vistaActual === 'esperando' && partidaSeleccionada && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4">
                 <div className="bg-[#14151f] border-2 border-[#252839] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-10 max-w-sm w-full flex flex-col items-center text-center">
@@ -703,7 +730,7 @@ export default function BloxypotCoinflip() {
                         </div>
                     </div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-widest mb-2 drop-shadow-md">Waiting</h2>
-                    <p className="text-[#8f9ac6] mb-10 font-bold text-sm">Waiting for a challenger to match your bet of <span className="text-white"><RedCoin/> {formatValue(partidaSeleccionada.valorTotalHost)}</span></p>
+                    <p className="text-[#8f9ac6] mb-10 font-bold text-sm">Waiting for a challenger to match your bet of <span className="text-white flex items-center justify-center gap-1 mt-2"><RedCoin/> {formatValue(partidaSeleccionada.valorTotalHost)}</span></p>
                     <button 
                         onClick={() => cancelarPartida(partidaSeleccionada.id)} 
                         className="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500 hover:text-black text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
@@ -714,30 +741,47 @@ export default function BloxypotCoinflip() {
             </div>
         )}
 
+        {/* ARENA VIEW */}
         {vistaActual === 'arena' && partidaSeleccionada && (
           <div className="w-full flex flex-col items-center animate-fade-in mt-4">
             <button onClick={() => {setVistaActual('lobby'); animacionIniciada.current = false;}} className="self-start text-[#8f9ac6] hover:text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors mb-8 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b]">
               ← Exit Arena
             </button>
-            <div className="flex items-center justify-between w-full max-w-3xl bg-[#14151f] p-8 rounded-[2rem] border border-[#252839] shadow-2xl mb-16 relative overflow-hidden">
+            <div className="flex items-center justify-between w-full max-w-4xl bg-[#14151f] p-8 md:p-12 rounded-[3rem] border border-[#252839] shadow-2xl mb-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#facc15]/5 via-transparent to-[#a855f7]/5"></div>
-                <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
-                    <AvatarVS img={partidaSeleccionada.avatar} side={partidaSeleccionada.lado} />
-                    <span className="text-white font-black text-lg text-center truncate w-full">{partidaSeleccionada.host}</span>
-                    <span className="text-[#facc15] font-black text-xs uppercase tracking-widest">Host</span>
+                
+                {/* HOST */}
+                <div className="flex flex-col items-center gap-4 relative z-10 w-1/3">
+                    <AvatarVS 
+                        img={partidaSeleccionada.avatar} 
+                        side={partidaSeleccionada.lado} 
+                        isWinner={mostrarImpacto && ganador === partidaSeleccionada.lado}
+                        isLoser={mostrarImpacto && ganador !== partidaSeleccionada.lado}
+                    />
+                    <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 ${mostrarImpacto && ganador === partidaSeleccionada.lado ? 'text-white' : (mostrarImpacto ? 'text-[#8f9ac6]' : 'text-white')}`}>{partidaSeleccionada.host}</span>
+                    <span className="text-[#facc15] font-black text-xs uppercase tracking-widest bg-[#facc15]/10 px-3 py-1 rounded-full border border-[#facc15]/20">Host</span>
                 </div>
+
+                {/* VS AND TOTAL VALUE */}
                 <div className="flex flex-col items-center w-1/3 relative z-10">
-                    <div className="text-4xl font-black text-[#252839] italic">VS</div>
-                    <div className="mt-4 flex items-center gap-2 text-2xl font-black text-white bg-[#0b0e14] px-4 py-2 rounded-xl border border-[#252839]">
-                       <RedCoin cls="w-6 h-6"/> {formatValue(partidaSeleccionada.valorTotalHost * 2)}
+                    <div className="text-4xl md:text-5xl font-black text-[#252839] italic">VS</div>
+                    <div className="mt-4 flex items-center gap-2 text-2xl md:text-3xl font-black text-white bg-[#0b0e14] px-6 py-3 rounded-2xl border border-[#252839] shadow-inner">
+                       <RedCoin cls="w-6 h-6 md:w-8 md:h-8"/> {formatValue(partidaSeleccionada.valorTotalHost * 2)}
                     </div>
                 </div>
-                <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
+
+                {/* CHALLENGER */}
+                <div className="flex flex-col items-center gap-4 relative z-10 w-1/3">
                     {partidaSeleccionada.estado === 'in_progress' || partidaSeleccionada.estado === 'completed' ? (
                         <>
-                           <AvatarVS img={partidaSeleccionada.avatarChallenger} side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} />
-                           <span className="text-white font-black text-lg text-center truncate w-full">{partidaSeleccionada.challenger}</span>
-                           <span className="text-[#a855f7] font-black text-xs uppercase tracking-widest">Challenger</span>
+                           <AvatarVS 
+                              img={partidaSeleccionada.avatarChallenger} 
+                              side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} 
+                              isWinner={mostrarImpacto && ganador === (partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads')}
+                              isLoser={mostrarImpacto && ganador !== (partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads')}
+                           />
+                           <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 ${mostrarImpacto && ganador === (partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads') ? 'text-white' : (mostrarImpacto ? 'text-[#8f9ac6]' : 'text-white')}`}>{partidaSeleccionada.challenger}</span>
+                           <span className="text-[#a855f7] font-black text-xs uppercase tracking-widest bg-[#a855f7]/10 px-3 py-1 rounded-full border border-[#a855f7]/20">Challenger</span>
                         </>
                     ) : (
                         <>
@@ -747,37 +791,42 @@ export default function BloxypotCoinflip() {
                     )}
                 </div>
             </div>
-            <div className="relative flex justify-center items-center h-64 mb-16 w-full">
+
+            {/* COINFLIP ANIMATION STAGE */}
+            <div className="relative flex justify-center items-center h-64 md:h-80 mb-16 w-full">
               {cuentaRegresiva !== null && (
-                  <div className="absolute inset-0 flex items-center justify-center z-50 animate-pulse">
-                      <span className="text-[150px] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.5)] opacity-90">{cuentaRegresiva}</span>
+                  <div className="absolute inset-0 flex items-center justify-center z-50 animate-ping-slow">
+                      <span className="text-[180px] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.8)] opacity-90">{cuentaRegresiva}</span>
                   </div>
               )}
-              <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[100px] rounded-full transition-all duration-700 ease-out z-0 ${mostrarImpacto ? 'opacity-40 scale-[2]' : 'opacity-0 scale-50'}`}></div>
-              <div className={`relative w-48 h-48 md:w-64 md:h-64 perspective-[1200px] z-10 ${cuentaRegresiva !== null ? 'opacity-20 blur-sm' : 'opacity-100'}`}
+              
+              <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[120px] rounded-full transition-all duration-700 ease-out z-0 ${mostrarImpacto ? 'opacity-50 scale-[2.5]' : 'opacity-0 scale-50'}`}></div>
+              
+              <div className={`relative w-48 h-48 md:w-64 md:h-64 perspective-[1200px] z-10 ${cuentaRegresiva !== null ? 'opacity-10 blur-md scale-90' : 'opacity-100'}`}
                    style={{
-                     transform: girando ? 'translateY(-100px) scale(1.2)' : 'translateY(0px) scale(1)',
-                     transition: girando ? 'transform 2s cubic-bezier(0.25, 1, 0.5, 1)' : 'transform 0.8s cubic-bezier(0.5, 0, 0.2, 1)'
+                     transform: girando ? 'translateY(-120px) scale(1.6)' : (mostrarImpacto ? 'translateY(0px) scale(1.1)' : 'translateY(0px) scale(1)'),
+                     transition: girando ? 'transform 2.5s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'transform 0.8s cubic-bezier(0.5, 0, 0.2, 1)'
                    }}
               >
-                <div className="w-full h-full relative preserve-3d"
+                <div className="w-full h-full relative preserve-3d drop-shadow-[0_30px_30px_rgba(0,0,0,0.8)]"
                   style={{
                     transitionDuration: girando ? '4s' : '0s', 
                     transitionTimingFunction: 'cubic-bezier(0.1, 0.8, 0.1, 1)', 
-                    transform: `rotateY(${rotacion}deg)`
+                    transform: `rotateY(${rotacion}deg) ${girando ? 'rotateX(20deg)' : 'rotateX(0deg)'}`
                   }}
                 >
-                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] bg-[#14151f] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_80px_rgba(250,204,21,1)]' : 'border-[#252839] shadow-2xl'}`}>
+                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_100px_rgba(250,204,21,1)]' : 'border-[#252839] shadow-inner'}`}>
                     <img src={imgMonedaHeads} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Heads" />
                   </div>
-                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] bg-[#14151f] flex items-center justify-center transition-colors duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_80px_rgba(168,85,247,1)]' : 'border-[#252839] shadow-2xl'}`}
+                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_100px_rgba(168,85,247,1)]' : 'border-[#252839] shadow-inner'}`}
                        style={{ transform: 'rotateY(180deg)' }}>
                     <img src={imgMonedaTails} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Tails" />
                   </div>
                 </div>
               </div>
             </div>
-            <h2 className={`text-4xl font-black uppercase tracking-[0.3em] min-h-[50px] transition-all duration-500 ${mostrarImpacto ? (ganador === 'Heads' ? 'text-[#facc15] drop-shadow-[0_0_20px_#facc15]' : 'text-[#a855f7] drop-shadow-[0_0_20px_#a855f7]') : 'text-white'}`}>
+
+            <h2 className={`text-4xl md:text-6xl font-black uppercase tracking-[0.3em] min-h-[60px] transition-all duration-500 z-10 ${mostrarImpacto ? (ganador === 'Heads' ? 'text-[#facc15] drop-shadow-[0_0_30px_#facc15] animate-bounce-in' : 'text-[#a855f7] drop-shadow-[0_0_30px_#a855f7] animate-bounce-in') : 'text-white'}`}>
               {cuentaRegresiva !== null ? 'PREPARING' : (ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING' : (partidaSeleccionada.estado === 'waiting' ? 'WAITING' : 'READY')))}
             </h2>
           </div>
@@ -785,6 +834,7 @@ export default function BloxypotCoinflip() {
 
       </div>
 
+      {/* JOIN MODAL */}
       {modalJoinAbierto && partidaSeleccionada && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-[#14151f] border border-[#252839] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -796,7 +846,6 @@ export default function BloxypotCoinflip() {
             </div>
             
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-                {/* AQUÍ VA EL onScroll Y EL slice() PARA EL ANTI-LAG */}
                 <div className="w-full md:w-2/3 p-6 overflow-y-auto custom-scrollbar border-r border-[#252839] bg-[#14151f]" onScroll={handleScrollInventario}>
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-[#8f9ac6] text-sm font-black uppercase tracking-widest">Your Inventory</h3>
@@ -834,7 +883,7 @@ export default function BloxypotCoinflip() {
                             <RedCoin cls="w-6 h-6"/> {formatValue(partidaSeleccionada.valorTotalHost)}
                         </div>
                         <h3 className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mb-2">Your Selected Value</h3>
-                        <div className={`text-3xl font-black flex items-center justify-center gap-2 py-5 rounded-xl border-2 transition-colors mb-2 ${dataJoinValidacion.valida ? 'text-[#22c55e] bg-[#22c55e]/10 border-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.2)]' : 'text-white bg-[#14151f] border-[#252839]'}`}>
+                        <div className={`text-3xl font-black flex items-center justify-center gap-2 py-5 rounded-xl border-2 transition-colors mb-2 ${dataJoinValidacion.valida ? 'text-[#22c55e] bg-[#22c55e]/10 border-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.2)] scale-105' : 'text-white bg-[#14151f] border-[#252839]'}`}>
                             <RedCoin cls="w-8 h-8"/> {formatValue(totalSeleccionadoToJoin)}
                         </div>
                         <div className={`text-center text-xs font-black uppercase tracking-widest mb-6 ${dataJoinValidacion.valida ? 'text-[#22c55e]' : 'text-red-500'}`}>
@@ -863,7 +912,19 @@ export default function BloxypotCoinflip() {
         .perspective-[1200px] { perspective: 1200px; }
         .preserve-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
+        
+        .animate-bounce-in { animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
+        .animate-ping-slow { animation: pingSlow 1s cubic-bezier(0, 0, 0.2, 1) forwards; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounceIn {
+          from { opacity: 0; transform: scale(0.5); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pingSlow {
+          0% { transform: scale(0.8); opacity: 1; }
+          100% { transform: scale(1.2); opacity: 0; }
+        }
       `}} />
     </div>
   );
