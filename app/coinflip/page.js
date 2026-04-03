@@ -127,7 +127,7 @@ export default function BloxypotCoinflip() {
 
     cargarPartidas();
 
-    // 3. REALTIME LOBBY (EL CREADOR DETECTA QUE ALGUIEN SE UNIÓ)
+    // 3. REALTIME LOBBY
     const channel = supabase.channel('lobby_coinflip')
       .on('postgres_changes', { 
           event: '*', 
@@ -154,13 +154,10 @@ export default function BloxypotCoinflip() {
                 return [formatted, ...prev];
             });
 
-            // MAGIA DEL CREADOR: Si la partida se completó y tú eres el creador, arranca tu animación
+            // MAGIA DEL CREADOR
             setPartidaSeleccionada((prevPartida) => {
                 if (prevPartida && prevPartida.id === formatted.id) {
-                    // Verificamos si pasó de esperando a completado por el servidor
                     if (prevPartida.estado === 'waiting' && formatted.estado === 'completed' && formatted.resultado) {
-                        
-                        // Solo mandamos a la arena si el usuario es el creador de esta partida
                         if (currentUser && formatted.creador_id === currentUser.id) {
                            setVistaActual('arena'); 
                            iniciarCinematicaMoneda(formatted);
@@ -184,7 +181,7 @@ export default function BloxypotCoinflip() {
       }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [currentUser]); // Dependencia agregada para que Realtime lea bien quién somos
+  }, [currentUser?.id]);
 
   // --- LÓGICA DE CREACIÓN ---
   const creatorFilteredPets = useMemo(() => {
@@ -208,23 +205,22 @@ export default function BloxypotCoinflip() {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
- const handleCreate = async () => {
-      // 1. Validaciones básicas
+  const handleCreateGame = async () => {
+      // 1. Validaciones
       if (!currentUser) return alert("Inicia sesión para jugar.");
-      if (currency === 'green' && (betAmount <= 0 || betAmount > saldoVerde)) return alert("Saldo verde inválido o insuficiente.");
-      if (currency === 'pets' && selectedPets.length === 0) return alert("Selecciona pets para apostar primero.");
+      if (creatorSelectedPets.length === 0) return alert("Selecciona mascotas para apostar primero.");
+      if (!creatorSide) return alert("Selecciona Heads o Tails.");
       
-      // Bloqueo de doble click
       if (isCreating) return;
       setIsCreating(true);
 
       try {
-          // 🚨 2. EL ANTI-SPAM (Máximo 2 partidas activas por usuario)
+          // 2. EL ANTI-SPAM 
           const { data: activeGames } = await supabase
               .from('partidas')
               .select('id')
               .eq('creador_id', currentUser.id)
-              .eq('modo_juego', 'coinflip') // Asegúrate de que así se llame el modo en tu DB
+              .eq('modo_juego', 'coinflip')
               .eq('estado', 'waiting');
 
           if (activeGames && activeGames.length >= 2) {
@@ -233,46 +229,33 @@ export default function BloxypotCoinflip() {
               return;
           }
 
-          // 3. COBRO EN VIVO (Verde o Pets)
-          if (currency === 'green') {
-              const nuevoSaldo = saldoVerde - betAmount;
-              const { error: errCobro } = await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
-              if (errCobro) throw new Error("Error al cobrar Saldo Verde.");
-              setUserProfile(prev => ({ ...prev, saldo_verde: nuevoSaldo }));
-          } else {
-              const petIds = selectedPets.map(p => p.inventarioId);
-              const { error: errDel } = await supabase.from('inventory').delete().in('id', petIds);
-              if (errDel) throw new Error("Error al apostar las pets.");
-          }
+          // 3. COBRO DE PETS
+          const petIds = creatorSelectedPets.map(p => p.inventarioId);
+          const { error: errDel } = await supabase.from('inventory').delete().in('id', petIds);
+          if (errDel) throw new Error("Error al retirar las pets de tu inventario.");
 
-          // 4. PREPARAR DATOS DE LA PARTIDA
+          // 4. DATOS DE LA PARTIDA
           const datosPartida = {
-              currency: currency,
-              betAmount: currency === 'green' ? betAmount : totalPetsValue,
-              side: selectedSide, // Asumiendo que tienes un estado selectedSide ('heads' o 'tails')
-              p1: { 
-                  id: currentUser.id, 
-                  name: userProfile.username || 'Player 1', 
-                  avatar: userProfile.avatar_url || '/default-avatar.png'
-              }
+              host_name: currentUser.username, 
+              avatar_creador: currentUser.avatar_url,
+              lado_creador: creatorSide,
+              valor_total: totalCreatorValue
           };
 
-          // 5. CREAR LA PARTIDA EN LA BASE DE DATOS
+          // 5. INSERTAR EN BD
           const { error } = await supabase.from('partidas').insert({
               modo_juego: 'coinflip',
               creador_id: currentUser.id,
-              // FIX PARA QUE NO TRUENE LA BD CON JSONB CUANDO ES SALDO VERDE:
-              apuesta_creador: currency === 'pets' ? selectedPets : [], 
+              apuesta_creador: creatorSelectedPets, // Array de pets directo
               datos_partida: datosPartida,
               estado: 'waiting'
           });
 
           if (error) throw error;
 
-          // 6. LIMPIAR LA MESA DESPUÉS DE CREAR
-          if (currency === 'pets') {
-              setSelectedPets([]);
-          }
+          // 6. LIMPIAR
+          setCreatorSelectedPets([]);
+          setCreatorSide(null);
           alert("¡Coinflip creado con éxito! Esperando rival...");
           
       } catch (err) {
@@ -283,37 +266,29 @@ export default function BloxypotCoinflip() {
       }
   };
 
-const cancelarPartida = async (gameId) => {
+  const cancelarPartida = async (gameId) => {
       if (!currentUser) return;
       
       try {
-          // 1. Buscamos la partida para saber qué devolver
           const { data: partida } = await supabase.from('partidas').select('*').eq('id', gameId).single();
           if (!partida || partida.estado !== 'waiting') {
               alert("No se puede cancelar esta partida.");
               return;
           }
 
-          // 2. Devolver el dinero o las pets
-          if (partida.datos_partida.currency === 'green') {
-              const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
-              await supabase.from('profiles').update({ 
-                  saldo_verde: profile.saldo_verde + partida.datos_partida.betAmount 
-              }).eq('id', currentUser.id);
-          } else if (partida.datos_partida.currency === 'pets') {
-              // Si apostó pets, las re-insertamos en su inventario
-              const petsParaDevolver = partida.apuesta_creador.map(pet => ({
-                  user_id: currentUser.id,
-                  item_id: pet.item_id
-              }));
-              if (petsParaDevolver.length > 0) {
-                  await supabase.from('inventory').insert(petsParaDevolver);
-              }
+          // Devolver pets al inventario
+          const petsParaDevolver = partida.apuesta_creador.map(pet => ({
+              user_id: currentUser.id,
+              item_id: pet.item_id
+          }));
+          if (petsParaDevolver.length > 0) {
+              await supabase.from('inventory').insert(petsParaDevolver);
           }
 
-          // 3. Borrar la partida
           await supabase.from('partidas').delete().eq('id', gameId);
-          alert("Partida cancelada y apuesta devuelta.");
+          
+          setVistaActual('lobby');
+          alert("Partida cancelada y mascotas devueltas.");
           
       } catch (err) {
           console.error("Error cancelando:", err);
@@ -334,11 +309,14 @@ const cancelarPartida = async (gameId) => {
       animacionIniciada.current = false;
       setCuentaRegresiva(null);
       
+      // FIX VIEW ESPECTADOR: Sincronización perfecta del lado de la moneda
       if (juego.estado === 'completed' && juego.resultado) {
+          const caraFinal = juego.resultado.cara_moneda || (juego.resultado.lado === 'creador_gana' ? juego.lado : (juego.lado === 'Heads' ? 'Tails' : 'Heads'));
+          
           setGirando(false);
-          setGanador(juego.resultado.lado === 'creador_gana' ? juego.lado : (juego.lado === 'Heads' ? 'Tails' : 'Heads'));
+          setGanador(caraFinal);
           setMostrarImpacto(true);
-          setRotacion(ganador === 'Heads' ? 0 : 180);
+          setRotacion(caraFinal === 'Heads' ? 0 : 180);
       } else {
           setGirando(false);
           setGanador(null);
@@ -384,8 +362,8 @@ const cancelarPartida = async (gameId) => {
     setSelectedPetsToJoin(selected);
   };
 
-const confirmarUnionYJugar = async () => {
-    if (!dataJoinValidacion.valida) return alert("Las mascotas no están en el rango del 2% permitido.");
+  const confirmarUnionYJugar = async () => {
+    if (!dataJoinValidacion.valida) return alert("Las mascotas no están en el rango permitido.");
     if (isJoining) return; 
     setIsJoining(true);
 
@@ -396,16 +374,9 @@ const confirmarUnionYJugar = async () => {
           avatar_challenger: currentUser.avatar_url
       };
 
-      const apuestaParaServidor = {
-        items: selectedPetsToJoin.map(p => p.inventarioId), 
-        detalle_completo: selectedPetsToJoin 
-      };
-
-      // ==========================================
-      // MAGIA 50/50 REAL (JUSTICIA ABSOLUTA)
-      // ==========================================
-      const resultadoMoneda = Math.random() < 0.5 ? 'Heads' : 'Tails'; // 50% de probabilidad real
-      const ganaCreador = resultadoMoneda === partidaSeleccionada.lado; // Gana el host si cae lo que eligió
+      // MAGIA 50/50 REAL
+      const resultadoMoneda = Math.random() < 0.5 ? 'Heads' : 'Tails';
+      const ganaCreador = resultadoMoneda === partidaSeleccionada.lado;
       
       const ganadorId = ganaCreador ? partidaSeleccionada.creador_id : currentUser.id;
       const ladoGanadorStatus = ganaCreador ? 'creador_gana' : 'retador_gana';
@@ -416,36 +387,26 @@ const confirmarUnionYJugar = async () => {
           cara_moneda: resultadoMoneda
       };
 
-      // UN SOLO UPDATE A LA BASE DE DATOS (Sin usar el RPC amañado)
       const { error } = await supabase.from('partidas')
         .update({ 
             retador_id: currentUser.id,
-            apuesta_retador: apuestaParaServidor,
+            apuesta_retador: selectedPetsToJoin, // Array directo
             estado: 'completed',
             resultado: resultadoPartida,
             datos_partida: nuevosDatosPartida 
         })
         .eq('id', partidaSeleccionada.id);
 
-      if (error) {
-        console.error("Error uniendo:", error);
-        alert("Esta partida ya no está disponible o hay un error de seguridad.");
-        setIsJoining(false);
-        return;
-      }
+      if (error) throw error;
 
-      // ==========================================
-      // LÓGICA DE PAGO (ENTREGAR LAS MASCOTAS AL GANADOR)
-      // ==========================================
+      // PAGAR MASCOTAS AL GANADOR
       const itemsAInsertar = [];
-      const petsDelHost = partidaSeleccionada.petsHost?.items || []; 
+      const petsDelHost = partidaSeleccionada.petsHost || []; 
       
       if (!ganaCreador) {
-          // GANA EL RETADOR (TÚ): Recibes tus pets + las del host
           selectedPetsToJoin.forEach(p => itemsAInsertar.push({ user_id: currentUser.id, item_id: p.item_id }));
           petsDelHost.forEach(p => itemsAInsertar.push({ user_id: currentUser.id, item_id: p.item_id || p.id }));
       } else {
-          // GANA EL CREADOR (HOST): Se lleva tus pets + las suyas
           selectedPetsToJoin.forEach(p => itemsAInsertar.push({ user_id: partidaSeleccionada.creador_id, item_id: p.item_id }));
           petsDelHost.forEach(p => itemsAInsertar.push({ user_id: partidaSeleccionada.creador_id, item_id: p.item_id || p.id }));
       }
@@ -453,9 +414,8 @@ const confirmarUnionYJugar = async () => {
       if (itemsAInsertar.length > 0) {
           await supabase.from('inventory').insert(itemsAInsertar);
       }
-      // ==========================================
 
-      // Bloquear mascotas visualmente de tu lado
+      // Bloquear visualmente
       const idsA_Bloquear = selectedPetsToJoin.map(p => p.inventarioId);
       setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
       
@@ -465,7 +425,7 @@ const confirmarUnionYJugar = async () => {
       const uiData = formatGameToUI({
           ...partidaSeleccionada,
           retador_id: currentUser.id,
-          apuesta_retador: apuestaParaServidor,
+          apuesta_retador: selectedPetsToJoin,
           estado: 'completed',
           resultado: resultadoPartida,
           datos_partida: nuevosDatosPartida
@@ -481,7 +441,7 @@ const confirmarUnionYJugar = async () => {
     }
   };
 
-  // --- ANIMACIONES ARENA (MODIFICADA PARA LEER DEL SERVIDOR) ---
+  // --- ANIMACIONES ARENA ---
   const iniciarCinematicaMoneda = (datosPartida) => {
     if (animacionIniciada.current) return; 
     animacionIniciada.current = true;
@@ -501,37 +461,26 @@ const confirmarUnionYJugar = async () => {
             clearInterval(intervalo);
             setCuentaRegresiva(null);
             
-            // EL SERVIDOR YA DECIDIÓ, APLICAMOS LA ANIMACIÓN DIRECTO
-            const ladoServidor = datosPartida.resultado?.lado; // 'creador_gana' o 'retador_gana'
-            
-            // Traducimos al texto visual de 'Heads' o 'Tails' basado en lo que eligió el creador
-            const ganaCreador = ladoServidor === 'creador_gana';
-            let servidorLadoGanador = 'Heads';
-            
-            if (ganaCreador) {
-                servidorLadoGanador = datosPartida.lado; // Si el host eligió Heads y ganó, la moneda será Heads
-            } else {
-                servidorLadoGanador = datosPartida.lado === 'Heads' ? 'Tails' : 'Heads'; 
-            }
+            // Usamos directamente la cara que dictó el servidor
+            const caraFinal = datosPartida.resultado?.cara_moneda || (datosPartida.resultado?.lado === 'creador_gana' ? datosPartida.lado : (datosPartida.lado === 'Heads' ? 'Tails' : 'Heads'));
 
             setGirando(true);
             
             setTimeout(() => {
               setRotacion(prevRotacion => {
-                const ganaHeadsVisual = servidorLadoGanador === 'Heads';
+                const ganaHeadsVisual = caraFinal === 'Heads';
                 const vueltasBase = prevRotacion + 3600; 
                 const nuevaRot = ganaHeadsVisual ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
                 
                 setTimeout(() => { 
                     setGirando(false); 
-                    setGanador(servidorLadoGanador); 
+                    setGanador(caraFinal); 
                     setTimeout(() => setMostrarImpacto(true), 150);
                 }, 4000);
 
                 return nuevaRot;
               });
             }, 100);
-
         }
     }, 1000);
   };
@@ -619,16 +568,18 @@ const confirmarUnionYJugar = async () => {
 
                   <div className="flex justify-center xl:justify-start py-2">
                     <div className="flex items-center ml-2">
-                      {game.petsHost?.items?.slice(0, 5).map((pet, i) => (
+                      {game.petsHost?.map((pet, i) => {
+                        if (i >= 5) return null;
+                        return (
                         <div key={i} className="relative box-border block h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 shadow-[0_0_10px_rgba(0,0,0,0.5)] group hover:-translate-y-2 hover:z-50 transition-transform" style={{zIndex: 10 - i}}>
                           <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: `radial-gradient(circle at 50% 50%, ${pet.color || '#9ca3af'} 0%, transparent 70%)` }}></div>
                           <img src={pet.image_url} className="block w-full h-full object-contain scale-110 drop-shadow-md relative z-10" alt="pet"/>
                         </div>
-                      ))}
-                      {game.petsHost?.items?.length > 5 && (
+                      )})}
+                      {game.petsHost?.length > 5 && (
                         <div className="relative box-border flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 z-[5]">
-                          <img src={game.petsHost.items[5].image_url} className="block w-full h-full object-contain blur-[3px] opacity-30" alt="pet"/>
-                          <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md bg-black/50 backdrop-blur-[1px]">+{game.petsHost.items.length - 5}</span>
+                          <img src={game.petsHost[5].image_url} className="block w-full h-full object-contain blur-[3px] opacity-30" alt="pet"/>
+                          <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md bg-black/50 backdrop-blur-[1px]">+{game.petsHost.length - 5}</span>
                         </div>
                       )}
                     </div>
@@ -754,7 +705,7 @@ const confirmarUnionYJugar = async () => {
                     <p className="text-[#8f9ac6] mb-10 font-bold text-sm">Waiting for a challenger to match your bet of <span className="text-white"><RedCoin/> {formatValue(partidaSeleccionada.valorTotalHost)}</span></p>
                     
                     <button 
-                        onClick={cancelarPartida} 
+                        onClick={() => cancelarPartida(partidaSeleccionada.id)} 
                         className="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500 hover:text-black text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
                     >
                         Cancel Match
