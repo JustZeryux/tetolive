@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/utils/Supabase';
+import PetCard from '@/components/PetCard';
+import { showToast } from '@/components/EpicToasts';
 
-// Componentes Visuales
+// Visual Components
 const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
 const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
 
@@ -25,173 +27,169 @@ export default function WalletPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [tab, setTab] = useState('inventory'); 
   
-  // Datos Reales
-  const [saldoVerde, setSaldoVerde] = useState(0);
-  const [saldoRojo, setSaldoRojo] = useState(0);
-  const [inventario, setInventario] = useState([]);
+  // Real Data States
+  const [greenBalance, setGreenBalance] = useState(0);
+  const [redBalance, setRedBalance] = useState(0);
+  const [inventory, setInventory] = useState([]);
   const [marketItems, setMarketItems] = useState([]);
   
-  // Estados de UI
-  const [cargando, setCargando] = useState(true);
-  const [procesando, setProcesando] = useState(false); 
+  // UI States
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false); 
   const [selectedIds, setSelectedIds] = useState(new Set()); 
 
-  // Filtros
+  // Modal & Animation States
+  const [confirmSellModal, setConfirmSellModal] = useState(false);
+  const [confirmBuyModal, setConfirmBuyModal] = useState(null);
+  const [epicPurchaseData, setEpicPurchaseData] = useState(null); // For Rule 8 Animation
+
+  // Filters
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('highest');
 
   const fetchData = async () => {
-    setCargando(true);
+    setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        setCargando(false);
+        setLoading(false);
         return;
     }
     setCurrentUser(user);
 
     const { data: profile } = await supabase.from('profiles').select('saldo_verde, saldo_rojo').eq('id', user.id).single();
     if (profile) {
-        setSaldoVerde(profile.saldo_verde || 0);
-        setSaldoRojo(profile.saldo_rojo || 0);
+        setGreenBalance(profile.saldo_verde || 0);
+        setRedBalance(profile.saldo_rojo || 0);
     }
 
-    await cargarInventario(user.id);
-    await cargarMarket();
-    setCargando(false);
+    await loadInventory(user.id);
+    await loadMarket();
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const cargarInventario = async (uid) => {
+  const loadInventory = async (uid) => {
     const { data, error } = await supabase
         .from('inventory')
-        // Extraemos is_limited directo de la tabla items conectada
-        .select(`id, item_id, serial_number, original_owner, locked, items (name, value, image_url, color, is_limited)`)
+        .select(`id, item_id, serial_number, original_owner, locked, items (name, value, image_url, color, is_limited, is_shiny, is_mythic)`)
         .eq('user_id', uid);
     
     if (error) return;
 
     if (data) {
-        // Esto te servirá para confirmar en tu consola (F12) si Supabase realmente está mandando "is_limited: true"
-        console.log("Mascotas en wallet:", data); 
-
-        setInventario(data.filter(row => row.items !== null).map(row => ({
-            inventarioId: row.id,
+        setInventory(data.filter(row => row.items !== null).map(row => ({
+            inventoryId: row.id,
             itemId: row.item_id,
-            nombre: row.items.name,
-            valor: row.items.value,
-            img: row.items.image_url,
+            name: row.items.name,
+            value: row.items.value,
+            image_url: row.items.image_url,
             color: row.items.color || '#9ca3af',
-            
-            // LECTURA ESTRICTA DEL BOOLEANO (Ignora el nombre)
-            isLimited: row.items.is_limited === true, 
-            
-            serial: row.serial_number || 0,
-            originalOwner: row.original_owner || 'Unknown',
+            is_mythic: row.items.is_limited === true || row.items.is_mythic === true, // Mapping for PetCard
+            is_shiny: row.items.is_shiny === true,
+            serial_number: row.serial_number || 0,
+            original_owner: row.original_owner || 'Unknown',
             isLocked: row.locked === true 
         })));
     }
   };
   
-  const cargarMarket = async () => {
+  const loadMarket = async () => {
     const { data, error } = await supabase
         .from('marketplace')
-        .select(`id, price, items (id, name, image_url, color)`);
+        .select(`id, price, items (id, name, image_url, color, is_limited, is_shiny, is_mythic)`);
     
     if (!error && data) {
         setMarketItems(data.filter(row => row.items !== null).map(row => ({
             marketId: row.id,
             itemId: row.items.id,
-            nombre: row.items.name,
-            precio: row.price,
-            img: row.items.image_url,
-            color: row.items.color || '#9ca3af'
+            name: row.items.name,
+            price: row.price,
+            value: row.price, // Used for generic sorting/display
+            image_url: row.items.image_url,
+            color: row.items.color || '#9ca3af',
+            is_mythic: row.items.is_limited === true || row.items.is_mythic === true,
+            is_shiny: row.items.is_shiny === true,
         })));
     }
   };
 
-  const calcularVenta = (valorOriginal) => {
+  const calculateSellFee = (originalValue) => {
     let feePercentage = 0.10; 
-    if (valorOriginal > 1000000) feePercentage = 0.02; 
-    else if (valorOriginal > 500000) feePercentage = 0.04; 
-    else if (valorOriginal > 100000) feePercentage = 0.06; 
-    else if (valorOriginal > 10000) feePercentage = 0.08; 
+    if (originalValue > 1000000) feePercentage = 0.02; 
+    else if (originalValue > 500000) feePercentage = 0.04; 
+    else if (originalValue > 100000) feePercentage = 0.06; 
+    else if (originalValue > 10000) feePercentage = 0.08; 
 
-    const feeAmount = Math.floor(valorOriginal * feePercentage);
-    const sellPrice = valorOriginal - feeAmount;
+    const feeAmount = Math.floor(originalValue * feePercentage);
+    const sellPrice = originalValue - feeAmount;
     
     return { sellPrice, feePercentage: (feePercentage * 100).toFixed(0) };
   };
 
-  // LÓGICA DE SELECCIÓN Y CANDADO (LOCK)
+  // --- SELECTION & LOCK LOGIC ---
   const toggleSelect = (pet) => {
     if (tab !== 'inventory') return;
-    if (pet.isLocked) return; // No deja seleccionar pets bloqueadas
+    if (pet.isLocked) return;
 
     const newSet = new Set(selectedIds);
-    if (newSet.has(pet.inventarioId)) newSet.delete(pet.inventarioId);
-    else newSet.add(pet.inventarioId);
+    if (newSet.has(pet.inventoryId)) newSet.delete(pet.inventoryId);
+    else newSet.add(pet.inventoryId);
     setSelectedIds(newSet);
   };
 
   const selectAll = () => {
-    // Solo toma en cuenta las mascotas que NO están bloqueadas
     const availablePets = filteredInventory.filter(p => !p.isLocked);
     
     if (selectedIds.size === availablePets.length && availablePets.length > 0) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(availablePets.map(p => p.inventarioId)));
+      setSelectedIds(new Set(availablePets.map(p => p.inventoryId)));
     }
   };
 
   const toggleLock = async (e, pet) => {
-    e.stopPropagation(); // Evita que se seleccione la card al clickear el candado
-    if (procesando) return;
+    e.stopPropagation(); 
+    if (processing) return;
 
     const newLockedState = !pet.isLocked;
 
-    // Actualización visual inmediata
-    setInventario(prev => prev.map(p => p.inventarioId === pet.inventarioId ? {...p, isLocked: newLockedState} : p));
+    // Optimistic UI Update
+    setInventory(prev => prev.map(p => p.inventoryId === pet.inventoryId ? {...p, isLocked: newLockedState} : p));
     
-    // Si la bloquea y estaba seleccionada, la quita de la selección
-    if (newLockedState && selectedIds.has(pet.inventarioId)) {
+    if (newLockedState && selectedIds.has(pet.inventoryId)) {
         const newSet = new Set(selectedIds);
-        newSet.delete(pet.inventarioId);
+        newSet.delete(pet.inventoryId);
         setSelectedIds(newSet);
     }
 
-    // Actualizar Base de Datos
-    const { error } = await supabase.from('inventory').update({ locked: newLockedState }).eq('id', pet.inventarioId);
+    const { error } = await supabase.from('inventory').update({ locked: newLockedState }).eq('id', pet.inventoryId);
     
     if (error) {
-        alert("Error al intentar bloquear/desbloquear.");
-        setInventario(prev => prev.map(p => p.inventarioId === pet.inventarioId ? {...p, isLocked: !newLockedState} : p));
+        showToast("Error updating lock status.", "error");
+        setInventory(prev => prev.map(p => p.inventoryId === pet.inventoryId ? {...p, isLocked: !newLockedState} : p));
     }
   };
 
-  // VENTA MÚLTIPLE
-  const venderSeleccionadas = async () => {
-    if (procesando || selectedIds.size === 0) return;
+  // --- MULTI-SELL LOGIC ---
+  const handleSellSelected = async () => {
+    if (processing || selectedIds.size === 0) return;
     
-    // Doble verificación de seguridad para no vender bloqueadas
-    const petsToSell = inventario.filter(p => selectedIds.has(p.inventarioId) && !p.isLocked);
+    const petsToSell = inventory.filter(p => selectedIds.has(p.inventoryId) && !p.isLocked);
     if(petsToSell.length === 0) return;
 
     let totalSellPrice = 0;
     let marketInserts = [];
 
     petsToSell.forEach(pet => {
-        const { sellPrice } = calcularVenta(pet.valor);
+        const { sellPrice } = calculateSellFee(pet.value);
         totalSellPrice += sellPrice;
-        marketInserts.push({ seller_id: currentUser.id, item_id: pet.itemId, price: pet.valor });
+        marketInserts.push({ seller_id: currentUser.id, item_id: pet.itemId, price: pet.value });
     });
 
-    if (!confirm(`¿Vender ${petsToSell.length} mascotas?\nRecibirás: ${totalSellPrice.toLocaleString()} 🟢`)) return;
-    
-    setProcesando(true);
+    setProcessing(true);
     
     try {
       const idsToDelete = Array.from(selectedIds);
@@ -199,7 +197,7 @@ export default function WalletPage() {
       
       for (const chunk of deleteChunks) {
           const { error: delError } = await supabase.from('inventory').delete().in('id', chunk);
-          if (delError) throw new Error("La base de datos rechazó el borrado.");
+          if (delError) throw new Error("Database rejected deletion.");
       }
 
       const insertChunks = chunkArray(marketInserts, 50);
@@ -207,73 +205,148 @@ export default function WalletPage() {
           await supabase.from('marketplace').insert(chunk);
       }
 
-      const nuevoSaldo = saldoVerde + totalSellPrice;
-      await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
+      const newBalance = greenBalance + totalSellPrice;
+      await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
       
-      setSaldoVerde(nuevoSaldo);
+      setGreenBalance(newBalance);
       setSelectedIds(new Set());
-      alert(`¡Venta Exitosa!\nRecibiste: ${totalSellPrice.toLocaleString()} 🟢`);
+      setConfirmSellModal(false);
+      
+      showToast(`Sale Successful! +${totalSellPrice.toLocaleString()} GC`, "success");
       await fetchData(); 
       
     } catch (error) {
-      alert(`❌ Algo salió mal: ${error.message}`);
+      showToast(`❌ Error: ${error.message}`, "error");
     }
-    setProcesando(false);
+    setProcessing(false);
   };
 
-  const comprarDelMarket = async (marketId, petName, precio, itemId) => {
-    if (procesando) return;
-    if (saldoVerde < precio) return alert("No tienes suficiente Saldo Verde.");
-    if (!confirm(`¿Comprar ${petName} por ${precio.toLocaleString()} 🟢?`)) return;
+  // --- MARKET BUY LOGIC ---
+  const handleMarketBuy = async () => {
+    if (processing || !confirmBuyModal) return;
+    const pet = confirmBuyModal;
 
-    setProcesando(true);
+    if (greenBalance < pet.price) {
+        showToast("Insufficient Green Balance.", "error");
+        setConfirmBuyModal(null);
+        return;
+    }
+
+    setProcessing(true);
     try {
-      const nuevoSaldo = saldoVerde - precio;
-      await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
-      await supabase.from('inventory').insert({ user_id: currentUser.id, item_id: itemId });
-      await supabase.from('marketplace').delete().eq('id', marketId);
+      const newBalance = greenBalance - pet.price;
+      await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
+      await supabase.from('inventory').insert({ user_id: currentUser.id, item_id: pet.itemId });
+      await supabase.from('marketplace').delete().eq('id', pet.marketId);
 
-      alert(`¡Compraste ${petName}!`);
+      setGreenBalance(newBalance);
+      setConfirmBuyModal(null);
+      
+      // Trigger Epic Result Animation
+      setEpicPurchaseData(pet);
       await fetchData(); 
     } catch (error) {
-      alert("Error al intentar comprar.");
+      showToast("Error processing purchase.", "error");
     }
-    setProcesando(false);
+    setProcessing(false);
   };
 
   const filteredInventory = useMemo(() => {
-    let result = [...inventario];
-    if (search.trim() !== '') result = result.filter(p => p.nombre.toLowerCase().includes(search.toLowerCase()));
+    let result = [...inventory];
+    if (search.trim() !== '') result = result.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
     
     result.sort((a, b) => {
-        if (sortBy === 'highest') return b.valor - a.valor;
-        if (sortBy === 'lowest') return a.valor - b.valor;
-        if (sortBy === 'limited') return (b.isLimited ? 1 : 0) - (a.isLimited ? 1 : 0);
-        if (sortBy === 'name') return a.nombre.localeCompare(b.nombre);
+        if (sortBy === 'highest') return b.value - a.value;
+        if (sortBy === 'lowest') return a.value - b.value;
+        if (sortBy === 'limited') return (b.is_mythic ? 1 : 0) - (a.is_mythic ? 1 : 0);
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
         return 0;
     });
     return result;
-  }, [inventario, search, sortBy]);
+  }, [inventory, search, sortBy]);
 
   const filteredMarket = useMemo(() => {
     let result = [...marketItems];
-    if (search.trim() !== '') result = result.filter(p => p.nombre.toLowerCase().includes(search.toLowerCase()));
+    if (search.trim() !== '') result = result.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
     
     result.sort((a, b) => {
-        if (sortBy === 'highest') return b.precio - a.precio;
-        if (sortBy === 'lowest') return a.precio - b.precio;
-        if (sortBy === 'name') return a.nombre.localeCompare(b.nombre);
+        if (sortBy === 'highest') return b.price - a.price;
+        if (sortBy === 'lowest') return a.price - b.price;
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
         return 0;
     });
     return result;
   }, [marketItems, search, sortBy]);
 
-  const totalInventoryValue = useMemo(() => inventario.reduce((sum, pet) => sum + pet.valor, 0), [inventario]);
-  const selectedValue = inventario.filter(p => selectedIds.has(p.inventarioId)).reduce((sum, p) => sum + calcularVenta(p.valor).sellPrice, 0);
+  const totalInventoryValue = useMemo(() => inventory.reduce((sum, pet) => sum + pet.value, 0), [inventory]);
+  const selectedValue = inventory.filter(p => selectedIds.has(p.inventoryId)).reduce((sum, p) => sum + calculateSellFee(p.value).sellPrice, 0);
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 animate-fade-in relative overflow-hidden font-sans pb-32">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[500px] bg-gradient-to-b from-[#6C63FF]/10 to-transparent blur-[150px] pointer-events-none z-0"></div>
+
+      {/* --- EPIC PURCHASE MODAL --- */}
+      {epicPurchaseData && (
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
+              <div className="absolute top-10 right-10 z-50">
+                  <img src="/Affiliates.png" className="w-24 h-24 animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] filter grayscale brightness-200" alt="Backpack" />
+              </div>
+              <div className="text-[120px] leading-none mb-4 z-10 drop-shadow-[0_0_80px_rgba(34,197,94,0.8)] animate-bounce-slight">✨</div>
+              <h2 className="text-5xl md:text-7xl font-black mb-12 text-center z-10 uppercase tracking-[0.2em] drop-shadow-2xl text-cyan-400">PET ACQUIRED!</h2>
+              
+              <div className="flex flex-col md:flex-row gap-12 items-center justify-center max-w-4xl z-10 mb-16">
+                  <div className="animate-fly-to-backpack drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+                      <div className="scale-150 pointer-events-none"><PetCard pet={epicPurchaseData} /></div>
+                  </div>
+              </div>
+              <button onClick={() => setEpicPurchaseData(null)} className="px-16 py-6 bg-white text-black text-2xl font-black uppercase tracking-widest rounded-full hover:bg-gray-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:scale-105 z-10 active:scale-95">
+                  COLLECT LOOT
+              </button>
+          </div>
+      )}
+
+      {/* --- CONFIRMATION MODALS --- */}
+      {confirmSellModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center animate-fade-in p-4">
+              <div className="bg-[#111] border-2 border-[#333] rounded-[2rem] p-8 max-w-md w-full shadow-[0_0_50px_rgba(34,197,94,0.2)] text-center">
+                  <h2 className="text-3xl font-black uppercase tracking-widest mb-4">Confirm Sale</h2>
+                  <p className="text-gray-400 mb-6 font-bold">Are you sure you want to sell {selectedIds.size} pets to the global market?</p>
+                  <div className="bg-[#0a0a0a] border border-[#222] rounded-2xl p-4 mb-8">
+                      <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">You will receive</p>
+                      <p className="text-3xl font-black text-[#22c55e] flex items-center justify-center gap-2">
+                          <GreenCoin cls="w-8 h-8"/> +{formatValue(selectedValue)}
+                      </p>
+                  </div>
+                  <div className="flex gap-4">
+                      <button onClick={() => setConfirmSellModal(false)} className="flex-1 py-4 bg-[#222] hover:bg-[#333] rounded-xl font-black uppercase tracking-widest transition-all">Cancel</button>
+                      <button onClick={handleSellSelected} disabled={processing} className="flex-1 py-4 bg-[#22c55e] hover:bg-[#16a34a] text-black rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all">Confirm</button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {confirmBuyModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center animate-fade-in p-4">
+              <div className="bg-[#111] border-2 border-[#333] rounded-[2rem] p-8 max-w-md w-full shadow-[0_0_50px_rgba(6,182,212,0.2)] text-center">
+                  <h2 className="text-3xl font-black uppercase tracking-widest mb-4">Confirm Purchase</h2>
+                  <p className="text-gray-400 mb-6 font-bold">Are you sure you want to buy <span className="text-white">{confirmBuyModal.name}</span>?</p>
+                  <div className="flex justify-center mb-6 scale-110 pointer-events-none">
+                      <PetCard pet={confirmBuyModal} />
+                  </div>
+                  <div className="bg-[#0a0a0a] border border-[#222] rounded-2xl p-4 mb-8">
+                      <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Total Cost</p>
+                      <p className="text-3xl font-black text-red-500 flex items-center justify-center gap-2">
+                          <GreenCoin cls="w-8 h-8 grayscale opacity-50"/> -{formatValue(confirmBuyModal.price)}
+                      </p>
+                  </div>
+                  <div className="flex gap-4">
+                      <button onClick={() => setConfirmBuyModal(null)} className="flex-1 py-4 bg-[#222] hover:bg-[#333] rounded-xl font-black uppercase tracking-widest transition-all">Cancel</button>
+                      <button onClick={handleMarketBuy} disabled={processing} className="flex-1 py-4 bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all">Confirm</button>
+                  </div>
+              </div>
+          </div>
+      )}
+
 
       <div className="max-w-[1200px] mx-auto relative z-10">
         
@@ -289,7 +362,7 @@ export default function WalletPage() {
                <div className="relative z-10">
                    <p className="text-[#8f9ac6] text-xs font-black uppercase tracking-widest mb-1">Green Balance</p>
                    <p className="text-3xl font-black text-white flex items-center gap-2 drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                       <GreenCoin cls="w-7 h-7 animate-pulse-slow"/> {formatValue(saldoVerde)}
+                       <GreenCoin cls="w-7 h-7 animate-pulse-slow"/> {formatValue(greenBalance)}
                    </p>
                </div>
             </div>
@@ -297,20 +370,20 @@ export default function WalletPage() {
             <div className="bg-[#14151f]/80 backdrop-blur-md border border-[#252839] rounded-3xl p-6 flex items-center justify-between shadow-[0_0_30px_rgba(0,0,0,0.5)] relative overflow-hidden group">
                <div className="absolute inset-0 bg-gradient-to-br from-[#ef4444]/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
                <div className="relative z-10">
-                   <p className="text-[#8f9ac6] text-xs font-black uppercase tracking-widest mb-1">Red Balance (Withdraw)</p>
+                   <p className="text-[#8f9ac6] text-xs font-black uppercase tracking-widest mb-1">Red Balance</p>
                    <p className="text-3xl font-black text-white flex items-center gap-2 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]">
-                       <RedCoin cls="w-7 h-7 animate-pulse-slow"/> {formatValue(saldoRojo)}
+                       <RedCoin cls="w-7 h-7 animate-pulse-slow"/> {formatValue(redBalance)}
                    </p>
                </div>
             </div>
 
             <div className="bg-[#14151f]/80 backdrop-blur-md border border-[#252839] rounded-3xl p-6 flex flex-col justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)] relative overflow-hidden">
                <div className="absolute -right-4 -top-4 text-7xl opacity-5 grayscale">🎒</div>
-               <p className="text-[#555b82] text-xs font-black uppercase tracking-widest mb-1 relative z-10">Total Vault Value</p>
+               <p className="text-[#555b82] text-xs font-black uppercase tracking-widest mb-1 relative z-10">Total Inventory Value</p>
                <p className="text-2xl font-black text-[#8f9ac6] flex items-center gap-2 relative z-10">
                    <RedCoin cls="w-6 h-6 grayscale opacity-50"/> {formatValue(totalInventoryValue)}
                </p>
-               <p className="text-[#555b82] text-[10px] font-black uppercase mt-1 relative z-10">{inventario.length} items owned</p>
+               <p className="text-[#555b82] text-[10px] font-black uppercase mt-1 relative z-10">{inventory.length} items owned</p>
             </div>
           </div>
         </div>
@@ -321,7 +394,7 @@ export default function WalletPage() {
             onClick={() => { setTab('inventory'); setSelectedIds(new Set()); }} 
             className={`px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-sm shadow-lg ${tab === 'inventory' ? 'bg-gradient-to-r from-[#6C63FF] to-[#5147D9] text-white shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:scale-105' : 'bg-[#14151f] text-[#8f9ac6] border border-[#252839] hover:bg-[#1c1f2e] hover:-translate-y-1'}`}
           >
-            My Pets ({inventario.length})
+            My Pets ({inventory.length})
           </button>
           <button 
             onClick={() => setTab('market')} 
@@ -331,15 +404,15 @@ export default function WalletPage() {
           </button>
         </div>
 
-        {/* ZONA PRINCIPAL */}
+        {/* MAIN ZONE */}
         <div className="bg-[#14151f]/80 backdrop-blur-xl border border-[#252839] rounded-[2rem] p-6 md:p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-h-[500px] relative z-10">
             
-            {/* FILTROS */}
+            {/* FILTERS */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 relative z-10">
                 <div className="flex items-center gap-4">
                   <h2 className="text-2xl font-black uppercase tracking-widest text-white flex items-center gap-2 drop-shadow-md">
                       {tab === 'inventory' ? 'Inventory' : 'Global Market'}
-                      {procesando && <span className="w-5 h-5 border-4 border-[#22c55e] border-t-transparent rounded-full animate-spin ml-3 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>}
+                      {processing && <span className="w-5 h-5 border-4 border-[#22c55e] border-t-transparent rounded-full animate-spin ml-3 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>}
                   </h2>
                   {tab === 'inventory' && filteredInventory.length > 0 && (
                     <button onClick={selectAll} className="text-[#8f9ac6] hover:text-white text-xs font-black uppercase tracking-widest transition-colors bg-[#0b0e14] px-4 py-2 rounded-lg border border-[#252839]">
@@ -369,8 +442,8 @@ export default function WalletPage() {
                 </div>
             </div>
 
-            {/* ESTADOS */}
-            {cargando ? (
+            {/* STATES */}
+            {loading ? (
                 <div className="py-32 flex flex-col items-center justify-center relative z-10">
                     <div className="w-16 h-16 border-4 border-[#252839] border-t-[#6C63FF] rounded-full animate-spin mb-6 shadow-[0_0_15px_#6C63FF]"></div>
                     <p className="text-[#8f9ac6] font-black uppercase tracking-widest animate-pulse">Loading assets...</p>
@@ -386,123 +459,63 @@ export default function WalletPage() {
                     <p className="text-[#8f9ac6] font-black text-2xl mb-2 uppercase tracking-widest">Market is empty</p>
                 </div>
             ) : (
-                /* GRID DE ITEMS CON DISEÑO ÉPICO Y MULTI-SELL */
+                /* GRID DE ITEMS (PetCard Integration) */
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 max-h-[650px] overflow-y-auto custom-scrollbar pr-2 pb-6 relative z-10 p-2">
                     
                     {tab === 'inventory' && filteredInventory.map((pet, i) => {
-                      const { sellPrice } = calcularVenta(pet.valor);
-                      const isSelected = selectedIds.has(pet.inventarioId);
+                      const isSelected = selectedIds.has(pet.inventoryId);
                       
                       return (
                         <div 
-                           key={pet.inventarioId} 
+                           key={pet.inventoryId} 
                            onClick={() => toggleSelect(pet)}
-                           className={`cursor-pointer relative bg-[#0a0a0a] rounded-2xl p-1 flex flex-col items-center justify-between transition-all duration-300 group h-[260px] animate-fade-in-up border-2 overflow-hidden
-                            ${pet.isLimited 
-                                ? `border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.5)] ${isSelected ? 'scale-105 -translate-y-2 ring-4 ring-[#22c55e]' : 'hover:-translate-y-2'}` 
-                                : isSelected 
-                                    ? 'border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105 -translate-y-2' 
-                                    : 'border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:-translate-y-1'
-                            }
+                           className={`cursor-pointer relative transition-all duration-300 group animate-fade-in-up rounded-2xl
+                            ${isSelected ? 'scale-105 -translate-y-2 ring-4 ring-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'hover:-translate-y-2'}
                             ${pet.isLocked ? 'grayscale-[40%] opacity-80 cursor-not-allowed' : ''}
                            `} 
                            style={{animationDelay: `${i * 30}ms`}}
                         >
-                            {/* DISEÑO MYTHIC ULTRA ÉPICO */}
-                            {pet.isLimited && (
-                                <>
-                                    {/* Borde interior animado y fondo épico */}
-                                    <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
-                                        <div className="absolute -inset-[100%] animate-spin-slow" style={{ background: 'conic-gradient(from 0deg, transparent 0 340deg, rgba(250,204,21,0.6) 360deg)' }}></div>
-                                        <div className="absolute inset-[2px] bg-[#0a0a0a] rounded-xl z-0"></div>
-                                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(250,204,21,0.15)_0%,transparent_80%)] z-0"></div>
-                                    </div>
-                                    {/* Banner SUPERIOR Mítico */}
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-max z-30">
-                                        <div className="bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-[#0a0a0a] text-[9px] font-black px-4 py-1 rounded-sm uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(250,204,21,0.8)] border-b-2 border-yellow-200">
-                                            Mythic
-                                        </div>
-                                    </div>
-                                </>
-                            )}
+                            {/* The Official PetCard */}
+                            <div className="pointer-events-none w-full h-full"><PetCard pet={pet} /></div>
 
-                            {!pet.isLimited && (
-                                <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
-                                    <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${pet.color} 0%, transparent 70%)` }}></div>
-                                </div>
-                            )}
-
-                            {/* Checkbox de Selección */}
+                            {/* Checkbox Overlay */}
                             <div className={`absolute top-2 left-2 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all z-20 shadow-lg
                                ${isSelected ? 'bg-[#22c55e] border-[#22c55e]' : 'bg-[#0a0a0a]/80 border-[#374151] backdrop-blur-sm group-hover:border-cyan-500/50'}
                             `}>
                                 {isSelected && <span className="text-[#0a0a0a] text-sm font-black">✓</span>}
                             </div>
 
-                            {/* Botón de Candado (Lock/Unlock) */}
+                            {/* Lock Button Overlay */}
                             <button 
                                 onClick={(e) => toggleLock(e, pet)}
                                 className={`absolute top-2 right-2 p-1.5 rounded-lg border-2 transition-all z-30 shadow-lg backdrop-blur-md hover:scale-110 active:scale-95
                                     ${pet.isLocked ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-[#0a0a0a]/80 border-[#374151] text-gray-400 hover:text-white hover:border-gray-400'}
                                 `}
-                                title={pet.isLocked ? "Desbloquear mascota" : "Bloquear para no vender"}
+                                title={pet.isLocked ? "Unlock pet" : "Lock pet from selling"}
                             >
                                 {pet.isLocked ? '🔒' : '🔓'}
                             </button>
-
-                            <div className="relative w-full flex-1 flex items-center justify-center mt-6 mb-2 z-10">
-                                <div className={`absolute w-20 h-20 rounded-full blur-[20px] transition-opacity duration-300 ${pet.isLimited ? 'opacity-70 bg-yellow-500 animate-pulse' : 'opacity-40 group-hover:opacity-70'}`} style={!pet.isLimited ? { backgroundColor: pet.color } : {}}></div>
-                                <img src={pet.img} className={`w-24 h-24 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 relative z-10 ${isSelected ? 'scale-110' : 'group-hover:scale-125 group-hover:-translate-y-2'} ${pet.isLimited ? 'animate-float' : ''}`} alt={pet.nombre}/>
-                            </div>
-                            
-                            <div className="w-full text-center z-10 bg-[#111827]/90 rounded-b-xl rounded-t-sm pt-2 pb-3 px-2 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden flex flex-col items-center">
-                                <div className="absolute top-0 left-0 w-full h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${pet.isLimited ? '#facc15' : pet.color}, transparent)` }}></div>
-                                
-                                <div className="text-[12px] truncate w-full text-white font-black uppercase tracking-widest px-1 mb-1" style={{textShadow: `0 2px 4px rgba(0,0,0,0.8)`, color: pet.isLimited ? '#facc15' : 'white'}}>{pet.nombre}</div>
-                                
-                                {/* Info Épica del Serial */}
-                                {pet.isLimited && (
-                                   <div className="flex flex-col items-center bg-[#0a0a0a] border border-yellow-500/40 w-full rounded p-1 mb-1 shadow-inner">
-                                       <span className="text-[11px] font-black text-yellow-400 uppercase tracking-widest">#{pet.serial}</span>
-                                       <span className="text-[8px] font-bold text-gray-400 truncate w-full uppercase">Own: {pet.originalOwner}</span>
-                                   </div>
-                                )}
-
-                                <div className="text-sm font-black text-gray-300 flex items-center justify-center w-full gap-1.5 bg-[#0a0a0a]/50 py-1 rounded-lg border border-[#1f2937] mt-1">
-                                    <RedCoin cls="w-4 h-4 grayscale opacity-80"/> {formatValue(pet.valor)}
-                                </div>
-                            </div>
                         </div>
                       );
                     })}
 
                     {tab === 'market' && filteredMarket.map((m, i) => (
-                        <div key={m.marketId} className="relative bg-[#0a0a0a] rounded-2xl p-1 flex flex-col items-center justify-between transition-all duration-300 group h-[260px] animate-fade-in-up border-2 border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:-translate-y-2" style={{animationDelay: `${i * 30}ms`}}>
-                            <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
-                                <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${m.color} 0%, transparent 70%)` }}></div>
-                            </div>
+                        <div key={m.marketId} className="relative transition-all duration-300 group animate-fade-in-up hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] rounded-2xl" style={{animationDelay: `${i * 30}ms`}}>
                             
-                            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-[#0a0a0a] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg shadow-lg z-20 border border-green-400">EN VENTA</div>
-
-                            <div className="relative w-full flex-1 flex items-center justify-center mt-6 mb-2 z-10">
-                                <div className="absolute w-20 h-20 rounded-full blur-[20px] opacity-40 group-hover:opacity-70 transition-opacity duration-300" style={{ backgroundColor: m.color }}></div>
-                                <img src={m.img} className="w-24 h-24 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 relative z-10 group-hover:scale-125 group-hover:-translate-y-2" alt={m.nombre}/>
-                            </div>
+                            {/* The Official PetCard */}
+                            <div className="pointer-events-none w-full h-full"><PetCard pet={m} /></div>
                             
-                            <div className="w-full text-center z-10 bg-[#111827]/90 rounded-b-xl rounded-t-sm py-2 px-2 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors">
-                                <div className="absolute top-0 left-0 w-full h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${m.color}, transparent)` }}></div>
-                                <div className="text-[12px] truncate text-white font-black uppercase tracking-widest px-1 mb-1">{m.nombre}</div>
-                                <div className="text-[15px] font-black text-[#22c55e] flex items-center justify-center gap-1.5 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]">
-                                    <GreenCoin cls="w-5 h-5"/> {formatValue(m.precio)}
-                                </div>
+                            {/* Market Overlays */}
+                            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-[#0a0a0a] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg shadow-lg z-20 border border-green-400">
+                                ON SALE
                             </div>
 
                             <button 
-                                onClick={() => comprarDelMarket(m.marketId, m.nombre, m.precio, m.itemId)}
-                                disabled={procesando}
+                                onClick={() => setConfirmBuyModal(m)}
+                                disabled={processing}
                                 className="absolute bottom-[-15px] left-1/2 -translate-x-1/2 w-[80%] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-[11px] font-black uppercase tracking-widest py-2 rounded-xl transition-all duration-300 z-20 shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_20px_rgba(6,182,212,0.6)] disabled:opacity-50 opacity-0 group-hover:opacity-100 group-hover:bottom-3"
                             >
-                                COMPRAR
+                                BUY ({formatValue(m.price)} GC)
                             </button>
                         </div>
                     ))}
@@ -512,7 +525,7 @@ export default function WalletPage() {
 
       </div>
 
-      {/* BARRA FLOTANTE DE MULTI-SELL */}
+      {/* FLOATING MULTI-SELL BAR */}
       <div className={`fixed bottom-0 left-0 right-0 p-6 flex justify-center transition-transform duration-500 z-50 pointer-events-none ${selectedIds.size > 0 ? 'translate-y-0' : 'translate-y-full'}`}>
          <div className="bg-[#14151f]/95 backdrop-blur-xl border border-[#22c55e]/50 rounded-full px-8 py-4 flex items-center gap-8 shadow-[0_0_50px_rgba(34,197,94,0.3)] pointer-events-auto scale-100 animate-fade-in-up">
             <div className="flex flex-col">
@@ -523,10 +536,10 @@ export default function WalletPage() {
                </div>
             </div>
             <button 
-              onClick={venderSeleccionadas} disabled={procesando}
+              onClick={() => setConfirmSellModal(true)} disabled={processing}
               className="bg-[#22c55e] hover:bg-[#16a34a] text-[#0b0e14] px-8 py-3 rounded-full font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
             >
-              {procesando ? 'Processing...' : 'Sell to Market'}
+              {processing ? 'Processing...' : 'Sell to Market'}
             </button>
          </div>
       </div>
@@ -535,8 +548,7 @@ export default function WalletPage() {
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .animate-fade-in-up { opacity: 0; animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .animate-spin-slow { animation: spin 4s linear infinite; }
-        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-bounce-slight { animation: bounceSlight 2s ease-in-out infinite; }
         
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(11, 14, 20, 0.5); border-radius: 10px; }
@@ -551,15 +563,17 @@ export default function WalletPage() {
             from { opacity: 0; transform: translateY(20px) scale(0.95); } 
             to { opacity: 1; transform: translateY(0) scale(1); } 
         }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        @keyframes bounceSlight { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-20px); } 
         }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-            100% { transform: translateY(0px); }
+        @keyframes flyToBackpack {
+            0% { transform: scale(0) translateY(100px); opacity: 0; }
+            15% { transform: scale(1.2) translateY(0); opacity: 1; }
+            60% { transform: scale(1) translateY(0); opacity: 1; }
+            100% { transform: scale(0.1) translate(calc(45vw - 100px), calc(-40vh + 100px)); opacity: 0; }
         }
+        .animate-fly-to-backpack { animation: flyToBackpack 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
       `}} />
     </div>
   );
