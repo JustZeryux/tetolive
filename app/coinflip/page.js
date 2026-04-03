@@ -75,7 +75,14 @@ export default function BloxypotCoinflip() {
 
   // Lobby
   const [lobbyGames, setLobbyGames] = useState([]);
-
+const handleScrollInventario = (e) => {
+      const { scrollTop, clientHeight, scrollHeight } = e.target;
+      // Si el usuario scrollea y llega casi al final, cargamos 60 pets más
+      if (scrollHeight - scrollTop <= clientHeight + 100) {
+          setVisiblePetsCount(prev => prev + 60);
+      }
+  };
+  
   useEffect(() => {
     // 1. INICIALIZAR USUARIO Y MASCOTAS
     const initUserAndInventory = async () => {
