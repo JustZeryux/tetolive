@@ -152,32 +152,46 @@ export default function WalletPage() {
     setProcesando(true);
     
     try {
-      // 1. Actualizar el dinero (Esto sigue siendo una sola operación)
-      const nuevoSaldo = saldoVerde + totalSellPrice;
-      await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
-
-      // 2. Borrar del inventario en lotes de 50 para evitar el error de URL larga (400 Bad Request)
+      // 1. PRIMERO BORRAMOS EN LOTES PEQUEÑOS (15 máximo para no romper la URL de Supabase)
       const idsToDelete = Array.from(selectedIds);
-      const deleteChunks = chunkArray(idsToDelete, 50);
+      const deleteChunks = chunkArray(idsToDelete, 15);
+      
       for (const chunk of deleteChunks) {
-          await supabase.from('inventory').delete().in('id', chunk);
+          const { error: delError } = await supabase.from('inventory').delete().in('id', chunk);
+          if (delError) {
+              console.error("Error al borrar chunk:", delError);
+              throw new Error("La base de datos rechazó el borrado. Transacción cancelada por seguridad.");
+          }
       }
 
-      // 3. Insertar en el mercado en lotes de 50
+      // 2. INSERTAMOS AL MERCADO (Aquí no hay límite de URL, pero 50 es buen número)
       const insertChunks = chunkArray(marketInserts, 50);
       for (const chunk of insertChunks) {
-          await supabase.from('marketplace').insert(chunk);
+          const { error: insError } = await supabase.from('marketplace').insert(chunk);
+          if (insError) console.error("Error insertando al mercado:", insError);
       }
 
-      alert(`¡Venta Múltiple Exitosa!\nRecibiste: ${totalSellPrice.toLocaleString()} 🟢\nTus items ahora están en el mercado.`);
+      // 3. LA RECOMPENSA AL FINAL (Solo llega aquí si las mascotas se borraron con éxito)
+      const nuevoSaldo = saldoVerde + totalSellPrice;
+      const { error: saldoError } = await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
+      
+      if (saldoError) throw new Error("Tus mascotas se vendieron pero hubo un error actualizando tu saldo.");
+
+      // 4. Actualizamos la Interfaz
+      setSaldoVerde(nuevoSaldo);
       setSelectedIds(new Set());
+      alert(`¡Venta Múltiple Exitosa!\nRecibiste: ${totalSellPrice.toLocaleString()} 🟢`);
+      
+      // Recargamos los datos para limpiar las mascotas vendidas de la pantalla
       await fetchData(); 
+      
     } catch (error) {
-      alert("Hubo un error al procesar tu venta. Intenta vender menos cantidad de una vez.");
+      alert(`❌ Algo salió mal: ${error.message}\nRevisa la consola para más detalles.`);
     }
     
     setProcesando(false);
   };
+
 
   const comprarDelMarket = async (marketId, petName, precio, itemId) => {
     if (procesando) return;
