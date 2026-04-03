@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/utils/Supabase';
+import PetCard from '@/components/PetCard'; // <-- INTEGRAMOS LA PETCARD UNIVERSAL
 
-// --- HELPERS VISUALES ---
+// --- VISUAL HELPERS ---
 const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
 
 const formatValue = (val) => {
@@ -11,7 +12,7 @@ const formatValue = (val) => {
   return val?.toLocaleString() || '0';
 };
 
-// --- MOTOR DE PROBABILIDAD REAL (ANTI-CHEAT) ---
+// --- REAL PROBABILITY ENGINE (ANTI-CHEAT) ---
 const selectItemWithChance = (items) => {
     if (!items || items.length === 0) return null;
     const totalChance = items.reduce((sum, item) => sum + parseFloat(item.chance || 0), 0);
@@ -24,14 +25,14 @@ const selectItemWithChance = (items) => {
             return item;
         }
     }
-    return items[items.length - 1]; // Fallback seguro
+    return items[items.length - 1]; // Safe fallback
 };
 
-// --- FUNCIÓN PURA: GENERAR RESULTADOS ---
+// --- PURE FUNCTION: GENERATE RESULTS ---
 const generateBattleResult = (battleCases, battlePlayers) => {
     const rounds = [];
     const playerTotals = {};
-    const itemsWon = []; // <-- Botín físico para el inventario
+    const itemsWon = []; // <-- Physical loot for inventory
     
     battlePlayers.forEach(p => playerTotals[p.id] = 0);
 
@@ -41,7 +42,7 @@ const generateBattleResult = (battleCases, battlePlayers) => {
             const valorItem = randomItem.price || randomItem.value || randomItem.valor || 0;
             
             const itemObtenido = { 
-                id: crypto.randomUUID(), // ID Único para el inventario
+                id: crypto.randomUUID(), 
                 name: randomItem.name, 
                 valor: valorItem, 
                 img: randomItem.image_url || randomItem.img || '/default-pet.png', 
@@ -80,18 +81,22 @@ export default function BattlesPage() {
   const [activeBattle, setActiveBattle] = useState(null);
   const [battles, setBattles] = useState([]);
   
-  // Estados Creador
+  // Creator States
   const [selectedCases, setSelectedCases] = useState([]);
   const [playerCount, setPlayerCount] = useState(2); 
   const [isCreating, setIsCreating] = useState(false); 
 
-  // Estados Arena
+  // Arena States
   const [currentRound, setCurrentRound] = useState(-1);
   const [battleResults, setBattleResults] = useState(null);
   const [isJoining, setIsJoining] = useState(false); 
   const resolvingRef = useRef(false);
 
-  // Cajas Disponibles
+  // Winnings UI States (Epic Loot Modal)
+  const [showWinnings, setShowWinnings] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  // Available Cases
   const [availableCases, setAvailableCases] = useState([]);  
   
   useEffect(() => {
@@ -112,7 +117,7 @@ export default function BattlesPage() {
     };
     initUser();
 
-    const cargarPartidas = async () => {
+    const loadMatches = async () => {
       const { data } = await supabase.from('partidas')
         .select('*')
         .eq('modo_juego', 'battles')
@@ -121,15 +126,15 @@ export default function BattlesPage() {
         .limit(20);
       if (data) setBattles(data);
     };
-    cargarPartidas();
+    loadMatches();
 
-    // SUSCRIPCIÓN REALTIME ANTI GHOST-MATCHES
+    // REALTIME SUBSCRIPTION (Coinflip-style Matchmaking)
     const channel = supabase.channel('battles_lobby')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.battles" }, 
         (payload) => {
           if (payload.eventType === 'INSERT') {
             setBattles(prev => {
-                if (prev.find(b => b.id === payload.new.id)) return prev; // Prevenir duplicados
+                if (prev.find(b => b.id === payload.new.id)) return prev; 
                 return [payload.new, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
@@ -142,6 +147,10 @@ export default function BattlesPage() {
                     } else if (payload.new.estado === 'completed' && !resolvingRef.current) {
                         setBattleResults(payload.new.resultado);
                         setCurrentRound((payload.new.datos_partida?.cases || []).length); 
+                        // Trigger Loot Modal for Winner
+                        if (payload.new.resultado.ganador_id === currentUser?.id) {
+                            setShowWinnings(true);
+                        }
                     }
                     return payload.new;
                 }
@@ -153,14 +162,16 @@ export default function BattlesPage() {
       }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [currentUser?.id]);
 
-  // --- MOTOR DE ANIMACIÓN ---
+  // --- ANIMATION ENGINE ---
   const animarBatalla = (battle, isResolver = false) => {
       if (resolvingRef.current) return;
       resolvingRef.current = true;
 
       setBattleResults(battle.resultado);
+      setShowWinnings(false);
+      setIsClaiming(false);
 
       let r = 0;
       const totalRounds = (battle.datos_partida?.cases || []).length;
@@ -173,12 +184,16 @@ export default function BattlesPage() {
               resolvingRef.current = false;
               if (isResolver) {
                   await supabase.from('partidas').update({ estado: 'completed' }).eq('id', battle.id);
+                  // Open modal directly for resolver if they won
+                  if (battle.resultado?.ganador_id === currentUser?.id) {
+                      setShowWinnings(true);
+                  }
               }
           }
-      }, 1500); // 1.5s por ronda
+      }, 1500); // 1.5s per round
   };
 
-  // --- LÓGICA DE CREACIÓN ---
+  // --- CREATION LOGIC ---
   const addCase = (caja) => {
     if (selectedCases.length >= 15) return alert("Maximum 15 cases per battle!");
     setSelectedCases([...selectedCases, { ...caja, uniqueId: crypto.randomUUID() }]);
@@ -195,7 +210,7 @@ export default function BattlesPage() {
     try {
       const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
       if (profile.saldo_verde < totalCost) {
-          alert("No tienes suficiente Saldo Verde.");
+          alert("Not enough Green Balance.");
           setIsCreating(false); return;
       }
       await supabase.from('profiles').update({ saldo_verde: profile.saldo_verde - totalCost }).eq('id', currentUser.id);
@@ -222,14 +237,15 @@ export default function BattlesPage() {
       setActiveBattle(nuevaPartida);
       setBattleResults(null);
       setCurrentRound(-1);
+      setShowWinnings(false);
     } catch (err) {
-        console.error("Error creando:", err);
+        console.error("Error creating battle:", err);
     } finally {
         setIsCreating(false);
     }
   };
 
-  // --- LÓGICA DE UNIRSE (ARREGLADA PARA INVENTARIO) ---
+  // --- JOIN LOGIC (FIXED FOR INVENTORY) ---
   const joinBattle = async (battle) => {
     const currentPlayers = battle.datos_partida?.players || [];
 
@@ -237,7 +253,11 @@ export default function BattlesPage() {
         setActiveBattle(battle);
         if(battle.resultado) setBattleResults(battle.resultado);
         setCurrentRound((battle.datos_partida?.cases || []).length);
-        setView('arena'); return;
+        setView('arena'); 
+        if (battle.estado === 'completed' && battle.resultado?.ganador_id === currentUser?.id) {
+            setShowWinnings(true);
+        }
+        return;
     }
     
     if (currentPlayers.some(p => p.id === currentUser.id)) {
@@ -250,7 +270,7 @@ export default function BattlesPage() {
     try {
       const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
       if (profile.saldo_verde < (battle.datos_partida?.cost || 0)) {
-          alert("Saldo Verde insuficiente para unirse.");
+          alert("Not enough Green Balance to join.");
           setIsJoining(false); return;
       }
       
@@ -272,7 +292,7 @@ export default function BattlesPage() {
           
           const winnerId = generatedResult.ganador_id;
 
-          // ENTREGAMOS LOS ITEMS AL INVENTARIO DEL GANADOR (No dinero líquido)
+          // DELIVER ITEMS TO INVENTORY
           const { data: winnerProf } = await supabase.from('profiles').select('inventory').eq('id', winnerId).single();
           if (winnerProf) {
               const currentInv = winnerProf.inventory || [];
@@ -288,17 +308,18 @@ export default function BattlesPage() {
       setView('arena');
       setBattleResults(updatedBattle.resultado || null);
       setCurrentRound(-1);
+      setShowWinnings(false);
 
       if (isFull) animarBatalla(updatedBattle, true);
     } catch (err) {
       console.error(err);
-      alert("Error al unirse a la partida.");
+      alert("Error joining the battle.");
     } finally {
       setIsJoining(false);
     }
   };
 
-  // --- LÓGICA DE BOTS (ARREGLADA PARA INVENTARIO) ---
+  // --- BOT LOGIC (LOCAL PLAY) ---
   const callBots = async () => {
     if (!activeBattle || activeBattle.estado !== 'waiting' || isJoining) return;
     setIsJoining(true);
@@ -322,7 +343,6 @@ export default function BattlesPage() {
       const generatedResult = generateBattleResult(activeBattle.datos_partida?.cases || [], newPlayers);
       const winnerId = generatedResult.ganador_id;
 
-      // SOLO ENTREGAMOS AL GANADOR SI NO ES BOT
       if (!winnerId.startsWith('bot_')) {
           const { data: winnerProf } = await supabase.from('profiles').select('inventory').eq('id', winnerId).single();
           if (winnerProf) {
@@ -343,17 +363,28 @@ export default function BattlesPage() {
       setActiveBattle(updatedBattle);
       setBattleResults(generatedResult);
       setCurrentRound(-1);
+      setShowWinnings(false);
       
       animarBatalla(updatedBattle, true);
       
     } catch (err) {
-      console.error("Error llamando bots:", err);
+      console.error("Error calling bots:", err);
     } finally {
       setIsJoining(false);
     }
   };
 
-  // --- UTILIDADES VISUALES ARENA ---
+  // --- EPIC CLAIM ANIMATION ---
+  const handleClaimLoot = () => {
+      setIsClaiming(true);
+      setTimeout(() => {
+          setShowWinnings(false);
+          setIsClaiming(false);
+          setView('lobby');
+      }, 800); // Wait for the "suck into backpack" animation to finish
+  };
+
+  // --- VISUAL UTILS ARENA ---
   const getPlayerItemForRound = (playerId, roundIndex) => {
       if (!battleResults || !battleResults.rounds) return null;
       const roll = battleResults.rounds.find(r => r.round === roundIndex && r.player_id === playerId);
@@ -375,7 +406,7 @@ export default function BattlesPage() {
       <div className="max-w-[1200px] mx-auto">
         
         {/* =========================================
-            VISTA 1: LOBBY DE BATALLAS
+            VIEW 1: BATTLES LOBBY
         ========================================= */}
         {view === 'lobby' && (
           <div className="animate-fade-in">
@@ -408,7 +439,7 @@ export default function BattlesPage() {
                     
                     {isCompleted && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
 
-                    {/* Jugadores */}
+                    {/* Players */}
                     <div className="flex items-center gap-2 w-full xl:w-auto justify-center xl:justify-start pt-4 xl:pt-0">
                       {Array.from({ length: pData.playerCount || 2 }).map((_, idx) => {
                         const user = battlePlayers[idx];
@@ -430,7 +461,7 @@ export default function BattlesPage() {
                       )})}
                     </div>
 
-                    {/* Cajas a abrir */}
+                    {/* Cases List */}
                     <div className="flex-1 w-full bg-[#141323] border border-[#252839] rounded-xl p-3 flex items-center gap-3 overflow-x-auto custom-scrollbar">
                       {battleCases.map((caja, idx) => (
                         <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center transition-transform hover:scale-105">
@@ -441,7 +472,7 @@ export default function BattlesPage() {
                       <span className="text-[#555b82] font-black text-xs ml-2 shrink-0">{battleCases.length} Rounds</span>
                     </div>
 
-                    {/* Costo y Botón */}
+                    {/* Cost & Button */}
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto justify-between xl:justify-end">
                       <div className="text-center sm:text-right">
                         <p className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest">Total Cost</p>
@@ -462,7 +493,7 @@ export default function BattlesPage() {
         )}
 
         {/* =========================================
-            VISTA 2: CREAR BATALLA
+            VIEW 2: CREATE BATTLE
         ========================================= */}
         {view === 'create' && (
           <div className="animate-fade-in">
@@ -472,7 +503,7 @@ export default function BattlesPage() {
 
             <div className="flex flex-col lg:flex-row gap-6">
               
-              {/* PANEL IZQ: CONFIG Y TOTAL */}
+              {/* LEFT PANEL: CONFIG & TOTAL */}
               <div className="w-full lg:w-1/3 flex flex-col gap-6">
                 <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-xl">
                   <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mb-4">Players</h3>
@@ -531,7 +562,7 @@ export default function BattlesPage() {
                 </div>
               </div>
 
-              {/* PANEL DER: TIENDA CAJAS */}
+              {/* RIGHT PANEL: CASE STORE */}
               <div className="w-full lg:w-2/3 bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-xl">
                 <h3 className="text-white text-lg font-black uppercase tracking-widest mb-6">Available Cases</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
@@ -551,7 +582,7 @@ export default function BattlesPage() {
         )}
 
         {/* =========================================
-            VISTA 3: ARENA (LA BATALLA)
+            VIEW 3: ARENA (THE BATTLE)
         ========================================= */}
         {view === 'arena' && activeBattle && (
           <div className="animate-fade-in flex flex-col min-h-[70vh]">
@@ -561,7 +592,7 @@ export default function BattlesPage() {
             
             <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-2xl flex-1 flex flex-col overflow-hidden relative">
                 
-                {/* BOTÓN PARA LLAMAR BOTS */}
+                {/* BOT CALL BUTTON */}
                 {activeBattle.estado === 'waiting' && activeBattle.creador_id === currentUser?.id && (
                     <div className="flex justify-center mb-8 w-full animate-fade-in">
                         <button 
@@ -569,12 +600,12 @@ export default function BattlesPage() {
                             disabled={isJoining}
                             className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-black px-8 py-4 rounded-2xl uppercase tracking-widest transition-transform hover:scale-105 shadow-[0_0_30px_rgba(168,85,247,0.4)] flex items-center gap-3 border-2 border-purple-400/50 disabled:opacity-50"
                         >
-                            <span className="text-2xl">🤖</span> Llenar con TetoBots (Local)
+                            <span className="text-2xl">🤖</span> Fill with TetoBots (Local)
                         </button>
                     </div>
                 )}
 
-                {/* HEADER ARENA */}
+                {/* ARENA HEADER */}
                 <div className="flex justify-between items-center mb-8 border-b border-[#252839] pb-6 relative z-10">
                     <div>
                         <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-1 flex items-center gap-2">
@@ -595,7 +626,7 @@ export default function BattlesPage() {
                     )}
                 </div>
 
-                {/* COLUMNAS DE JUGADORES */}
+                {/* PLAYER COLUMNS */}
                 <div className="flex-1 grid gap-4 relative z-10" style={{ gridTemplateColumns: `repeat(${activeBattle.datos_partida?.playerCount || 2}, minmax(0, 1fr))` }}>
                     
                     {Array.from({ length: activeBattle.datos_partida?.playerCount || 2 }).map((_, pIdx) => {
@@ -606,7 +637,7 @@ export default function BattlesPage() {
                         return (
                         <div key={pIdx} className={`flex flex-col bg-[#141323] border ${isWinner ? 'border-[#facc15] shadow-[0_0_30px_rgba(250,204,21,0.2)] scale-[1.02]' : 'border-[#252839]'} rounded-xl overflow-hidden relative transition-all duration-500`}>
                             
-                            {/* Cabecera Jugador */}
+                            {/* Player Header */}
                             <div className={`p-4 border-b ${isWinner ? 'border-[#facc15] bg-gradient-to-b from-[#facc15]/20 to-transparent' : 'border-[#252839] bg-[#1c1f2e]'} flex flex-col items-center relative z-20 transition-colors`}>
                                 {isWinner && <span className="absolute -top-1 text-4xl drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] z-30 animate-bounce">👑</span>}
                                 {player ? (
@@ -630,7 +661,7 @@ export default function BattlesPage() {
                                 )}
                             </div>
 
-                            {/* Rondas (Cajas/Items) */}
+                            {/* Rounds (Cases/Items) */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-2 relative">
                                 {(activeBattle.datos_partida?.cases || []).map((caja, rIdx) => {
                                     const revealedItem = player && rIdx <= currentRound ? getPlayerItemForRound(player.id, rIdx) : null;
@@ -671,6 +702,45 @@ export default function BattlesPage() {
                 </div>
             </div>
           </div>
+        )}
+
+        {/* =========================================
+            EPIC LOOT MODAL (WINNINGS)
+        ========================================= */}
+        {showWinnings && battleResults && battleResults.allItems && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in px-4">
+                {/* Glow de Fondo */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#facc1540_0%,_transparent_60%)] animate-pulse"></div>
+
+                <div className={`relative bg-[#141323] border-4 border-[#facc15] rounded-3xl p-6 md:p-10 max-w-5xl w-full flex flex-col items-center shadow-[0_0_80px_rgba(250,204,21,0.4)] transition-all duration-700 ${isClaiming ? 'scale-50 opacity-0 translate-y-full blur-md' : 'scale-100 opacity-100'}`}>
+                    
+                    <h2 className="text-5xl md:text-6xl font-black text-[#facc15] uppercase tracking-widest mb-2 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] animate-bounce">
+                        Victory!
+                    </h2>
+                    <p className="text-[#8f9ac6] mb-8 font-bold text-center text-lg md:text-xl">
+                        You dominated the arena. These items are yours:
+                    </p>
+
+                    {/* Grid de items usando PetCard */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 w-full max-h-[50vh] overflow-y-auto custom-scrollbar p-2">
+                        {battleResults.allItems.map((item, idx) => (
+                            <PetCard 
+                                key={idx} 
+                                item={item} 
+                                showValue={true} 
+                                showChance={true} 
+                            />
+                        ))}
+                    </div>
+
+                    <button 
+                        onClick={handleClaimLoot} 
+                        className="mt-10 bg-gradient-to-r from-[#facc15] to-[#ca8a04] hover:from-[#fde047] hover:to-[#eab308] text-[#0b0e14] font-black px-12 md:px-16 py-4 md:py-5 rounded-2xl text-xl md:text-2xl uppercase tracking-widest transition-transform hover:scale-110 shadow-[0_0_30px_rgba(250,204,21,0.6)] flex items-center gap-3"
+                    >
+                        {isClaiming ? 'Claiming...' : 'Claim to Backpack 🎒'}
+                    </button>
+                </div>
+            </div>
         )}
 
       </div>
