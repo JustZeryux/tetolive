@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/utils/Supabase';
+import PetCard from '@/components/PetCard';
+import { showToast } from '@/components/EpicToasts';
 
-// --- COMPONENTES VISUALES ---
+// --- VISUAL COMPONENTS ---
 const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
 
 const formatValue = (val) => {
@@ -13,7 +15,7 @@ const formatValue = (val) => {
 
 const getAvatar = (url, name) => url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name || 'player'}&backgroundColor=8b0000,000000`;
 
-// SVG del Revólver Animado
+// Animated Revolver SVG
 const GunSVG = ({ targetAngle, isShaking, isFiring, isSpinningCylinder }) => (
     <div className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute inset-0 flex items-center justify-center ${isShaking ? 'animate-shake-hard' : ''}`} style={{ transform: `rotate(${targetAngle}deg)` }}>
         <div className={`relative ${isFiring ? 'scale-125 drop-shadow-[0_0_60px_rgba(255,0,0,1)]' : 'drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)]'} transition-transform duration-100`}>
@@ -66,9 +68,10 @@ export default function RussianRoulettePage() {
   const [actionLog, setActionLog] = useState("WAITING...");
   const [isProcessing, setIsProcessing] = useState(false);
   const [potTotal, setPotTotal] = useState(0);
+  const [winData, setWinData] = useState(null); // Epic Win Screen Data
   
-  // EFECTOS
-  const [gunAngle, setGunAngle] = useState(-90); // Default apunta a la mesa
+  // VISUAL EFFECTS
+  const [gunAngle, setGunAngle] = useState(-90);
   const [gunShaking, setGunShaking] = useState(false);
   const [gunFiring, setGunFiring] = useState(false);
   const [screenFlash, setScreenFlash] = useState(false);
@@ -76,8 +79,26 @@ export default function RussianRoulettePage() {
 
   const chambersRef = useRef([]);
   const currentChamberRef = useRef(0);
-  const lastPayloadTsRef = useRef(0); // Evita duplicar acciones de la DB
+  const lastPayloadTsRef = useRef(0); 
+  const activeChannelRef = useRef(null); 
   const [uiChamber, setUiChamber] = useState(0); 
+
+  const fetchUserInventory = async (userId) => {
+      // Obtenemos item_id para poder re-insertar correctamente a la mochila después
+      const { data: inv } = await supabase.from('inventory').select(`id, item_id, items (name, value, image_url, color, is_shiny, is_mythic)`).eq('user_id', userId);
+      if (inv) {
+          setUserInventory(inv.map(i => ({ 
+              id: i.id, 
+              item_id: i.item_id,
+              name: i.items.name, 
+              value: i.items.value, 
+              image_url: i.items.image_url, 
+              color: i.items.color,
+              is_shiny: i.items.is_shiny,
+              is_mythic: i.items.is_mythic
+          })));
+      }
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -86,17 +107,16 @@ export default function RussianRoulettePage() {
         setCurrentUser(user);
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setUserProfile(profile);
-        
-        const { data: inv } = await supabase.from('inventory').select(`id, items (name, value, image_url, color)`).eq('user_id', user.id);
-        if (inv) setUserInventory(inv.map(i => ({ id: i.id, name: i.items.name, value: i.items.value, img: i.items.image_url, color: i.items.color })));
+        await fetchUserInventory(user.id);
       }
     };
     init();
+
+    return () => cleanupChannel(); 
   }, []);
 
   // --- AUDIO ZERO-LATENCY ENGINE ---
   const unlockAudio = () => {
-      // Fuerza al navegador a "autorizar" el audio cargándolo en memoria vacía
       ['spin', 'click', 'bang', 'win'].forEach(id => {
           const el = document.getElementById(`sfx-${id}`);
           if (el && el.paused) { el.volume = 0; el.play().then(() => { el.pause(); el.currentTime = 0; el.volume = id === 'bang' ? 1 : 0.8; }).catch(()=>{}); }
@@ -115,19 +135,20 @@ export default function RussianRoulettePage() {
       if (selectedPets.find(p => p.id === pet.id)) setSelectedPets(selectedPets.filter(p => p.id !== pet.id));
       else setSelectedPets([...selectedPets, pet]);
   };
+  
   const calculateSelectedValue = () => selectedPets.reduce((sum, p) => sum + p.value, 0);
 
-  // --- MATEMÁTICA TRIGONOMÉTRICA (POSICIONES Y ARMA) ---
+  // --- TRIGONOMETRIC MATH (GUN AIMING) ---
   const getCircleMath = (index, total) => {
-      const startAngle = Math.PI / 2; // 90 grados (Abajo en CSS)
+      const startAngle = Math.PI / 2; 
       const angleStep = (2 * Math.PI) / total;
       const angle = startAngle + (index * angleStep);
       
-      const rx = 40; const ry = 35; // Radios del óvalo
+      const rx = 40; const ry = 35; 
       const left = 50 + Math.cos(angle) * rx;
       const top = 50 + Math.sin(angle) * ry;
       
-      const gunDegrees = angle * (180 / Math.PI); // Calcula donde apunta exactamente
+      const gunDegrees = angle * (180 / Math.PI); 
       return { left: `${left}%`, top: `${top}%`, gunDegrees };
   };
 
@@ -146,16 +167,23 @@ export default function RussianRoulettePage() {
   }, [players, currentUser]);
 
 
-  // --- LOCAL VS BOT ---
+  // --- LOCAL VS BOT MATCH ---
   const startBotMatch = async () => {
       unlockAudio();
       const isCoin = betType === 'coins';
       const myBetVal = isCoin ? coinBet : calculateSelectedValue();
       
-      if (isCoin && userProfile.saldo_verde < myBetVal) return alert("Insufficient coins!");
-      if (!isCoin && selectedPets.length === 0) return alert("Select at least one pet!");
+      if (isCoin && userProfile.saldo_verde < myBetVal) return showToast("Insufficient Green Coins!", "error");
+      if (!isCoin && selectedPets.length === 0) return showToast("Select at least one pet from your inventory!", "error");
       
-      if (isCoin) await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
+      if (isCoin) {
+          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
+          setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
+      } else {
+          // Descontar mascotas localmente de la base de datos
+          await supabase.from('inventory').delete().in('id', selectedPets.map(p => p.id));
+          await fetchUserInventory(currentUser.id);
+      }
       
       if (!isCoin) {
           const { data: allItems } = await supabase.from('items').select('*').gt('value', 0);
@@ -163,7 +191,7 @@ export default function RussianRoulettePage() {
           if (allItems) {
               while (currentVal < myBetVal && tetoPets.length < 4) {
                   const p = allItems[Math.floor(Math.random() * allItems.length)];
-                  tetoPets.push(p); currentVal += p.value;
+                  tetoPets.push({...p, item_id: p.id}); currentVal += p.value;
               }
           }
           setBotPets(tetoPets);
@@ -237,7 +265,14 @@ export default function RussianRoulettePage() {
   }, [turnId, view, mode, cylinderSpinning]);
 
 
-  // --- MULTIPLAYER ONLINE (DB SYNC FIX) ---
+  // --- MULTIPLAYER ONLINE ENGINE (2% COINFLIP MATCHMAKING & NO GHOST CHANNELS) ---
+  const cleanupChannel = () => {
+      if (activeChannelRef.current) {
+          supabase.removeChannel(activeChannelRef.current);
+          activeChannelRef.current = null;
+      }
+  };
+
   const fetchLobbies = async () => {
       const { data } = await supabase.from('roulette_lobbies').select('*').eq('status', 'waiting');
       if (data) setLobbies(data);
@@ -247,27 +282,47 @@ export default function RussianRoulettePage() {
       setMode('online');
       fetchLobbies();
       setView('lobbies');
-      supabase.channel('public:roulette_lobbies').on('postgres_changes', { event: '*', schema: 'public', table: 'roulette_lobbies' }, fetchLobbies).subscribe();
+      
+      cleanupChannel(); 
+      const channel = supabase.channel('public:roulette_lobbies')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'roulette_lobbies' }, fetchLobbies)
+          .subscribe();
+      activeChannelRef.current = channel;
   };
 
   const hostOnlineMatch = async () => {
       unlockAudio();
-      if (betType === 'pets') return alert("Online Pet Betting coming in the next security patch.");
-      if (userProfile.saldo_verde < coinBet) return alert("Insufficient coins.");
+      const isCoins = betType === 'coins';
+      const myBetVal = isCoins ? coinBet : calculateSelectedValue();
+
+      if (isCoins && userProfile.saldo_verde < myBetVal) return showToast("Insufficient coins.", "error");
+      if (!isCoins && selectedPets.length === 0) return showToast("Select pets to host a lobby.", "error");
       
-      await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - coinBet }).eq('id', currentUser.id);
+      // Descontar saldo/items al hostear
+      if (isCoins) {
+          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
+          setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
+      } else {
+          await supabase.from('inventory').delete().in('id', selectedPets.map(p => p.id));
+          await fetchUserInventory(currentUser.id);
+      }
 
       const me = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
 
       const { data } = await supabase.from('roulette_lobbies').insert({
-          host_id: currentUser.id, host_name: userProfile.username, bet_type: 'coins', bet_amount: coinBet, players: [me]
+          host_id: currentUser.id, 
+          host_name: userProfile.username, 
+          bet_type: betType, 
+          bet_amount: myBetVal, 
+          players: [me],
+          pool_items: !isCoins ? selectedPets : []
       }).select().single();
 
       if (data) {
           setCurrentRoom(data);
           setPlayers([me]);
-          setPotTotal(coinBet);
-          connectToRoom(data.id, true);
+          setPotTotal(myBetVal);
+          connectToRoom(data.id);
           setView('playing'); 
           setActionLog("WAITING FOR PLAYERS...");
       }
@@ -275,35 +330,65 @@ export default function RussianRoulettePage() {
 
   const joinOnlineMatch = async (lobby) => {
       unlockAudio();
-      if (userProfile.saldo_verde < lobby.bet_amount) return alert("No saldo.");
-      await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - lobby.bet_amount }).eq('id', currentUser.id);
+      const isCoins = lobby.bet_type === 'coins';
+      const myBetVal = isCoins ? lobby.bet_amount : calculateSelectedValue();
+
+      if (isCoins && userProfile.saldo_verde < myBetVal) return showToast("Insufficient balance.", "error");
+      
+      // Matchmaking: Regla del 2% estricto tipo Coinflip para Pets
+      if (!isCoins) {
+          const diff = Math.abs(myBetVal - lobby.bet_amount);
+          const maxDiff = lobby.bet_amount * 0.02;
+          if (diff > maxDiff) {
+              return showToast("Your pets value must be within 2% of the host's value!", "error");
+          }
+      }
+
+      // Descontar saldo/items al unirse
+      if (isCoins) {
+          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
+          setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
+      } else {
+          await supabase.from('inventory').delete().in('id', selectedPets.map(p => p.id));
+          await fetchUserInventory(currentUser.id);
+      }
 
       const me = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
       const updatedPlayers = [...lobby.players, me];
+      const updatedPool = !isCoins ? [...lobby.pool_items, ...selectedPets] : [];
       
       const joinPayload = { event: 'player_joined', ts: Date.now() };
 
-      await supabase.from('roulette_lobbies').update({ players: updatedPlayers, action_payload: joinPayload }).eq('id', lobby.id);
+      await supabase.from('roulette_lobbies').update({ 
+          players: updatedPlayers, 
+          action_payload: joinPayload,
+          pool_items: updatedPool 
+      }).eq('id', lobby.id);
 
       setCurrentRoom(lobby);
       setPlayers(updatedPlayers);
       setPotTotal(lobby.bet_amount * updatedPlayers.length);
-      connectToRoom(lobby.id, false);
+      connectToRoom(lobby.id);
       setView('playing');
       setActionLog("WAITING FOR HOST TO START...");
   };
 
-  const connectToRoom = (roomId, isHost) => {
-      supabase.channel(`room_${roomId}_updates`)
+  const connectToRoom = (roomId) => {
+      cleanupChannel(); // Evita suscripciones fantasmas
+
+      const channel = supabase.channel(`room_${roomId}_updates`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roulette_lobbies', filter: `id=eq.${roomId}` }, (payload) => {
           const newRow = payload.new;
-          
-          // Mantener los jugadores y pot sincronizados con la DB
-          setPlayers(newRow.players);
+          setCurrentRoom(newRow); // Previene closures stale
           setPotTotal(newRow.bet_amount * newRow.players.length);
 
-          // PROCESADOR DE ACCIONES (LA MAGIA DE LA DB)
           const action = newRow.action_payload;
+          
+          // UI Spoiler Fix: No renderizamos la muerte instantáneamente hasta que la bala "salga" visualmente.
+          if (action?.event !== 'shoot_action') {
+              setPlayers(newRow.players);
+          }
+
           if (action && action.ts !== lastPayloadTsRef.current) {
               lastPayloadTsRef.current = action.ts;
 
@@ -322,8 +407,7 @@ export default function RussianRoulettePage() {
                       setActionLog(action.turnId === currentUser.id ? "YOUR TURN." : "MATCH STARTED.");
                   }, 2000);
               } else if (action.event === 'shoot_action') {
-                  // Ejecuta visuales pero manda el nuevo estado de jugadores guardado en la DB
-                  executeOnlineVisuals(action, newRow.players); 
+                  executeOnlineVisuals(action, newRow); 
               } else if (action.event === 'reload_cylinder') {
                   chambersRef.current = action.chambers;
                   currentChamberRef.current = 0;
@@ -340,10 +424,12 @@ export default function RussianRoulettePage() {
               }
           }
       }).subscribe();
+
+      activeChannelRef.current = channel;
   };
 
   const startOnlineGameHost = async () => {
-      if (players.length < 2) return alert("Need at least 2 players!");
+      if (players.length < 2) return showToast("Need at least 2 players to start!", "error");
       
       const newChambers = [false, false, false, false, false, false];
       newChambers[Math.floor(Math.random() * 6)] = true;
@@ -354,7 +440,7 @@ export default function RussianRoulettePage() {
   };
 
 
-  // --- LÓGICA DE DISPARO UNIFICADA ---
+  // --- UNIFIED SHOOTING LOGIC ---
   const handleShoot = async (targetId) => {
       if (isProcessing || turnId !== currentUser.id || cylinderSpinning) return;
       setIsProcessing(true);
@@ -362,7 +448,6 @@ export default function RussianRoulettePage() {
       const isBullet = chambersRef.current[currentChamberRef.current];
 
       if (mode === 'online') {
-          // ONLINE: El disparador actualiza la DB
           const newPlayers = players.map(p => p.id === targetId && isBullet ? {...p, isDead: true} : p);
           const shootPayload = { event: 'shoot_action', shooterId: currentUser.id, targetId, isBullet, ts: Date.now() };
           await supabase.from('roulette_lobbies').update({ action_payload: shootPayload, players: newPlayers }).eq('id', currentRoom.id);
@@ -399,13 +484,21 @@ export default function RussianRoulettePage() {
       }
   };
 
-  const executeOnlineVisuals = async (action, newPlayersState) => {
-      const shooterName = players.find(p => p.id === action.shooterId)?.name;
-      const targetVisual = visualCirclePlayers.find(p => p.id === action.targetId);
+  // --- SAFE MULTIPLAYER VISUAL EXECUTION ---
+  const executeOnlineVisuals = async (action, newRow) => {
+      const currentDbPlayers = newRow.players;
+      const shooterName = currentDbPlayers.find(p => p.id === action.shooterId)?.name;
       
-      // La pistola gira EXACTAMENTE a los grados calculados del objetivo.
-      setGunAngle(targetVisual.gunDegrees);
+      let mapped = [...currentDbPlayers];
+      const myIdx = mapped.findIndex(p => p.id === currentUser?.id);
+      if (myIdx > 0) {
+          const me = mapped.splice(myIdx, 1)[0];
+          mapped.unshift(me);
+      }
+      const targetIdx = mapped.findIndex(p => p.id === action.targetId);
+      const math = getCircleMath(targetIdx, mapped.length);
 
+      setGunAngle(math.gunDegrees);
       setActionLog(action.shooterId === action.targetId ? `${shooterName} AIMS AT THEMSELVES...` : `${shooterName} AIMS AT TARGET...`);
       
       await new Promise(r => setTimeout(r, 1500));
@@ -419,37 +512,45 @@ export default function RussianRoulettePage() {
           setScreenFlash(true);
           setActionLog(`💥 BANG! 💥`);
           
-          // Aplicamos la muerte y validamos
+          // Renderiza la calavera de forma segura despues del bang
+          setPlayers(currentDbPlayers);
+
           setTimeout(() => {
-              checkOnlineWinCondition(newPlayersState, action.targetId);
+              checkOnlineWinCondition(currentDbPlayers, action.targetId, newRow);
           }, 1000);
       } else {
           playSFX('click');
           setActionLog("...CLICK.");
+          setPlayers(currentDbPlayers); 
+
           setTimeout(() => {
               currentChamberRef.current += 1;
               setUiChamber(currentChamberRef.current);
               
-              let nextIdx = players.findIndex(p => p.id === action.shooterId) + 1;
-              while (nextIdx < players.length * 2) {
-                  const checkPlayer = players[nextIdx % players.length];
+              let nextIdx = currentDbPlayers.findIndex(p => p.id === action.shooterId) + 1;
+              let nextTurnId = null;
+              while (nextIdx < currentDbPlayers.length * 2) {
+                  const checkPlayer = currentDbPlayers[nextIdx % currentDbPlayers.length];
                   if (!checkPlayer.isDead) {
-                      setTurnId(checkPlayer.id);
-                      setActionLog(checkPlayer.id === currentUser.id ? "YOUR TURN." : `${checkPlayer.name}'S TURN.`);
+                      nextTurnId = checkPlayer.id;
                       break;
                   }
                   nextIdx++;
               }
+              
+              setTurnId(nextTurnId);
+              const nextPlayerInfo = currentDbPlayers.find(p => p.id === nextTurnId);
+              setActionLog(nextTurnId === currentUser.id ? "YOUR TURN." : `${nextPlayerInfo?.name || 'NEXT'}'S TURN.`);
               setIsProcessing(false);
           }, 2000);
       }
   };
 
-  const checkOnlineWinCondition = async (currentPlayers, deadPlayerId) => {
+  const checkOnlineWinCondition = async (currentPlayers, deadPlayerId, newRow) => {
       const alivePlayers = currentPlayers.filter(p => !p.isDead);
       
       if (alivePlayers.length === 1) {
-          setTimeout(() => endGame(alivePlayers[0].id, currentRoom.bet_amount * currentPlayers.length), 3000);
+          setTimeout(() => endGame(alivePlayers[0].id, newRow.bet_amount * currentPlayers.length, newRow), 3000);
       } else {
           setTimeout(async () => {
                setGunFiring(false);
@@ -466,42 +567,71 @@ export default function RussianRoulettePage() {
                   nextIdx++;
                }
 
-               if (currentRoom.host_id === currentUser.id) {
+               if (newRow.host_id === currentUser.id) {
                    const newChambers = [false, false, false, false, false, false];
                    newChambers[Math.floor(Math.random() * 6)] = true;
                    
                    const reloadPayload = { event: 'reload_cylinder', chambers: newChambers, turnId: nextTurnId, ts: Date.now() };
-                   await supabase.from('roulette_lobbies').update({ action_payload: reloadPayload }).eq('id', currentRoom.id);
+                   await supabase.from('roulette_lobbies').update({ action_payload: reloadPayload }).eq('id', newRow.id);
                }
           }, 3000);
       }
   };
 
-  const endGame = async (winnerId, prize) => {
+  const endGame = async (winnerId, prize, roomState = currentRoom) => {
       if (winnerId === currentUser.id) {
           playSFX('win');
-          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde + prize }).eq('id', currentUser.id);
-          setActionLog(`🏆 YOU WON ${formatValue(prize)}! 🏆`);
-      } else {
-          if (betType === 'pets' && mode === 'bot') {
-              await supabase.from('inventory').delete().in('id', selectedPets.map(p=>p.id));
+          let wonItemsList = [];
+          
+          if (betType === 'coins') {
+              await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde + prize }).eq('id', currentUser.id);
+              setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde + prize}));
+          } else {
+              // Recolectar la pool de mascotas y agregarlas al inventario ganador
+              const allBotsPets = mode === 'bot' ? botPets : [];
+              const allLobbyPets = roomState ? roomState.pool_items : [];
+              wonItemsList = mode === 'bot' ? [...selectedPets, ...allBotsPets] : allLobbyPets;
+              
+              const insertPayload = wonItemsList.map(p => ({ user_id: currentUser.id, item_id: p.item_id || p.id }));
+              await supabase.from('inventory').insert(insertPayload);
+              await fetchUserInventory(currentUser.id);
           }
-          const winnerName = players.find(p => p.id === winnerId)?.name || 'SOMEONE';
+          
+          setWinData({ prizeType: betType, amount: prize, items: wonItemsList });
+          setActionLog(`🏆 YOU WON ${betType === 'coins' ? formatValue(prize) : 'EPIC LOOT'}! 🏆`);
+      } else {
+          const currentPlayersList = roomState?.players || players;
+          const winnerName = currentPlayersList.find(p => p.id === winnerId)?.name || 'SOMEONE';
           setActionLog(`💀 ${winnerName} TAKES IT ALL. 💀`);
       }
       
-      if (currentRoom && currentRoom.host_id === currentUser.id) await supabase.from('roulette_lobbies').update({ status: 'finished' }).eq('id', currentRoom.id);
+      if (roomState && roomState.host_id === currentUser.id) {
+          await supabase.from('roulette_lobbies').update({ status: 'finished' }).eq('id', roomState.id);
+      }
       
-      setTimeout(() => setView('result'), 2500);
+      setTimeout(() => {
+          setView('result');
+          cleanupChannel();
+      }, 2500);
+      
       setGunFiring(false);
       setScreenFlash(false);
       setIsProcessing(false);
   };
 
+  const leaveToMenu = () => {
+      cleanupChannel();
+      setView('menu'); 
+      setCurrentRoom(null); 
+      setPlayers([]); 
+      setSelectedPets([]); 
+      setWinData(null);
+  };
+
   return (
     <div className={`min-h-[calc(100vh-80px)] bg-[#050505] text-white font-sans overflow-hidden transition-colors duration-100 ${screenFlash ? 'bg-red-900' : ''}`}>
       
-      {/* AUDIOS PRECARGADOS */}
+      {/* PRELOADED AUDIO */}
       <audio id="sfx-spin" src="/sounds/spin.mp3" preload="auto" />
       <audio id="sfx-click" src="/sounds/click.mp3" preload="auto" />
       <audio id="sfx-bang" src="/sounds/bang.mp3" preload="auto" />
@@ -520,12 +650,12 @@ export default function RussianRoulettePage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl z-10">
                     <button onClick={() => { setMode('bot'); setView('betting'); unlockAudio(); }} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-red-600 shadow-2xl flex flex-col items-center">
-                        <span className="text-7xl mb-4 group-hover:scale-125 transition-transform">🤖</span>
+                        <span className="text-7xl mb-4 group-hover:scale-125 transition-transform drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">🤖</span>
                         <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Local Duel</h3>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Coins & Pets vs Bot</p>
                     </button>
                     <button onClick={() => { openLobbies(); unlockAudio(); }} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-blue-600 shadow-2xl flex flex-col items-center">
-                        <span className="text-7xl mb-4 group-hover:scale-125 transition-transform">🌐</span>
+                        <span className="text-7xl mb-4 group-hover:scale-125 transition-transform drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">🌐</span>
                         <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Online Arena</h3>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Multiplayer Battle Royale</p>
                     </button>
@@ -537,9 +667,9 @@ export default function RussianRoulettePage() {
         {view === 'lobbies' && (
             <div className="animate-fade-in max-w-5xl mx-auto w-full">
                 <div className="flex justify-between items-center mb-8 bg-[#0a0a0a] p-6 rounded-[2rem] border border-[#222] shadow-xl">
-                    <button onClick={() => setView('menu')} className="text-gray-500 hover:text-white font-black tracking-widest uppercase text-sm">← Back</button>
+                    <button onClick={leaveToMenu} className="text-gray-500 hover:text-white font-black tracking-widest uppercase text-sm">← Back</button>
                     <h2 className="text-3xl font-black uppercase tracking-widest text-blue-500">Public Tables</h2>
-                    <button onClick={() => setView('betting')} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all">Host Match</button>
+                    <button onClick={() => setView('betting')} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-95">Host Match</button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -551,18 +681,20 @@ export default function RussianRoulettePage() {
                         <div key={l.id} className="bg-[#111] border border-[#333] p-8 rounded-[2rem] flex flex-col hover:border-blue-500 transition-colors group relative shadow-2xl">
                             <div className="absolute top-0 right-0 bg-blue-600/20 text-blue-400 font-black text-[10px] px-6 py-2 rounded-bl-2xl uppercase tracking-widest">Lobby Open</div>
                             <div className="flex items-center gap-6 mb-8">
-                                <img src={getAvatar(null, l.host_name)} className="w-20 h-20 rounded-full border-4 border-[#222]" />
+                                <img src={getAvatar(null, l.host_name)} className="w-20 h-20 rounded-full border-4 border-[#222] object-cover" />
                                 <div>
-                                    <p className="font-black text-2xl tracking-wider text-white">{l.host_name}'s Table</p>
+                                    <p className="font-black text-2xl tracking-wider text-white truncate max-w-[200px]">{l.host_name}'s Table</p>
                                     <p className="text-sm text-gray-500 uppercase font-black tracking-widest mt-1">{l.players?.length || 1} / 6 Players</p>
                                 </div>
                             </div>
                             <div className="flex justify-between items-end border-t border-[#222] pt-6 mt-auto">
                                 <div>
-                                    <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Entry Fee</p>
-                                    <p className="font-black text-3xl text-green-400 flex items-center gap-2"><GreenCoin cls="w-8 h-8"/> {formatValue(l.bet_amount)}</p>
+                                    <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Entry Fee {l.bet_type === 'pets' ? '(2% Diff Limit)' : ''}</p>
+                                    <p className={`font-black text-3xl flex items-center gap-2 ${l.bet_type === 'coins' ? 'text-green-400' : 'text-red-500'}`}>
+                                        {l.bet_type === 'coins' ? <GreenCoin cls="w-8 h-8"/> : '🐾'} {formatValue(l.bet_amount)}
+                                    </p>
                                 </div>
-                                <button onClick={() => joinOnlineMatch(l)} disabled={l.players?.length >= 6} className="bg-white text-black hover:bg-blue-500 hover:text-white px-10 py-4 rounded-xl font-black uppercase transition-all disabled:opacity-20">Join</button>
+                                <button onClick={() => joinOnlineMatch(l)} disabled={l.players?.length >= 6} className="bg-white text-black hover:bg-blue-500 hover:text-white px-10 py-4 rounded-xl font-black uppercase transition-all disabled:opacity-20 active:scale-95">Join</button>
                             </div>
                         </div>
                     ))}
@@ -570,11 +702,11 @@ export default function RussianRoulettePage() {
             </div>
         )}
 
-        {/* === SETUP APUESTA === */}
+        {/* === SETUP BET === */}
         {view === 'betting' && (
             <div className="animate-fade-in max-w-5xl mx-auto w-full py-10">
                 <div className="flex items-center justify-between mb-8">
-                    <button onClick={() => setView(mode === 'online' ? 'lobbies' : 'menu')} className="bg-[#111] border border-[#333] px-6 py-3 rounded-xl text-gray-400 hover:text-white font-black uppercase tracking-widest transition-all">← Back</button>
+                    <button onClick={leaveToMenu} className="bg-[#111] border border-[#333] px-6 py-3 rounded-xl text-gray-400 hover:text-white font-black uppercase tracking-widest transition-all">← Back</button>
                     <h2 className="text-4xl font-black uppercase tracking-widest">Set Wager</h2>
                     <div className="w-24"></div>
                 </div>
@@ -583,12 +715,15 @@ export default function RussianRoulettePage() {
                     <div className="lg:col-span-2 bg-[#0a0a0a] rounded-[2rem] p-8 border border-[#222] shadow-2xl">
                         <div className="flex gap-4 mb-8 bg-[#111] p-2 rounded-2xl border border-[#333]">
                             <button onClick={() => setBetType('coins')} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'coins' ? (mode === 'online' ? 'bg-blue-600' : 'bg-red-600') + ' text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'}`}>Coins</button>
-                            <button onClick={() => setBetType('pets')} disabled={mode === 'online'} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'pets' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'} disabled:opacity-20`}>Pets {mode === 'online' && '(Local)'}</button>
+                            <button onClick={() => setBetType('pets')} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'pets' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'}`}>Pets</button>
                         </div>
 
                         {betType === 'coins' ? (
                             <div className="py-10">
-                                <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-4">Wager Amount</p>
+                                <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-4 flex justify-between">
+                                  <span>Wager Amount</span>
+                                  <span className="text-[#22c55e]">Balance: {formatValue(userProfile?.saldo_verde || 0)}</span>
+                                </p>
                                 <div className="bg-[#111] p-8 rounded-[2rem] border-2 border-[#333] flex items-center justify-between focus-within:border-white transition-colors">
                                     <input type="number" value={coinBet} onChange={(e) => setCoinBet(Number(e.target.value))} className="bg-transparent text-5xl font-black outline-none w-full text-white" />
                                     <GreenCoin cls="w-12 h-12"/>
@@ -597,12 +732,10 @@ export default function RussianRoulettePage() {
                         ) : (
                             <div>
                                 <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-4 flex justify-between"><span>Inventory ({selectedPets.length})</span> <span className="text-green-400">Value: {formatValue(calculateSelectedValue())}</span></p>
-                                <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar p-2 bg-[#111] rounded-2xl border border-[#333]">
+                                <div className="grid grid-cols-3 md:grid-cols-4 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar p-4 bg-[#111] rounded-2xl border border-[#333]">
                                     {userInventory.map(pet => (
-                                        <div key={pet.id} onClick={() => togglePetSelection(pet)} className={`relative p-3 rounded-xl border-2 cursor-pointer transition-all hover:-translate-y-1 ${selectedPets.find(p=>p.id===pet.id) ? 'border-red-500 bg-red-900/20 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'border-[#222] bg-[#0a0a0a]'}`}>
-                                            <img src={pet.img} className="w-full h-16 object-contain mb-2 relative z-10" alt={pet.name} />
-                                            <p className="text-[10px] font-black truncate text-center text-white">{pet.name}</p>
-                                            <p className="text-[9px] font-bold text-green-400 text-center flex items-center justify-center gap-1"><GreenCoin cls="w-3 h-3"/>{formatValue(pet.value)}</p>
+                                        <div key={pet.id} onClick={() => togglePetSelection(pet)} className={`relative transition-all cursor-pointer ${selectedPets.find(p=>p.id===pet.id) ? 'scale-105 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] border-2 border-red-500 rounded-xl z-10' : 'hover:-translate-y-1'}`}>
+                                            <PetCard pet={pet} />
                                         </div>
                                     ))}
                                 </div>
@@ -615,12 +748,12 @@ export default function RussianRoulettePage() {
                             <h4 className="text-gray-600 font-black uppercase tracking-[0.3em] text-xs mb-8 text-center border-b border-[#222] pb-4">Match Preview</h4>
                             <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Total Pot</p>
                             <div className={`text-5xl font-black drop-shadow-xl flex flex-col items-center gap-3 text-center mb-10 ${mode === 'online' ? 'text-blue-500' : 'text-red-500'}`}>
-                                {betType === 'coins' ? <><GreenCoin cls="w-16 h-16"/> {formatValue(coinBet * (mode === 'online' ? 2 : 2))}</> : 'PETS MIX'}
+                                {betType === 'coins' ? <><GreenCoin cls="w-16 h-16"/> {formatValue(coinBet * 2)}</> : 'PETS MIX'}
                             </div>
                             <div className="flex justify-between items-center bg-[#111] p-4 rounded-2xl border border-[#222]">
                                 <div className="text-center w-full">
                                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">You</p>
-                                    <p className="text-lg font-black text-white truncate">{userProfile?.username}</p>
+                                    <p className="text-lg font-black text-white truncate max-w-[100px] mx-auto">{userProfile?.username}</p>
                                 </div>
                                 <span className="text-2xl font-black italic text-red-600 mx-4">VS</span>
                                 <div className="text-center w-full">
@@ -637,16 +770,16 @@ export default function RussianRoulettePage() {
             </div>
         )}
 
-        {/* === LA MESA DE CASINO === */}
+        {/* === THE CASINO TABLE === */}
         {view === 'playing' && (
             <div className="relative w-full h-[70vh] flex items-center justify-center animate-fade-in mt-10">
                 
-                {/* FONDO DE MESA */}
+                {/* TABLE BACKGROUND */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1000px] h-[65vh] max-h-[600px] bg-[#140808] border-[20px] border-[#1a1111] rounded-[600px] shadow-[0_0_100px_rgba(0,0,0,1),inset_0_0_150px_rgba(0,0,0,1)] z-0 flex items-center justify-center pointer-events-none">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 rounded-[500px]"></div>
                     <div className="absolute inset-6 rounded-[500px] border-[3px] border-red-900/40"></div>
                     
-                    {/* EL POT EN EL CENTRO */}
+                    {/* CENTER POT */}
                     <div className="absolute z-0 flex flex-col items-center justify-center bg-black/60 p-8 rounded-full border border-red-900/50 backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.8)]">
                         <span className="text-[10px] uppercase tracking-[0.4em] text-red-500/80 mb-2 font-black">Pot Total</span>
                         {betType === 'coins' ? (
@@ -656,25 +789,25 @@ export default function RussianRoulettePage() {
                         ) : (
                             <div className="flex flex-col items-center gap-4">
                                 <div className="flex -space-x-4">
-                                    {selectedPets.slice(0,3).map((p,i) => <img key={i} src={p.img} className="w-12 h-12 rounded-full border-2 border-white bg-black/80 shadow-lg object-contain p-1" />)}
+                                    {selectedPets.slice(0,3).map((p,i) => <img key={i} src={p.image_url || p.img} className="w-12 h-12 rounded-full border-2 border-white bg-black/80 shadow-lg object-contain p-1" />)}
                                 </div>
-                                <span className="text-sm font-black text-red-600 italic">VS TETO</span>
+                                <span className="text-sm font-black text-red-600 italic">VS {mode === 'online' ? 'LOBBY' : 'TETO'}</span>
                                 <div className="flex -space-x-4">
-                                    {botPets.slice(0,3).map((p,i) => <img key={`b${i}`} src={p.img} className="w-12 h-12 rounded-full border-2 border-gray-500 bg-black/80 shadow-lg object-contain p-1 opacity-80" />)}
+                                    {(mode === 'bot' ? botPets : (currentRoom?.pool_items || [])).slice(0,3).map((p,i) => <img key={`b${i}`} src={p.image_url || p.img} className="w-12 h-12 rounded-full border-2 border-gray-500 bg-black/80 shadow-lg object-contain p-1 opacity-80" />)}
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* TEXTO DE ACCIÓN */}
+                {/* ACTION LOG TEXT */}
                 <div className="absolute top-0 w-full text-center z-40 pointer-events-none">
                     <p className={`text-4xl md:text-5xl font-black italic transition-all duration-300 uppercase tracking-[0.2em] bg-black/80 backdrop-blur-xl inline-block px-12 py-5 rounded-full border border-white/10 shadow-2xl ${actionLog.includes('BANG') ? 'text-red-600 scale-125 drop-shadow-[0_0_50px_rgba(220,38,38,1)] border-red-500/50' : 'text-white'}`}>
                         {actionLog}
                     </p>
                 </div>
 
-                {/* --- JUGADORES (CÍRCULO PERFECTO) --- */}
+                {/* --- PLAYERS (PERFECT CIRCLE) --- */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
                     {visualCirclePlayers.map(p => {
                         const isMe = p.id === currentUser?.id;
@@ -691,10 +824,10 @@ export default function RussianRoulettePage() {
                                     {isMe ? 'YOU' : p.name}
                                 </div>
                                 
-                                {/* BOTONES */}
+                                {/* ACTIONS BUTTONS */}
                                 {isMe && !p.isDead && turnId === currentUser.id && (
                                     <div className="absolute top-[-70px] w-max flex gap-4">
-                                        <button disabled={isProcessing || cylinderSpinning} onClick={() => handleShoot(currentUser.id)} className="bg-white hover:bg-gray-200 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 border-4 border-white/20">Shoot Self</button>
+                                        <button disabled={isProcessing || cylinderSpinning} onClick={() => handleShoot(currentUser.id)} className="bg-white hover:bg-gray-200 text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 border-4 border-white/20 disabled:opacity-20 disabled:cursor-not-allowed">Shoot Self</button>
                                         <button disabled={isProcessing || cylinderSpinning || mode === 'online'} onClick={() => handleShoot('bot')} className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_30px_rgba(220,38,38,0.4)] active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed">Shoot Foe {mode === 'online' && '(Disabled)'}</button>
                                     </div>
                                 )}
@@ -703,11 +836,11 @@ export default function RussianRoulettePage() {
                     })}
                 </div>
 
-                {/* --- EL ARMA --- */}
+                {/* --- THE GUN --- */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 flex items-center justify-center z-30 pointer-events-none mt-4">
                     <GunSVG targetAngle={gunAngle} isShaking={gunShaking} isFiring={gunFiring} isSpinningCylinder={cylinderSpinning} />
                     
-                    {/* UI CILINDRO */}
+                    {/* CYLINDER UI */}
                     <div className="absolute -bottom-16 flex gap-2 bg-black/80 px-6 py-3 rounded-full border border-white/10 backdrop-blur-xl shadow-2xl">
                         {[0, 1, 2, 3, 4, 5].map(idx => (
                             <div key={idx} className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${idx === uiChamber ? 'border-red-500 bg-red-500 shadow-[0_0_15px_rgba(220,38,38,1)] scale-150' : idx < uiChamber ? 'border-[#333] bg-[#111] opacity-40' : 'border-gray-500 bg-transparent'}`}></div>
@@ -715,23 +848,55 @@ export default function RussianRoulettePage() {
                     </div>
                 </div>
 
-                {/* BOTON DE HOST */}
+                {/* HOST START BUTTON */}
                 {currentRoom?.host_id === currentUser?.id && actionLog === "WAITING FOR PLAYERS..." && (
                     <div className="absolute bottom-10 z-40">
-                        <button onClick={startOnlineGameHost} disabled={players.length < 2} className="bg-white text-black px-16 py-6 rounded-full font-black text-xl uppercase tracking-widest shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:scale-105 transition-all disabled:opacity-20">Start Match ({players.length}/6)</button>
+                        <button onClick={startOnlineGameHost} disabled={players.length < 2} className="bg-white text-black px-16 py-6 rounded-full font-black text-xl uppercase tracking-widest shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:scale-105 transition-all disabled:opacity-20 active:scale-95">Start Match ({players.length}/6)</button>
                     </div>
                 )}
             </div>
         )}
 
-        {/* === PANTALLA RESULTADOS === */}
+        {/* === EPIC RESULT SCREEN === */}
         {view === 'result' && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[60vh] animate-fade-in relative z-50">
-                <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl z-0 pointer-events-none rounded-[3rem]"></div>
-                <div className="text-[200px] leading-none mb-6 z-10 drop-shadow-[0_0_80px_rgba(255,0,0,0.8)] animate-bounce-slight">{actionLog.includes('WON') ? '🏆' : '💀'}</div>
-                <h2 className={`text-5xl md:text-8xl font-black mb-16 text-center z-10 uppercase tracking-[0.2em] drop-shadow-2xl px-4 ${actionLog.includes('WON') ? 'text-yellow-400' : 'text-red-600'}`}>{actionLog}</h2>
-                <button onClick={() => { setView('menu'); setCurrentRoom(null); setPlayers([]); setSelectedPets([]); }} className="px-20 py-8 bg-white text-black text-2xl font-black uppercase tracking-widest rounded-full hover:bg-gray-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:scale-105 z-10 active:scale-95">
-                    BACK TO LOBBY
+            <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
+                
+                {/* Backpack Icon (Destination for flying items) */}
+                {actionLog.includes('WON') && (
+                    <div className="absolute top-10 right-10 z-50">
+                        <img src="/Affiliates.png" className="w-24 h-24 animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] filter grayscale brightness-200" alt="Backpack" />
+                    </div>
+                )}
+
+                <div className="text-[150px] leading-none mb-6 z-10 drop-shadow-[0_0_80px_rgba(255,0,0,0.8)] animate-bounce-slight">
+                    {actionLog.includes('WON') ? '🏆' : '💀'}
+                </div>
+                
+                <h2 className={`text-5xl md:text-8xl font-black mb-16 text-center z-10 uppercase tracking-[0.2em] drop-shadow-2xl px-4 ${actionLog.includes('WON') ? 'text-yellow-400' : 'text-red-600'}`}>
+                    {actionLog}
+                </h2>
+                
+                {/* Flying Items Animation Container */}
+                {actionLog.includes('WON') && winData && (
+                    <div className="flex flex-wrap gap-6 justify-center items-center max-w-4xl z-10 mt-8">
+                        {winData.prizeType === 'coins' ? (
+                            <div className="flex items-center gap-6 text-7xl text-green-400 font-black animate-fly-to-backpack drop-shadow-[0_0_30px_rgba(34,197,94,0.8)]">
+                                <GreenCoin cls="w-24 h-24"/> +{formatValue(winData.amount)}
+                            </div>
+                        ) : (
+                            winData.items.map((pet, i) => (
+                                <div key={i} className="animate-fly-to-backpack drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]" style={{animationDelay: `${i * 0.15}s`}}>
+                                    <div className="scale-125 pointer-events-none">
+                                        <PetCard pet={pet} />
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+
+                <button onClick={leaveToMenu} className="px-20 py-8 mt-16 bg-white text-black text-2xl font-black uppercase tracking-widest rounded-full hover:bg-gray-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:scale-105 z-10 active:scale-95">
+                    {actionLog.includes('WON') ? 'COLLECT LOOT & LEAVE' : 'BACK TO LOBBY'}
                 </button>
             </div>
         )}
@@ -746,24 +911,40 @@ export default function RussianRoulettePage() {
         .animate-bounce-slight { animation: bounceSlight 2s ease-in-out infinite; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
         @keyframes shakeHard {
             0%, 100% { transform: translate(0, 0) rotate(0deg); }
             25% { transform: translate(-6px, 6px) rotate(-4deg); }
             50% { transform: translate(6px, -6px) rotate(4deg); }
             75% { transform: translate(-6px, -6px) rotate(-2deg); }
         }
+        
         @keyframes flash {
             0% { opacity: 1; background-color: rgba(220,38,38,1); }
             100% { opacity: 0; background-color: transparent; }
         }
+        
         @keyframes spinFast {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        
         @keyframes bounceSlight {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
         }
+
+        /* EPIC BACKPACK FLYING ANIMATION */
+        @keyframes flyToBackpack {
+            0% { transform: scale(0) translateY(100px); opacity: 0; }
+            15% { transform: scale(1.2) translateY(0); opacity: 1; }
+            60% { transform: scale(1) translateY(0); opacity: 1; }
+            100% { transform: scale(0.1) translate(calc(45vw - 100px), calc(-40vh + 100px)); opacity: 0; }
+        }
+        .animate-fly-to-backpack {
+            animation: flyToBackpack 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0a0a0a; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
