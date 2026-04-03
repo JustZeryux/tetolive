@@ -99,18 +99,6 @@ export default function CasesPage() {
       return;
     }
     
-const openCase = async () => {
-    if (!currentUser || !userProfile) return alert("Por favor inicia sesión.");
-    if (spinning) return;
-
-    const totalCost = selectedCase.price * quantity;
-
-    if (userProfile.saldo_verde < totalCost) {
-      setMoneyNeeded(totalCost);
-      setShowNoMoneyModal(true);
-      return;
-    }
-    
     setView('opening');
     setSpinning(true); 
     setHasLimitedWin(false);
@@ -173,20 +161,25 @@ const openCase = async () => {
       let foundLimited = false;
       
       for (let i = 0; i < quantity; i++) {
-          const winner = getRandomVisualItem(normalizedItems);
-          winners.push(winner);
+          const rawWinner = getRandomVisualItem(normalizedItems);
 
-          let realItemId = winner.id || winner.item_id || mapNameToId[winner.name];
+          let realItemId = rawWinner.id || rawWinner.item_id || mapNameToId[rawWinner.name];
+          let isLim = mapNameToLimited[rawWinner.name] || rawWinner.is_limited;
+
           if (!realItemId) {
-             const { data: itemData } = await supabase.from('items').select('id, is_limited').eq('name', winner.name).single();
+             const { data: itemData } = await supabase.from('items').select('id, is_limited').eq('name', rawWinner.name).single();
              if (itemData) {
                  realItemId = itemData.id;
-                 if (itemData.is_limited) foundLimited = true;
+                 isLim = itemData.is_limited;
              }
-             else throw new Error(`No encontramos el ID real de "${winner.name}" en la base de datos.`);
-          } else {
-             if (mapNameToLimited[winner.name] || winner.is_limited) foundLimited = true;
+             else throw new Error(`No encontramos el ID real de "${rawWinner.name}" en la base de datos.`);
           }
+          
+          if (isLim) foundLimited = true;
+
+          // Inyectamos isLimited para asegurar que la animación épica cargue correctamente al final
+          const finalWinner = { ...rawWinner, isLimited: isLim };
+          winners.push(finalWinner);
           
           inventoryInserts.push({ 
               user_id: currentUser.id, 
@@ -228,6 +221,25 @@ const openCase = async () => {
 
       setTimeout(() => {
         setSpinning(false);
+
+        // --- EFECTO ÉPICO PARA LIMITEDS (FLASH DE PANTALLA Y SONIDO) ---
+        if (foundLimited) {
+            try {
+               const epicAudio = new Audio('/sounds/win.mp3'); 
+               epicAudio.volume = 0.6;
+               epicAudio.play().catch(e => console.log('El audio no se reprodujo automáticamente'));
+            } catch (e) {}
+
+            const flash = document.createElement('div');
+            flash.className = "fixed inset-0 bg-white z-[999] opacity-0 transition-opacity duration-300 pointer-events-none";
+            document.body.appendChild(flash);
+            setTimeout(() => flash.style.opacity = "0.7", 10);
+            setTimeout(() => {
+              flash.style.opacity = "0";
+              setTimeout(() => flash.remove(), 300);
+            }, 150);
+        }
+
         supabase.auth.getUser().then(res => {
              supabase.from('profiles').select('*').eq('id', res.data.user.id).single().then(p => {
                  if(p.data) setUserProfile(p.data);
@@ -472,14 +484,14 @@ const openCase = async () => {
             )}
 
             <h2 className={`text-5xl font-black uppercase tracking-widest mb-10 z-10 ${hasLimitedWin ? 'text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] animate-pulse' : 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'}`}>
-              {hasLimitedWin ? '🌟 MYTHIC UNBOXED! 🌟' : (quantity > 1 ? 'Items Unboxed!' : 'Item Unboxed!')}
+              {hasLimitedWin ? '🌟 LIMITED UNBOXED! 🌟' : (quantity > 1 ? 'Items Unboxed!' : 'Item Unboxed!')}
             </h2>
             
             {quantity === 1 ? (
                 <div className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative ${hasLimitedWin ? 'border-yellow-500 animate-shake shadow-[0_0_100px_rgba(234,179,8,0.5)] scale-110' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, boxShadow: `0 0 50px ${winningItems[0].color}40` } : {}}>
                   <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${hasLimitedWin ? '#eab308' : winningItems[0].color} 0%, transparent 60%)`}}></div>
                   <div className={`absolute -top-6 bg-[#0a0a0a] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg ${hasLimitedWin ? 'border-yellow-400 text-yellow-400 animate-pulse' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, color: winningItems[0].color } : {}}>
-                    {hasLimitedWin ? '⭐ MYTHIC ⭐' : 'NUEVO ITEM'}
+                    {hasLimitedWin ? '⭐ LIMITED ⭐' : 'NUEVO ITEM'}
                   </div>
                   
                   <div className="relative">
@@ -490,17 +502,6 @@ const openCase = async () => {
                   <h3 className="text-3xl font-black uppercase text-center mb-2 tracking-widest relative z-10" style={hasLimitedWin ? { color: '#facc15', textShadow: `0 0 30px rgba(250,204,21,0.8)` } : { color: winningItems[0].color, textShadow: `0 0 20px ${winningItems[0].color}80` }}>
                     {winningItems[0].name}
                   </h3>
-
-                  {hasLimitedWin && (
-                    <div className="bg-[#0a0a0a]/80 border-2 border-yellow-500 px-8 py-3 rounded-xl mb-4 relative z-10 shadow-[0_0_20px_rgba(234,179,8,0.4)] backdrop-blur-md text-center w-full">
-                        <p className="text-yellow-400 font-black text-sm uppercase tracking-widest mb-1">
-                            Owner: <span className="text-white">{userProfile?.username || currentUser?.email?.split('@')[0] || 'Player'}</span>
-                        </p>
-                        <p className="text-gray-400 text-xs font-bold">
-                            Serial: <span className="text-white font-black text-lg">#{winningItems[0].serial}</span> <span className="text-[10px]">/ {winningItems[0].maxQuantity}</span>
-                        </p>
-                    </div>
-                  )}
 
                   <p className="text-gray-300 font-bold text-lg flex items-center gap-2 mb-10 bg-[#111827] px-4 py-2 rounded-lg border border-[#374151] relative z-10 shadow-inner mt-2">
                     Valor: <GreenCoin cls="w-5 h-5 grayscale opacity-80"/> {formatValue(winningItems[0].valor || 0)}
@@ -520,9 +521,6 @@ const openCase = async () => {
                     <div className="flex flex-wrap justify-center gap-6 mb-10 w-full">
                         {winningItems.map((winItem, idx) => (
                             <div key={idx} className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-2xl p-4 flex flex-col items-center shadow-2xl relative transition-transform hover:scale-110 w-[140px] md:w-[180px] ${winItem.isLimited ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.5)] animate-float' : ''}`} style={!winItem.isLimited ? { borderColor: winItem.color, boxShadow: `0 0 20px ${winItem.color}20` } : {}}>
-                                {winItem.isLimited && (
-                                   <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-black px-2 py-1 rounded-bl-lg rounded-tr-lg z-20 shadow-md">#{winItem.serial}</div>
-                                )}
                                 <div className="absolute inset-0 pointer-events-none opacity-20 rounded-2xl" style={{ background: `radial-gradient(circle at center, ${winItem.isLimited ? '#eab308' : winItem.color} 0%, transparent 70%)`}}></div>
                                 <img src={winItem.img} className="w-24 h-24 object-contain drop-shadow-xl mb-3 relative z-10" alt={winItem.name} />
                                 <h3 className="text-xs md:text-sm font-black uppercase text-center mb-2 tracking-widest truncate w-full relative z-10" style={{ color: winItem.isLimited ? '#facc15' : winItem.color }}>
