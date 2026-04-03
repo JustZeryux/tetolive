@@ -177,13 +177,15 @@ export default function CasesPage() {
           
           if (isLim) foundLimited = true;
 
-          // Inyectamos isLimited para asegurar que la animación épica cargue correctamente al final
           const finalWinner = { ...rawWinner, isLimited: isLim };
           winners.push(finalWinner);
           
+          // --- FIX PUNTO 5: MANDAR EL OWNER Y LIMITED A LA BD ---
           inventoryInserts.push({ 
               user_id: currentUser.id, 
               item_id: realItemId,
+              is_limited: isLim,
+              original_owner: isLim ? (userProfile.username || currentUser.email?.split('@')[0] || 'Player') : null
           });
       }
 
