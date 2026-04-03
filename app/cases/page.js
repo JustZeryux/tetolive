@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/utils/Supabase';
+import PetCard from '@/components/PetCard';
 
 const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
 
@@ -14,7 +15,7 @@ export default function CasesPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [casesData, setCasesData] = useState([]); 
-  const [cargando, setCargando] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('price_asc'); 
@@ -45,7 +46,7 @@ export default function CasesPage() {
         setUserProfile(profile);
       }
 
-      const { data: itemsDbData } = await supabase.from('items').select('name, is_limited, max_quantity');
+      const { data: itemsDbData } = await supabase.from('items').select('name, is_limited, max_quantity, value, image_url, color, id');
       const itemMap = {};
       if(itemsDbData) {
           itemsDbData.forEach(i => itemMap[i.name] = i);
@@ -60,7 +61,7 @@ export default function CasesPage() {
         }));
         setCasesData(formatCases);
       }
-      setCargando(false);
+      setIsLoading(false);
     };
     fetchData();
   }, []);
@@ -88,7 +89,7 @@ export default function CasesPage() {
   };
 
   const openCase = async () => {
-    if (!currentUser || !userProfile) return alert("Por favor inicia sesión.");
+    if (!currentUser || !userProfile) return alert("Please log in first.");
     if (spinning) return;
 
     const totalCost = selectedCase.price * quantity;
@@ -104,29 +105,17 @@ export default function CasesPage() {
     setHasLimitedWin(false);
 
     try {
-      const { data: allItemsDB } = await supabase.from('items').select('id, name, is_limited, max_quantity');
-      const mapNameToId = {};
-      const mapNameToLimited = {};
-      const mapNameToMaxQ = {};
-      
-      if (allItemsDB) {
-          allItemsDB.forEach(i => {
-              mapNameToId[i.name] = i.id;
-              mapNameToLimited[i.name] = i.is_limited;
-              mapNameToMaxQ[i.name] = i.max_quantity;
-          });
-      }
-
-      // --- SISTEMA ANTI-BYPASS DE MASCOTAS LIMITADAS ---
+      // --- ANTI-BYPASS FOR LIMITED PETS ---
       const validItemsToRoll = [];
       let totalChance = 0;
 
       for (let item of selectedCase.items) {
-          const isLim = mapNameToLimited[item.name] || item.is_limited;
-          const maxQ = mapNameToMaxQ[item.name] || item.max_quantity;
+          const dbItem = dbItemsMap[item.name];
+          const isLim = dbItem?.is_limited || item.is_limited;
+          const maxQ = dbItem?.max_quantity || item.max_quantity;
           
           if (isLim && maxQ) {
-              const itemId = mapNameToId[item.name] || item.id || item.item_id;
+              const itemId = dbItem?.id || item.id || item.item_id;
               if (itemId) {
                   const { count } = await supabase
                       .from('inventory')
@@ -134,7 +123,7 @@ export default function CasesPage() {
                       .eq('item_id', itemId);
                   
                   if (count >= maxQ) {
-                      continue; // El límite global se alcanzó, la mascota es eliminada de la caja
+                      continue; // Global limit reached, remove from pool
                   }
               }
           }
@@ -142,19 +131,19 @@ export default function CasesPage() {
           totalChance += item.chance;
       }
 
-      if (validItemsToRoll.length === 0) throw new Error("No hay items disponibles en esta caja (todos alcanzaron su límite).");
+      if (validItemsToRoll.length === 0) throw new Error("No items available in this case (all reached their global limit).");
 
-      // Recalcular probabilidades (chance) para los items restantes
+      // Recalculate chances
       const normalizedItems = validItemsToRoll.map(item => ({
           ...item,
           chance: (item.chance / totalChance) * 100
       }));
       // ---------------------------------------------------
 
-      const nuevoSaldo = userProfile.saldo_verde - totalCost;
-      const { error: cobroError } = await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
+      const newBalance = userProfile.saldo_verde - totalCost;
+      const { error: chargeError } = await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
 
-      if (cobroError) throw new Error("Fallo al descontar el saldo: " + cobroError.message);
+      if (chargeError) throw new Error("Failed to deduct balance: " + chargeError.message);
 
       const winners = [];
       const inventoryInserts = [];
@@ -162,9 +151,10 @@ export default function CasesPage() {
       
       for (let i = 0; i < quantity; i++) {
           const rawWinner = getRandomVisualItem(normalizedItems);
+          const dbItem = dbItemsMap[rawWinner.name];
 
-          let realItemId = rawWinner.id || rawWinner.item_id || mapNameToId[rawWinner.name];
-          let isLim = mapNameToLimited[rawWinner.name] || rawWinner.is_limited;
+          let realItemId = rawWinner.id || rawWinner.item_id || dbItem?.id;
+          let isLim = dbItem?.is_limited || rawWinner.is_limited;
 
           if (!realItemId) {
              const { data: itemData } = await supabase.from('items').select('id, is_limited').eq('name', rawWinner.name).single();
@@ -173,18 +163,27 @@ export default function CasesPage() {
                  isLim = itemData.is_limited;
              }
              else {
-                 // Rollback saldo
+                 // Rollback balance
                  await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
-                 throw new Error(`No encontramos el ID real de "${rawWinner.name}" en la base de datos. Se reembolsó tu saldo.`);
+                 throw new Error(`Could not find real ID for "${rawWinner.name}" in database. Balance refunded.`);
              }
           }
           
           if (isLim) foundLimited = true;
 
-          const finalWinner = { ...rawWinner, isLimited: isLim };
+          // Normalize for PetCard compatibility
+          const finalWinner = { 
+              ...rawWinner, 
+              isLimited: isLim,
+              id: realItemId,
+              valor: rawWinner.valor || rawWinner.value || dbItem?.value || 0,
+              img: rawWinner.img || rawWinner.image_url || dbItem?.image_url,
+              color: rawWinner.color || dbItem?.color || '#ffffff'
+          };
+          
           winners.push(finalWinner);
           
-          // --- FIX PUNTO 5: MANDAR EL OWNER Y LIMITED A LA BD ---
+          // Secure Inventory Insert Payload
           inventoryInserts.push({ 
               user_id: currentUser.id, 
               item_id: realItemId,
@@ -196,10 +195,9 @@ export default function CasesPage() {
       const { data: insertedInv, error: invError } = await supabase.from('inventory').insert(inventoryInserts).select();
 
       if (invError) {
-          // --- ROLLBACK DE SEGURIDAD ---
-          // Si el trigger de la base de datos falla, regresamos el dinero para evitar enojos
+          // --- SECURITY ROLLBACK ---
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
-          throw new Error("Fallo al insertar en el inventario. Se te devolvió tu saldo automáticamente. " + invError.message);
+          throw new Error("Failed to insert items into inventory. Your balance was refunded. " + invError.message);
       }
 
       setWinningItems(winners);
@@ -222,9 +220,6 @@ export default function CasesPage() {
               el.style.transform = `translateX(0px)`;
               setTimeout(() => {
                 el.style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.15, 1)';
-                
-                // --- FIX: CÁLCULO EXACTO DEL ANCHO DE LAS CARTAS ---
-                // Para x1 es w-[180px], para múltiples es w-[120px]. Más mx-1 (4px * 2 = 8px).
                 const isMulti = quantity > 1;
                 const itemWidth = isMulti ? 128 : 188; 
                 el.style.transform = `translateX(-${(WINNING_INDEX * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)}px)`;
@@ -235,16 +230,15 @@ export default function CasesPage() {
       }, 100);
 
       setTimeout(() => {
-        // --- FIX DEL CONGELAMIENTO: CAMBIAR LA VISTA AL FINALIZAR EL SPIN ---
         setSpinning(false);
         setView('result'); 
 
-        // --- EFECTO ÉPICO PARA LIMITEDS (FLASH DE PANTALLA Y SONIDO) ---
+        // --- EPIC SOUND AND FLASH FOR LIMITEDS ---
         if (foundLimited) {
             try {
                const epicAudio = new Audio('/sounds/win.mp3'); 
                epicAudio.volume = 0.6;
-               epicAudio.play().catch(e => console.log('El audio no se reprodujo automáticamente'));
+               epicAudio.play().catch(e => console.log('Audio autoplay prevented'));
             } catch (e) {}
 
             const flash = document.createElement('div');
@@ -268,14 +262,14 @@ export default function CasesPage() {
       console.error(error);
       alert(error.message);
       setSpinning(false);
-      setView('store'); // Si falla antes de girar, lo regresamos a la tienda
+      setView('store'); // Return to store on fail
     }
   };
 
-  if (cargando) return (
+  if (isLoading) return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] flex flex-col items-center justify-center text-white">
       <div className="w-16 h-16 border-4 border-[#6C63FF] border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_#6C63FF]"></div>
-      <p className="font-bold text-lg text-[#8f9ac6] uppercase tracking-widest animate-pulse">Cargando Cajas...</p>
+      <p className="font-bold text-lg text-[#8f9ac6] uppercase tracking-widest animate-pulse">Loading Cases...</p>
     </div>
   );
 
@@ -288,19 +282,19 @@ export default function CasesPage() {
           <div className="bg-[#1a1d29] border-2 border-red-500/50 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(239,68,68,0.2)] animate-bounce-in">
             <div className="flex justify-center mb-4 text-6xl">⚠️</div>
             <h2 className="text-2xl font-black text-center uppercase mb-2">Insufficient Balance</h2>
-            <p className="text-[#8f9ac6] text-center mb-6">No tienes suficientes monedas para esta caja.</p>
+            <p className="text-[#8f9ac6] text-center mb-6">You don't have enough coins for this case.</p>
             <div className="bg-[#0b0e14] rounded-2xl p-4 mb-6 border border-[#252839]">
               <div className="flex justify-between mb-2">
-                <span className="text-xs font-bold uppercase text-[#4a506b]">Tu Saldo:</span>
+                <span className="text-xs font-bold uppercase text-[#4a506b]">Your Balance:</span>
                 <span className="font-bold text-white"><GreenCoin/> {userProfile?.saldo_verde?.toLocaleString() || 0}</span>
               </div>
               <div className="flex justify-between border-t border-[#252839] pt-2">
-                <span className="text-xs font-bold uppercase text-[#4a506b]">Precio Total:</span>
+                <span className="text-xs font-bold uppercase text-[#4a506b]">Total Price:</span>
                 <span className="font-bold text-red-400"><GreenCoin/> {moneyNeeded.toLocaleString()}</span>
               </div>
             </div>
             <button onClick={() => setShowNoMoneyModal(false)} className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl transition-all uppercase tracking-widest shadow-lg">
-              Entendido
+              Understood
             </button>
           </div>
         </div>
@@ -308,38 +302,39 @@ export default function CasesPage() {
 
       <div className="max-w-[1200px] mx-auto relative z-10">
 
+        {/* STORE VIEW */}
         {view === 'store' && (
           <div className="animate-fade-in">
             <div className="text-center mb-10 mt-4">
               <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e0e5ff] to-[#8f9ac6] uppercase tracking-widest drop-shadow-[0_0_15px_rgba(108,99,255,0.4)] mb-3">
                 Premium Cases
               </h1>
-              <p className="text-[#8f9ac6] font-bold text-lg md:text-xl tracking-wide">Abre cajas y consigue los items más raros.</p>
+              <p className="text-[#8f9ac6] font-bold text-lg md:text-xl tracking-wide">Open cases and get the rarest items.</p>
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-center bg-[#14151f]/80 backdrop-blur-md border border-[#252839] rounded-2xl p-4 mb-10 gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
               <div className="relative w-full md:w-1/3">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8f9ac6]">🔍</span>
                 <input 
-                  type="text" placeholder="Buscar caja..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                  type="text" placeholder="Search case..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-[#6C63FF] focus:shadow-[0_0_15px_rgba(108,99,255,0.3)] transition-all font-semibold"
                 />
               </div>
               <div className="flex items-center gap-3 w-full md:w-auto">
-                <span className="text-[#8f9ac6] font-bold uppercase text-sm tracking-wider">Ordenar:</span>
+                <span className="text-[#8f9ac6] font-bold uppercase text-sm tracking-wider">Sort by:</span>
                 <select 
                   value={sortBy} onChange={(e) => setSortBy(e.target.value)}
                   className="bg-[#0b0e14] border border-[#252839] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#6C63FF] font-semibold cursor-pointer w-full md:w-auto"
                 >
-                  <option value="price_asc">Precio: Menor a Mayor</option>
-                  <option value="price_desc">Precio: Mayor a Menor</option>
-                  <option value="name_asc">Nombre: A - Z</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                  <option value="name_asc">Name: A - Z</option>
                 </select>
               </div>
             </div>
 
             {filteredAndSortedCases.length === 0 ? (
-              <div className="text-center py-20 text-[#8f9ac6] text-xl font-bold bg-[#14151f]/50 rounded-3xl border border-[#252839] border-dashed">😔 No se encontraron cajas.</div>
+              <div className="text-center py-20 text-[#8f9ac6] text-xl font-bold bg-[#14151f]/50 rounded-3xl border border-[#252839] border-dashed">😔 No cases found.</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {filteredAndSortedCases.map(caja => (
@@ -364,10 +359,11 @@ export default function CasesPage() {
           </div>
         )}
 
+        {/* INSPECT VIEW */}
         {view === 'inspect' && selectedCase && (
           <div className="animate-fade-in">
             <button onClick={() => setView('store')} className="text-[#8f9ac6] hover:text-white font-bold text-sm flex items-center gap-2 transition-colors mb-8 bg-[#1c1f2e] px-5 py-2.5 rounded-xl border border-[#252839] w-max shadow-md hover:border-cyan-500/50">
-               &lsaquo; Volver a la tienda
+               &lsaquo; Back to Store
             </button>
             <div className="flex flex-col lg:flex-row gap-10 items-start">
               
@@ -382,7 +378,7 @@ export default function CasesPage() {
                 <h2 className="text-3xl font-black text-white uppercase tracking-widest z-10 mb-8 text-center" style={{textShadow: `0 2px 10px ${selectedCase.color}80`}}>{selectedCase.name}</h2>
                 
                 <div className="w-full mb-6 z-10">
-                    <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest text-center mb-3">Cantidad a abrir</p>
+                    <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest text-center mb-3">Amount to open</p>
                     <div className="grid grid-cols-5 gap-2">
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(q => (
                             <button
@@ -396,13 +392,13 @@ export default function CasesPage() {
                 </div>
 
                 <button onClick={openCase} disabled={spinning} className="w-full py-4 rounded-2xl font-black text-xl text-white uppercase tracking-widest shadow-[0_5px_20px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_30px_rgba(6,182,212,0.6)] transition-all hover:-translate-y-1 bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center gap-3 z-10">
-                  ABRIR {quantity > 1 ? `x${quantity}` : ''} POR <GreenCoin cls="w-6 h-6"/> {formatValue(selectedCase.price * quantity)}
+                  OPEN {quantity > 1 ? `x${quantity}` : ''} FOR <GreenCoin cls="w-6 h-6"/> {formatValue(selectedCase.price * quantity)}
                 </button>
               </div>
 
               <div className="w-full lg:w-2/3 bg-[#0a0a0a] border-2 border-[#1f2937] rounded-3xl p-8 shadow-2xl relative overflow-hidden">
                 <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] uppercase tracking-widest mb-6 border-b border-[#374151] pb-4">
-                  Contenido de la Caja
+                  Case Contents
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {selectedCase.items.map((item, idx) => {
@@ -433,9 +429,9 @@ export default function CasesPage() {
                       </div>
                       
                       <div className="w-full text-center mt-auto border-t border-[#374151]/50 bg-[#0a0a0a]/50 py-2 px-1 z-10 rounded-b-lg">
-                        <p className={`font-black text-[11px] uppercase tracking-wide w-full truncate ${isLimitedItem ? 'text-yellow-400' : ''}`} style={!isLimitedItem ? {color: item.color} : {}}>{item.name}</p>
+                        <p className={`font-black text-[11px] uppercase tracking-wide w-full truncate px-1 ${isLimitedItem ? 'text-yellow-400' : ''}`} style={!isLimitedItem ? {color: item.color} : {}}>{item.name}</p>
                         <p className="text-gray-400 text-[10px] font-bold mt-0.5 flex items-center justify-center gap-1">
-                            <GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(item.valor || 0)}
+                            <GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(item.valor || item.value || dbItemsMap[item.name]?.value || 0)}
                         </p>
                       </div>
                     </div>
@@ -447,6 +443,7 @@ export default function CasesPage() {
           </div>
         )}
 
+        {/* OPENING VIEW (SPINNER) */}
         {view === 'opening' && (
           <div className="animate-fade-in flex flex-col items-center justify-center min-h-[60vh] relative">
             <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] z-10">
@@ -487,6 +484,7 @@ export default function CasesPage() {
           </div>
         )}
 
+        {/* RESULT VIEW */}
         {view === 'result' && winningItems.length > 0 && (
           <div className={`w-full flex flex-col items-center justify-center min-h-[70vh] relative ${hasLimitedWin ? 'animate-epic-reveal' : 'animate-bounce-in'}`}>
             
@@ -505,10 +503,11 @@ export default function CasesPage() {
             </h2>
             
             {quantity === 1 ? (
+                // EPIC HUGE REVEAL FOR 1 ITEM
                 <div className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative ${hasLimitedWin ? 'border-yellow-500 animate-shake shadow-[0_0_100px_rgba(234,179,8,0.5)] scale-110' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, boxShadow: `0 0 50px ${winningItems[0].color}40` } : {}}>
                   <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${hasLimitedWin ? '#eab308' : winningItems[0].color} 0%, transparent 60%)`}}></div>
                   <div className={`absolute -top-6 bg-[#0a0a0a] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg ${hasLimitedWin ? 'border-yellow-400 text-yellow-400 animate-pulse' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, color: winningItems[0].color } : {}}>
-                    {hasLimitedWin ? '⭐ LIMITED ⭐' : 'NUEVO ITEM'}
+                    {hasLimitedWin ? '⭐ LIMITED ⭐' : 'NEW ITEM'}
                   </div>
                   
                   <div className="relative">
@@ -521,32 +520,28 @@ export default function CasesPage() {
                   </h3>
 
                   <p className="text-gray-300 font-bold text-lg flex items-center gap-2 mb-10 bg-[#111827] px-4 py-2 rounded-lg border border-[#374151] relative z-10 shadow-inner mt-2">
-                    Valor: <GreenCoin cls="w-5 h-5 grayscale opacity-80"/> {formatValue(winningItems[0].valor || 0)}
+                    Value: <GreenCoin cls="w-5 h-5 grayscale opacity-80"/> {formatValue(winningItems[0].valor || 0)}
                   </p>
                   
                   <div className="flex gap-4 w-full relative z-10">
                     <button onClick={() => setView('store')} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
-                      Tienda
+                      Store
                     </button>
                     <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
-                      Girar Otra Vez
+                      Spin Again
                     </button>
                   </div>
                 </div>
             ) : (
+                // MULTIPLE ITEMS REVEAL (USING PETCARD)
                 <div className="flex flex-col items-center w-full max-w-[1200px] z-10">
-                    <div className="flex flex-wrap justify-center gap-6 mb-10 w-full">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10 w-full max-h-[50vh] overflow-y-auto custom-scrollbar p-2">
                         {winningItems.map((winItem, idx) => (
-                            <div key={idx} className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-2xl p-4 flex flex-col items-center shadow-2xl relative transition-transform hover:scale-110 w-[140px] md:w-[180px] ${winItem.isLimited ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.5)] animate-float' : ''}`} style={!winItem.isLimited ? { borderColor: winItem.color, boxShadow: `0 0 20px ${winItem.color}20` } : {}}>
-                                <div className="absolute inset-0 pointer-events-none opacity-20 rounded-2xl" style={{ background: `radial-gradient(circle at center, ${winItem.isLimited ? '#eab308' : winItem.color} 0%, transparent 70%)`}}></div>
-                                <img src={winItem.img} className="w-24 h-24 object-contain drop-shadow-xl mb-3 relative z-10" alt={winItem.name} />
-                                <h3 className="text-xs md:text-sm font-black uppercase text-center mb-2 tracking-widest truncate w-full relative z-10" style={{ color: winItem.isLimited ? '#facc15' : winItem.color }}>
-                                    {winItem.name}
-                                </h3>
-                                <p className="text-gray-400 font-bold text-[10px] md:text-xs flex items-center gap-1 bg-[#111827] px-2 py-1 rounded-lg border border-[#374151] relative z-10">
-                                    <GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(winItem.valor || 0)}
-                                </p>
-                            </div>
+                            <PetCard 
+                                key={idx} 
+                                item={winItem} 
+                                showValue={true} 
+                            />
                         ))}
                     </div>
                     
@@ -556,10 +551,10 @@ export default function CasesPage() {
 
                     <div className="flex gap-4 w-full max-w-md relative z-10">
                         <button onClick={() => setView('store')} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
-                          Tienda
+                          Store
                         </button>
                         <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
-                          Girar {quantity} Más
+                          Spin {quantity} More
                         </button>
                     </div>
                 </div>
@@ -569,6 +564,11 @@ export default function CasesPage() {
 
       </div>
       <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
         .animate-bounce-in { animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
