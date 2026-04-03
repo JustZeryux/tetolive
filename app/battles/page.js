@@ -11,8 +11,9 @@ const formatValue = (val) => {
   return val?.toLocaleString() || '0';
 };
 
-// --- NUEVO HELPER: SELECCIONA RESPETANDO EL CHANCE ---
+// --- MOTOR DE PROBABILIDAD REAL (ANTI-CHEAT) ---
 const selectItemWithChance = (items) => {
+    if (!items || items.length === 0) return null;
     const totalChance = items.reduce((sum, item) => sum + parseFloat(item.chance || 0), 0);
     const randomValue = Math.random() * totalChance;
     
@@ -23,28 +24,30 @@ const selectItemWithChance = (items) => {
             return item;
         }
     }
-    return items[items.length - 1]; // Fallback de seguridad
+    return items[items.length - 1]; // Fallback seguro
 };
 
 // --- FUNCIÓN PURA: GENERAR RESULTADOS ---
 const generateBattleResult = (battleCases, battlePlayers) => {
     const rounds = [];
     const playerTotals = {};
-    const itemsWon = []; // <-- NUEVO: Para guardar el "botín" completo
+    const itemsWon = []; // <-- Botín físico para el inventario
     
     battlePlayers.forEach(p => playerTotals[p.id] = 0);
 
     battleCases.forEach((caja, roundIdx) => {
         battlePlayers.forEach(p => {
-            const randomItem = selectItemWithChance(caja.items); // <-- AHORA RESPETA LAS CHANCES
+            const randomItem = selectItemWithChance(caja.items);
             const valorItem = randomItem.price || randomItem.value || randomItem.valor || 0;
             
             const itemObtenido = { 
+                id: crypto.randomUUID(), // ID Único para el inventario
                 name: randomItem.name, 
                 valor: valorItem, 
                 img: randomItem.image_url || randomItem.img || '/default-pet.png', 
                 color: randomItem.color || '#374151', 
-                chance: randomItem.chance || 10 
+                chance: randomItem.chance || 10,
+                origen: 'Battles'
             };
 
             rounds.push({
@@ -54,7 +57,7 @@ const generateBattleResult = (battleCases, battlePlayers) => {
             });
             
             playerTotals[p.id] += valorItem;
-            itemsWon.push(itemObtenido); // Guardamos la pet en el botín
+            itemsWon.push(itemObtenido);
         });
     });
 
@@ -93,7 +96,7 @@ export default function BattlesPage() {
   
   useEffect(() => {
     const loadCasesForBattles = async () => {
-      const { data, error } = await supabase.from('cases').select('id, name, price, image_url, items, color');
+      const { data, error } = await supabase.from('cases').select('id, name, price, image_url, items, color').order('price', { ascending: true });
       if (data && !error) setAvailableCases(data);
     };
     loadCasesForBattles();
@@ -120,23 +123,20 @@ export default function BattlesPage() {
     };
     cargarPartidas();
 
-    // SUSCRIPCIÓN REALTIME MEJORADA (Evita colisiones)
+    // SUSCRIPCIÓN REALTIME ANTI GHOST-MATCHES
     const channel = supabase.channel('battles_lobby')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.battles" }, 
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setBattles(prev => [payload.new, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
             setBattles(prev => {
-                const arr = [...prev];
-                const idx = arr.findIndex(g => g.id === payload.new.id);
-                if (idx !== -1) arr[idx] = payload.new; else arr.unshift(payload.new);
-                return arr;
+                if (prev.find(b => b.id === payload.new.id)) return prev; // Prevenir duplicados
+                return [payload.new, ...prev];
             });
+          } else if (payload.eventType === 'UPDATE') {
+            setBattles(prev => prev.map(b => b.id === payload.new.id ? payload.new : b));
             
             setActiveBattle(prev => {
                 if (prev && prev.id === payload.new.id) {
-                    // Si pasó a in_progress, animamos sin procesar nada en la BD
                     if (prev.estado === 'waiting' && payload.new.estado === 'in_progress' && payload.new.resultado) {
                         animarBatalla(payload.new, false);
                     } else if (payload.new.estado === 'completed' && !resolvingRef.current) {
@@ -171,17 +171,16 @@ export default function BattlesPage() {
           if (r > totalRounds) {
               clearInterval(interval);
               resolvingRef.current = false;
-              // Solo el que generó los resultados marca la sala como completada en la DB
               if (isResolver) {
                   await supabase.from('partidas').update({ estado: 'completed' }).eq('id', battle.id);
               }
           }
-      }, 1500);
+      }, 1500); // 1.5s por ronda
   };
 
   // --- LÓGICA DE CREACIÓN ---
   const addCase = (caja) => {
-    if (selectedCases.length >= 10) return alert("Maximum 10 cases per battle!");
+    if (selectedCases.length >= 15) return alert("Maximum 15 cases per battle!");
     setSelectedCases([...selectedCases, { ...caja, uniqueId: crypto.randomUUID() }]);
   };
   const removeCase = (uniqueId) => setSelectedCases(selectedCases.filter(c => c.uniqueId !== uniqueId));
@@ -224,13 +223,13 @@ export default function BattlesPage() {
       setBattleResults(null);
       setCurrentRound(-1);
     } catch (err) {
-      console.error("Error creando:", err);
+        console.error("Error creando:", err);
     } finally {
-      setIsCreating(false);
+        setIsCreating(false);
     }
   };
 
-  // --- LÓGICA DE UNIRSE (ONLINE SANO) ---
+  // --- LÓGICA DE UNIRSE (ARREGLADA PARA INVENTARIO) ---
   const joinBattle = async (battle) => {
     const currentPlayers = battle.datos_partida?.players || [];
 
@@ -267,17 +266,18 @@ export default function BattlesPage() {
           estado: isFull ? 'in_progress' : 'waiting'
       };
 
-      // Si la sala se llenó, TÚ calculas los resultados para todos y pagas al ganador
       if (isFull) {
           const generatedResult = generateBattleResult(battle.datos_partida?.cases || [], newPlayers);
           updatePayload.resultado = generatedResult;
           
           const winnerId = generatedResult.ganador_id;
-          let totalGanancia = Object.values(generatedResult.totals).reduce((a,b) => a+b, 0);
 
-          const { data: winnerProf } = await supabase.from('profiles').select('saldo_verde').eq('id', winnerId).single();
+          // ENTREGAMOS LOS ITEMS AL INVENTARIO DEL GANADOR (No dinero líquido)
+          const { data: winnerProf } = await supabase.from('profiles').select('inventory').eq('id', winnerId).single();
           if (winnerProf) {
-              await supabase.from('profiles').update({ saldo_verde: winnerProf.saldo_verde + totalGanancia }).eq('id', winnerId);
+              const currentInv = winnerProf.inventory || [];
+              const updatedInv = [...currentInv, ...generatedResult.allItems];
+              await supabase.from('profiles').update({ inventory: updatedInv }).eq('id', winnerId);
           }
       }
 
@@ -289,9 +289,7 @@ export default function BattlesPage() {
       setBattleResults(updatedBattle.resultado || null);
       setCurrentRound(-1);
 
-      if (isFull) {
-          animarBatalla(updatedBattle, true); // true = Eres el "Resolver"
-      }
+      if (isFull) animarBatalla(updatedBattle, true);
     } catch (err) {
       console.error(err);
       alert("Error al unirse a la partida.");
@@ -300,7 +298,7 @@ export default function BattlesPage() {
     }
   };
 
-  // --- LÓGICA DE BOTS (PUNTO 20) ---
+  // --- LÓGICA DE BOTS (ARREGLADA PARA INVENTARIO) ---
   const callBots = async () => {
     if (!activeBattle || activeBattle.estado !== 'waiting' || isJoining) return;
     setIsJoining(true);
@@ -323,13 +321,14 @@ export default function BattlesPage() {
 
       const generatedResult = generateBattleResult(activeBattle.datos_partida?.cases || [], newPlayers);
       const winnerId = generatedResult.ganador_id;
-      let totalGanancia = Object.values(generatedResult.totals).reduce((a,b) => a+b, 0);
 
-      // Solo pagamos si el ganador NO es un bot
+      // SOLO ENTREGAMOS AL GANADOR SI NO ES BOT
       if (!winnerId.startsWith('bot_')) {
-          const { data: winnerProf } = await supabase.from('profiles').select('saldo_verde').eq('id', winnerId).single();
+          const { data: winnerProf } = await supabase.from('profiles').select('inventory').eq('id', winnerId).single();
           if (winnerProf) {
-              await supabase.from('profiles').update({ saldo_verde: winnerProf.saldo_verde + totalGanancia }).eq('id', winnerId);
+              const currentInv = winnerProf.inventory || [];
+              const updatedInv = [...currentInv, ...generatedResult.allItems];
+              await supabase.from('profiles').update({ inventory: updatedInv }).eq('id', winnerId);
           }
       }
 
@@ -349,7 +348,6 @@ export default function BattlesPage() {
       
     } catch (err) {
       console.error("Error llamando bots:", err);
-      alert("Error al invocar a los TetoBots.");
     } finally {
       setIsJoining(false);
     }
@@ -373,7 +371,7 @@ export default function BattlesPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 animate-fade-in relative">
+    <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 relative">
       <div className="max-w-[1200px] mx-auto">
         
         {/* =========================================
@@ -386,7 +384,7 @@ export default function BattlesPage() {
                 <h1 className="text-4xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[#ef4444] to-[#f87171] drop-shadow-[0_0_15px_rgba(239,68,68,0.3)] flex items-center gap-3">
                   ⚔️ Case Battles
                 </h1>
-                <p className="text-[#8f9ac6] font-bold mt-2">Go head-to-head. Winner takes all items.</p>
+                <p className="text-[#8f9ac6] font-bold mt-2">Win matches. Claim the items to your inventory.</p>
               </div>
               <button 
                 onClick={() => setView('create')}
@@ -406,7 +404,7 @@ export default function BattlesPage() {
                   const battlePlayers = pData.players || [];
                   
                   return (
-                  <div key={battle.id} className={`bg-[#1c1f2e] border ${isCompleted ? 'border-[#252839] opacity-80' : 'border-[#252839] hover:border-[#ef4444]/50'} rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-6 transition-all shadow-lg group relative`}>
+                  <div key={battle.id} className={`bg-[#1c1f2e] border ${isCompleted ? 'border-[#252839] opacity-80' : 'border-[#252839] hover:border-[#ef4444]/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)]'} rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-6 transition-all shadow-lg relative`}>
                     
                     {isCompleted && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
 
@@ -418,7 +416,7 @@ export default function BattlesPage() {
                         
                         return (
                         <div key={idx} className="relative flex items-center">
-                          {isWinner && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl z-20 drop-shadow-md">👑</span>}
+                          {isWinner && <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl z-20 drop-shadow-md">👑</span>}
                           {user ? (
                             <div className={`w-12 h-12 rounded-full border-2 ${isWinner ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'border-[#ef4444]'} overflow-hidden bg-[#141323] z-10`}>
                               <img src={user.avatar} className="w-full h-full object-cover" alt="player"/>
@@ -435,7 +433,7 @@ export default function BattlesPage() {
                     {/* Cajas a abrir */}
                     <div className="flex-1 w-full bg-[#141323] border border-[#252839] rounded-xl p-3 flex items-center gap-3 overflow-x-auto custom-scrollbar">
                       {battleCases.map((caja, idx) => (
-                        <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center">
+                        <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center transition-transform hover:scale-105">
                           <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${caja.color || '#fff'} 0%, transparent 70%)` }}></div>
                           <img src={caja.image_url} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color || '#fff'}80)`}}/>
                         </div>
@@ -452,7 +450,7 @@ export default function BattlesPage() {
                       <button 
                         onClick={() => joinBattle(battle)}
                         disabled={isJoining}
-                        className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md group-hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'} disabled:opacity-50`}
+                        className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:-translate-y-1'} disabled:opacity-50`}
                       >
                         {isJoining ? 'Wait...' : (isCompleted ? 'View Battle' : (battlePlayers.some(p => p.id === currentUser?.id) ? 'View' : 'Join Battle'))}
                       </button>
@@ -468,7 +466,7 @@ export default function BattlesPage() {
         ========================================= */}
         {view === 'create' && (
           <div className="animate-fade-in">
-            <button onClick={() => setView('lobby')} className="w-max text-[#8f9ac6] hover:text-[#ef4444] font-bold text-sm flex items-center gap-1 transition-colors bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839] mb-6">
+            <button onClick={() => setView('lobby')} className="w-max text-[#8f9ac6] hover:text-[#ef4444] font-bold text-sm flex items-center gap-1 transition-colors bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839] mb-6 shadow-md hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]">
               &lsaquo; Back to Lobby
             </button>
 
@@ -493,26 +491,27 @@ export default function BattlesPage() {
                 <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest">Selected Cases</h3>
-                    <span className="text-[#555b82] text-xs font-black">{selectedCases.length}/10</span>
+                    <span className="text-[#555b82] text-xs font-black">{selectedCases.length}/15</span>
                   </div>
 
                   <div className="flex-1 min-h-[150px] bg-[#141323] border border-[#252839] rounded-xl p-3 flex flex-col gap-2 overflow-y-auto custom-scrollbar mb-6">
                     {selectedCases.length === 0 ? (
                       <div className="flex-1 flex items-center justify-center text-[#555b82] font-bold text-sm text-center px-4">
-                        Click cases on the right to add them to your battle.
+                        Click cases on the right to add them.
                       </div>
                     ) : (
                       selectedCases.map((caja, idx) => (
-                        <div key={caja.uniqueId} className="bg-[#1c1f2e] border border-[#252839] rounded-lg p-2 flex items-center gap-3 animate-fade-in">
-                          <span className="text-[#555b82] font-black text-xs w-4">{idx + 1}</span>
-                          <div className="w-8 h-8 relative shrink-0">
-                            <img src={caja.image_url} className="w-full h-full object-contain drop-shadow-md z-10 relative" alt="case"/>
+                        <div key={caja.uniqueId} className="bg-[#1c1f2e] border border-[#252839] rounded-lg p-2 flex items-center gap-3 animate-fade-in relative overflow-hidden">
+                          <div className="absolute inset-0 opacity-10" style={{background: `linear-gradient(90deg, ${caja.color || '#fff'} 0%, transparent 100%)`}}></div>
+                          <span className="text-[#555b82] font-black text-xs w-4 z-10">{idx + 1}</span>
+                          <div className="w-8 h-8 relative shrink-0 z-10">
+                            <img src={caja.image_url} className="w-full h-full object-contain drop-shadow-md" alt="case"/>
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 z-10">
                             <p className="text-white font-bold text-xs truncate" style={{color: caja.color}}>{caja.name}</p>
                             <p className="text-[#8f9ac6] font-black text-[10px] flex items-center gap-1"><GreenCoin cls="w-2.5 h-2.5"/> {formatValue(caja.price)}</p>
                           </div>
-                          <button onClick={() => removeCase(caja.uniqueId)} className="text-[#ef4444] hover:bg-[#ef4444]/20 p-1.5 rounded-md transition-colors">✖</button>
+                          <button onClick={() => removeCase(caja.uniqueId)} className="text-[#ef4444] hover:bg-[#ef4444]/20 p-1.5 rounded-md transition-colors z-10">✖</button>
                         </div>
                       ))
                     )}
@@ -525,7 +524,7 @@ export default function BattlesPage() {
                         <GreenCoin cls="w-6 h-6"/> {formatValue(totalCost)}
                       </span>
                     </div>
-                    <button onClick={handleCreate} disabled={selectedCases.length === 0 || isCreating} className="w-full py-4 bg-gradient-to-r from-[#ef4444] to-[#dc2626] hover:from-[#f87171] text-white font-black rounded-xl text-sm uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(239,68,68,0.4)] disabled:opacity-50 disabled:grayscale hover:-translate-y-1">
+                    <button onClick={handleCreate} disabled={selectedCases.length === 0 || isCreating} className="w-full py-4 bg-gradient-to-r from-[#ef4444] to-[#dc2626] hover:from-[#f87171] hover:to-[#ef4444] text-white font-black rounded-xl text-sm uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(239,68,68,0.4)] disabled:opacity-50 disabled:grayscale hover:-translate-y-1">
                       {isCreating ? 'Creating...' : 'Call to Battle'}
                     </button>
                   </div>
@@ -535,10 +534,10 @@ export default function BattlesPage() {
               {/* PANEL DER: TIENDA CAJAS */}
               <div className="w-full lg:w-2/3 bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-xl">
                 <h3 className="text-white text-lg font-black uppercase tracking-widest mb-6">Available Cases</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
                   {availableCases.map((caja) => (
-                    <div key={caja.id} onClick={() => addCase(caja)} className="bg-[#141323] border border-[#252839] hover:border-[#ef4444] rounded-xl p-4 flex flex-col items-center cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_5px_15px_rgba(239,68,68,0.15)] group relative">
-                      <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
+                    <div key={caja.id} onClick={() => addCase(caja)} className="bg-[#141323] border border-[#252839] hover:border-[#ef4444] rounded-xl p-4 flex flex-col items-center cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_5px_15px_rgba(239,68,68,0.15)] group relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-5 group-hover:opacity-20 transition-opacity" style={{ background: `radial-gradient(circle at center, ${caja.color} 0%, transparent 70%)` }}></div>
                       <img src={caja.image_url} className="w-16 h-16 object-contain drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform mb-3 relative z-10" alt={caja.name} style={{filter: `drop-shadow(0 0 10px ${caja.color}60)`}}/>
                       <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1 text-center z-10">{caja.name}</h4>
                       <p className="text-[#3AFF4E] font-black text-xs flex items-center gap-1 z-10"><GreenCoin cls="w-3 h-3"/> {formatValue(caja.price)}</p>
@@ -556,46 +555,48 @@ export default function BattlesPage() {
         ========================================= */}
         {view === 'arena' && activeBattle && (
           <div className="animate-fade-in flex flex-col min-h-[70vh]">
-             <button onClick={() => setView('lobby')} className="w-max text-[#8f9ac6] hover:text-white font-bold text-sm flex items-center gap-1 transition-colors bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839] mb-6">
+             <button onClick={() => setView('lobby')} className="w-max text-[#8f9ac6] hover:text-white font-bold text-sm flex items-center gap-1 transition-colors bg-[#1c1f2e] px-4 py-2 rounded-lg border border-[#252839] mb-6 shadow-md">
               &lsaquo; Back to Battles
             </button>
             
-            <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-2xl flex-1 flex flex-col overflow-hidden">
+            <div className="bg-[#1c1f2e] border border-[#252839] rounded-2xl p-6 shadow-2xl flex-1 flex flex-col overflow-hidden relative">
                 
-                {/* BOTÓN PARA LLAMAR BOTS (PUNTO 20) */}
+                {/* BOTÓN PARA LLAMAR BOTS */}
                 {activeBattle.estado === 'waiting' && activeBattle.creador_id === currentUser?.id && (
-                    <div className="flex justify-center mb-8 w-full animate-bounce-in">
+                    <div className="flex justify-center mb-8 w-full animate-fade-in">
                         <button 
                             onClick={callBots} 
                             disabled={isJoining}
                             className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-black px-8 py-4 rounded-2xl uppercase tracking-widest transition-transform hover:scale-105 shadow-[0_0_30px_rgba(168,85,247,0.4)] flex items-center gap-3 border-2 border-purple-400/50 disabled:opacity-50"
                         >
-                            <span className="text-2xl">🤖</span> Llenar con TetoBots (Local Mode)
+                            <span className="text-2xl">🤖</span> Llenar con TetoBots (Local)
                         </button>
                     </div>
                 )}
 
                 {/* HEADER ARENA */}
-                <div className="flex justify-between items-center mb-8 border-b border-[#252839] pb-6">
+                <div className="flex justify-between items-center mb-8 border-b border-[#252839] pb-6 relative z-10">
                     <div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-1">Battle Arena</h2>
-                        <p className="text-[#8f9ac6] font-bold text-sm">{(activeBattle.datos_partida?.cases || []).length} Rounds • Total Value: <span className="text-[#3AFF4E]"><GreenCoin/> {formatValue(activeBattle.datos_partida?.cost || 0)}</span></p>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-1 flex items-center gap-2">
+                          <span className="text-[#ef4444]">⚔️</span> Battle Arena
+                        </h2>
+                        <p className="text-[#8f9ac6] font-bold text-sm">{(activeBattle.datos_partida?.cases || []).length} Rounds • Value: <span className="text-[#3AFF4E]"><GreenCoin/> {formatValue(activeBattle.datos_partida?.cost || 0)}</span></p>
                     </div>
                     {activeBattle.estado === 'waiting' && (
-                        <div className="flex items-center gap-3 bg-[#141323] border border-[#2F3347] px-4 py-2 rounded-lg animate-pulse">
-                            <span className="w-3 h-3 rounded-full bg-[#facc15]"></span>
-                            <span className="text-[#facc15] font-black text-sm tracking-widest uppercase">Waiting for players ({(activeBattle.datos_partida?.players || []).length}/{activeBattle.datos_partida?.playerCount || 2})</span>
+                        <div className="flex items-center gap-3 bg-[#141323] border border-[#2F3347] px-4 py-2 rounded-lg shadow-inner">
+                            <span className="w-3 h-3 rounded-full bg-[#facc15] animate-pulse"></span>
+                            <span className="text-[#facc15] font-black text-sm tracking-widest uppercase">Waiting ({(activeBattle.datos_partida?.players || []).length}/{activeBattle.datos_partida?.playerCount || 2})</span>
                         </div>
                     )}
                     {currentRound >= (activeBattle.datos_partida?.cases || []).length && (
-                        <div className="flex items-center gap-3 bg-[#141323] border border-[#3AFF4E] px-4 py-2 rounded-lg">
-                            <span className="text-[#3AFF4E] font-black text-lg tracking-widest uppercase">Battle Completed</span>
+                        <div className="flex items-center gap-3 bg-[#3AFF4E]/10 border border-[#3AFF4E] px-4 py-2 rounded-lg shadow-[0_0_15px_rgba(58,255,78,0.2)]">
+                            <span className="text-[#3AFF4E] font-black text-lg tracking-widest uppercase animate-pulse">Battle Completed</span>
                         </div>
                     )}
                 </div>
 
                 {/* COLUMNAS DE JUGADORES */}
-                <div className="flex-1 grid gap-4 relative" style={{ gridTemplateColumns: `repeat(${activeBattle.datos_partida?.playerCount || 2}, minmax(0, 1fr))` }}>
+                <div className="flex-1 grid gap-4 relative z-10" style={{ gridTemplateColumns: `repeat(${activeBattle.datos_partida?.playerCount || 2}, minmax(0, 1fr))` }}>
                     
                     {Array.from({ length: activeBattle.datos_partida?.playerCount || 2 }).map((_, pIdx) => {
                         const player = (activeBattle.datos_partida?.players || [])[pIdx];
@@ -603,18 +604,18 @@ export default function BattlesPage() {
                         const currentTotal = player ? getPlayerVisualTotal(player.id) : 0;
 
                         return (
-                        <div key={pIdx} className={`flex flex-col bg-[#141323] border ${isWinner ? 'border-[#facc15] shadow-[0_0_30px_rgba(250,204,21,0.2)]' : 'border-[#252839]'} rounded-xl overflow-hidden relative transition-all`}>
+                        <div key={pIdx} className={`flex flex-col bg-[#141323] border ${isWinner ? 'border-[#facc15] shadow-[0_0_30px_rgba(250,204,21,0.2)] scale-[1.02]' : 'border-[#252839]'} rounded-xl overflow-hidden relative transition-all duration-500`}>
                             
                             {/* Cabecera Jugador */}
-                            <div className={`p-4 border-b ${isWinner ? 'border-[#facc15] bg-[#facc15]/10' : 'border-[#252839] bg-[#1c1f2e]'} flex flex-col items-center relative z-20`}>
-                                {isWinner && <span className="absolute top-2 text-2xl drop-shadow-md z-30 animate-bounce">👑</span>}
+                            <div className={`p-4 border-b ${isWinner ? 'border-[#facc15] bg-gradient-to-b from-[#facc15]/20 to-transparent' : 'border-[#252839] bg-[#1c1f2e]'} flex flex-col items-center relative z-20 transition-colors`}>
+                                {isWinner && <span className="absolute -top-1 text-4xl drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] z-30 animate-bounce">👑</span>}
                                 {player ? (
                                     <>
-                                        <div className={`w-16 h-16 rounded-full border-2 ${isWinner ? 'border-[#facc15]' : 'border-[#ef4444]'} overflow-hidden bg-[#0b0e14] mb-3`}>
+                                        <div className={`w-16 h-16 rounded-full border-4 ${isWinner ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'border-[#ef4444]'} overflow-hidden bg-[#0b0e14] mb-3 transition-all`}>
                                             <img src={player.avatar} className="w-full h-full object-cover" alt={player.name}/>
                                         </div>
-                                        <h3 className="font-black text-white truncate w-full text-center text-sm mb-1">{player.name}</h3>
-                                        <div className="bg-[#0b0e14] border border-[#2F3347] rounded-md px-3 py-1 flex items-center gap-1">
+                                        <h3 className={`font-black truncate w-full text-center text-sm mb-1 ${isWinner ? 'text-[#facc15]' : 'text-white'}`}>{player.name}</h3>
+                                        <div className="bg-[#0b0e14] border border-[#2F3347] rounded-md px-3 py-1 flex items-center gap-1 shadow-inner">
                                             <GreenCoin cls="w-4 h-4"/>
                                             <span className={`font-black ${isWinner ? 'text-[#facc15]' : 'text-white'}`}>{formatValue(currentTotal)}</span>
                                         </div>
@@ -622,7 +623,7 @@ export default function BattlesPage() {
                                 ) : (
                                     <>
                                         <div className="w-16 h-16 rounded-full border-2 border-dashed border-[#555b82] flex items-center justify-center bg-[#0b0e14] mb-3">
-                                            <span className="text-[#555b82] font-black text-xl">?</span>
+                                            <span className="text-[#555b82] font-black text-xl animate-pulse">?</span>
                                         </div>
                                         <h3 className="font-black text-[#555b82] text-sm mb-1">Waiting...</h3>
                                     </>
@@ -636,28 +637,30 @@ export default function BattlesPage() {
                                     const isCurrentSpinning = activeBattle.estado !== 'waiting' && rIdx === currentRound && !revealedItem;
 
                                     return (
-                                    <div key={rIdx} className={`h-28 rounded-lg border relative flex items-center justify-center overflow-hidden transition-all ${revealedItem ? 'border-[#3f4354] bg-[#1c1f2e]' : 'border-[#252839] bg-[#0b0e14]'}`}>
+                                    <div key={rIdx} className={`h-28 rounded-lg border relative flex items-center justify-center overflow-hidden transition-all duration-300 ${revealedItem ? 'bg-[#1c1f2e]' : 'border-[#252839] bg-[#0b0e14]'}`} style={{borderColor: revealedItem ? revealedItem.color : ''}}>
                                         
                                         {!revealedItem && !isCurrentSpinning && (
-                                            <div className="opacity-40 grayscale flex flex-col items-center">
+                                            <div className="opacity-30 grayscale flex flex-col items-center">
                                                 <img src={caja.image_url} className="w-10 h-10 object-contain drop-shadow-md" alt="case"/>
                                             </div>
                                         )}
 
                                         {isCurrentSpinning && (
                                             <div className="flex flex-col items-center animate-pulse">
-                                                <img src={caja.image_url} className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-bounce" alt="case" style={{filter: `drop-shadow(0 0 10px ${caja.color}80)`}}/>
-                                                <span className="text-[10px] font-black text-[#8f9ac6] mt-2 uppercase">Unboxing...</span>
+                                                <img src={caja.image_url} className="w-12 h-12 object-contain drop-shadow-[0_0_20px_rgba(239,68,68,0.8)] animate-spin-slow" alt="case" style={{filter: `drop-shadow(0 0 15px ${caja.color}80)`}}/>
+                                                <span className="text-[10px] font-black text-[#8f9ac6] mt-2 uppercase tracking-widest">Unboxing...</span>
                                             </div>
                                         )}
 
                                         {revealedItem && (
-                                            <div className="w-full h-full flex flex-col items-center justify-center animate-fade-in relative group">
-                                                <div className="absolute inset-0 opacity-10" style={{ background: `radial-gradient(circle at center, ${revealedItem.color} 0%, transparent 70%)` }}></div>
-                                                <div className="absolute top-1 right-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-[#0b0e14]/80 border border-[#252839] text-white z-10">{revealedItem.chance}%</div>
-                                                <img src={revealedItem.img || revealedItem.image_url} className="w-14 h-14 object-contain drop-shadow-lg z-10 group-hover:scale-110 transition-transform" alt="item"/>
-                                                <p className="text-[10px] font-bold truncate w-full text-center px-1 z-10 mt-1" style={{color: revealedItem.color}}>{revealedItem.name}</p>
-                                                <p className="text-white font-black text-[10px] flex items-center gap-1 z-10"><GreenCoin cls="w-2.5 h-2.5"/> {formatValue(revealedItem.valor)}</p>
+                                            <div className="w-full h-full flex flex-col items-center justify-center animate-bounce-in relative group">
+                                                <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${revealedItem.color} 0%, transparent 80%)` }}></div>
+                                                <div className="absolute top-1 right-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-[#0b0e14]/90 border text-white z-10" style={{borderColor: revealedItem.color}}>{revealedItem.chance}%</div>
+                                                
+                                                <img src={revealedItem.img || revealedItem.image_url} className="w-14 h-14 object-contain drop-shadow-xl z-10 group-hover:scale-125 transition-transform duration-300" alt="item" style={{filter: `drop-shadow(0 0 10px ${revealedItem.color}90)`}}/>
+                                                
+                                                <p className="text-[10px] font-black truncate w-full text-center px-1 z-10 mt-1 drop-shadow-md" style={{color: revealedItem.color}}>{revealedItem.name}</p>
+                                                <p className="text-white font-black text-[10px] flex items-center gap-1 z-10 bg-[#0b0e14]/50 px-2 rounded-full mt-0.5"><GreenCoin cls="w-2.5 h-2.5"/> {formatValue(revealedItem.valor)}</p>
                                             </div>
                                         )}
                                     </div>
