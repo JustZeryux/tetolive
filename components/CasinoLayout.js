@@ -38,6 +38,7 @@ const menuSections = [
       { name: 'Wallet', path: '/wallet', iconImg: '/Wallet.png' },
       { name: 'Vault', path: '/vault', iconImg: '/Vault.png' },
       { name: 'Rewards', path: '/rewards', iconImg: '/Rewards.png' },
+      { name: 'Trading', path: '/trading', iconImg: '/Rewards.png' },
     ]
   },
   {
