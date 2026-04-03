@@ -11,30 +11,50 @@ const formatValue = (val) => {
   return val?.toLocaleString() || '0';
 };
 
+// --- NUEVO HELPER: SELECCIONA RESPETANDO EL CHANCE ---
+const selectItemWithChance = (items) => {
+    const totalChance = items.reduce((sum, item) => sum + parseFloat(item.chance || 0), 0);
+    const randomValue = Math.random() * totalChance;
+    
+    let currentSum = 0;
+    for (const item of items) {
+        currentSum += parseFloat(item.chance || 0);
+        if (randomValue <= currentSum) {
+            return item;
+        }
+    }
+    return items[items.length - 1]; // Fallback de seguridad
+};
+
 // --- FUNCIÓN PURA: GENERAR RESULTADOS ---
 const generateBattleResult = (battleCases, battlePlayers) => {
     const rounds = [];
     const playerTotals = {};
+    const itemsWon = []; // <-- NUEVO: Para guardar el "botín" completo
     
     battlePlayers.forEach(p => playerTotals[p.id] = 0);
 
     battleCases.forEach((caja, roundIdx) => {
         battlePlayers.forEach(p => {
-            const randomItem = caja.items[Math.floor(Math.random() * caja.items.length)];
+            const randomItem = selectItemWithChance(caja.items); // <-- AHORA RESPETA LAS CHANCES
             const valorItem = randomItem.price || randomItem.value || randomItem.valor || 0;
             
+            const itemObtenido = { 
+                name: randomItem.name, 
+                valor: valorItem, 
+                img: randomItem.image_url || randomItem.img || '/default-pet.png', 
+                color: randomItem.color || '#374151', 
+                chance: randomItem.chance || 10 
+            };
+
             rounds.push({
                 round: roundIdx,
                 player_id: p.id,
-                item: { 
-                    name: randomItem.name, 
-                    valor: valorItem, 
-                    img: randomItem.image_url || randomItem.img || '/default-pet.png', 
-                    color: randomItem.color || '#374151', 
-                    chance: randomItem.chance || 10 
-                }
+                item: itemObtenido
             });
+            
             playerTotals[p.id] += valorItem;
+            itemsWon.push(itemObtenido); // Guardamos la pet en el botín
         });
     });
 
@@ -48,7 +68,7 @@ const generateBattleResult = (battleCases, battlePlayers) => {
         }
     });
 
-    return { ganador_id, rounds, totals: playerTotals };
+    return { ganador_id, rounds, totals: playerTotals, allItems: itemsWon };
 };
 
 export default function BattlesPage() {
