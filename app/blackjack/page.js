@@ -71,19 +71,21 @@ export default function BlackjackPage() {
   const [userProfile, setUserProfile] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
-  const [allItemsDb, setAllItemsDb] = useState([]); // Base de datos real de items
+  const [allItemsDb, setAllItemsDb] = useState([]);
 
-  const [gameMode, setGameMode] = useState('ai'); 
+  const [gameMode, setGameMode] = useState('lobby'); 
 
-  // PvE States
+  // PvP / PvE Shared
   const [currency, setCurrency] = useState('green'); 
   const [betAmount, setBetAmount] = useState(10);
+  
+  // PvE States
   const [gameState, setGameState] = useState('betting'); 
   const [deck, setDeck] = useState([]);
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
   const [winner, setWinner] = useState(null); 
-  const [aiGameId, setAiGameId] = useState(null); // ID de la partida contra IA en BD
+  const [aiGameId, setAiGameId] = useState(null);
 
   // PvP States
   const [pvpLobbyGames, setPvpLobbyGames] = useState([]);
@@ -95,7 +97,6 @@ export default function BlackjackPage() {
   const [myInventory, setMyInventory] = useState([]);
   const [selectedPets, setSelectedPets] = useState([]);
   const [botPets, setBotPets] = useState([]); 
-  const [joiningGameId, setJoiningGameId] = useState(null);
 
   useEffect(() => {
     const fetchInitData = async () => {
@@ -106,7 +107,6 @@ export default function BlackjackPage() {
         setUserProfile(profile);
       }
       
-      // Obtener todos los items para que el bot pueda apostar cosas reales
       const { data: items } = await supabase.from('items').select('*');
       if (items) setAllItemsDb(items);
 
@@ -115,7 +115,6 @@ export default function BlackjackPage() {
     };
     fetchInitData();
 
-    // Sincronización Realtime PvP
     const lobbySub = supabase.channel('blackjack_lobby')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.blackjack" }, 
         (payload) => {
@@ -159,78 +158,40 @@ export default function BlackjackPage() {
       if (activePvPGame?.estado === 'completed') processPvPPayout();
       else pvpPayoutProcessed.current = false;
 
-      const checkDeal = async () => {
-          if (activePvPGame?.estado === 'playing' && activePvPGame.datos_partida.p1.hand.length === 0 && currentUser?.id === activePvPGame.creador_id) {
-             const newDeck = createDeck();
-             const dp = { ...activePvPGame.datos_partida };
-             dp.p1.hand = [newDeck.pop(), newDeck.pop()];
-             dp.p2.hand = [newDeck.pop(), newDeck.pop()];
-             dp.dealerHand = [newDeck.pop(), newDeck.pop()]; 
-             dp.p1.score = calculateScore(dp.p1.hand);
-             dp.p2.score = calculateScore(dp.p2.hand);
-             dp.deck = newDeck;
-             
-             if (dp.p1.score === 21) dp.p1.status = 'stand';
-             if (dp.p2.score === 21) dp.p2.status = 'stand';
-
-             if (dp.p1.status === 'stand' && dp.p2.status === 'stand') dp.currentTurn = 'dealer';
-             else if (dp.p1.status === 'stand') dp.currentTurn = 'p2';
-             else dp.currentTurn = 'p1';
-
-             await supabase.from('partidas').update({ datos_partida: dp }).eq('id', activePvPGame.id);
-          }
-      };
-      checkDeal();
   }, [activePvPGame, currentUser]);
 
   const loadPvPLobby = async () => {
-    const { data } = await supabase.from('partidas').select('*').eq('modo_juego', 'blackjack').eq('estado', 'waiting').order('creado_en', { ascending: false });
+    const { data } = await supabase.from('partidas').select('*').eq('modo_juego', 'blackjack').in('estado', ['waiting', 'negotiating', 'host_ready']).order('creado_en', { ascending: false });
     if(data) setPvpLobbyGames(data);
   };
 
   const saldoVerde = userProfile?.saldo_verde || 0;
   const totalPetsValue = selectedPets.reduce((acc, curr) => acc + curr.valor, 0);
 
-  // === IA REAL PET GENERATOR (Busca en la tabla items) ===
-const generateRealBotPets = (targetValue) => {
+  // === IA REAL PET GENERATOR ===
+  const generateRealBotPets = (targetValue) => {
       if (!allItemsDb || allItemsDb.length === 0) return [];
       let currentSum = 0;
       let aiSelected = [];
-      
-      // EL FIX: Filtramos TODO lo que valga 0 o no tenga valor antes de hacer nada
       const itemsValidos = allItemsDb.filter(item => (item.value || 0) > 0);
-      
-      // Mezclar items válidos para que sea al azar
       let shuffled = [...itemsValidos].sort(() => 0.5 - Math.random());
       
       for (let item of shuffled) {
           if (currentSum + item.value <= targetValue) {
-              aiSelected.push({
-                 item_id: item.id,
-                 nombre: item.name,
-                 valor: item.value,
-                 imagen: item.image_url,
-                 color: item.color || '#ffffff'
-              });
+              aiSelected.push({ item_id: item.id, nombre: item.name, valor: item.value, imagen: item.image_url, color: item.color || '#ffffff' });
               currentSum += item.value;
           }
       }
       
-      // Si no logró sumar nada (porque todo es muy caro), fuerza el más barato disponible
       if (aiSelected.length === 0 && shuffled.length > 0) {
            let cheapest = [...shuffled].sort((a,b) => a.value - b.value)[0];
-           aiSelected.push({
-               item_id: cheapest.id,
-               nombre: cheapest.name,
-               valor: cheapest.value,
-               imagen: cheapest.image_url,
-               color: cheapest.color || '#ffffff'
-           });
+           aiSelected.push({ item_id: cheapest.id, nombre: cheapest.name, valor: cheapest.value, imagen: cheapest.image_url, color: cheapest.color || '#ffffff' });
       }
       return aiSelected;
   };
+
   // ==========================================
-  // LÓGICA MODO VS AI (PvE) CON BD REAL
+  // LÓGICA MODO VS AI (PvE)
   // ==========================================
   const startGameAI = async () => {
     if (!currentUser) return alert("Inicia sesión para jugar.");
@@ -244,43 +205,28 @@ const generateRealBotPets = (targetValue) => {
           await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
           setUserProfile(prev => ({ ...prev, saldo_verde: nuevoSaldo }));
       } else {
-          // COBRAR MASCOTAS AL USUARIO (Borrarlas del inventario temporalmente)
           const petIds = selectedPets.map(p => p.inventarioId);
           const { error: errDel } = await supabase.from('inventory').delete().in('id', petIds);
           if (errDel) throw new Error("Error cobrando pets: " + errDel.message);
       }
 
-      // REGISTRAR PARTIDA VS IA EN LA BD
       const { data: matchData } = await supabase.from('partidas').insert({
-          modo_juego: 'blackjack_ai',
-          creador_id: currentUser.id,
-          estado: 'playing',
-          datos_partida: { 
-              currency, 
-              betAmount: currency === 'green' ? betAmount : totalPetsValue, 
-              selectedPets, 
-              botPets 
-          }
+          modo_juego: 'blackjack_ai', creador_id: currentUser.id, estado: 'playing',
+          datos_partida: { currency, betAmount: currency === 'green' ? betAmount : totalPetsValue, selectedPets, botPets }
       }).select('id').single();
       
       if (matchData) setAiGameId(matchData.id);
 
-      // Repartir Cartas
       const newDeck = createDeck();
       const pHand = [newDeck.pop(), newDeck.pop()];
       const dHand = [newDeck.pop(), newDeck.pop()];
 
-      setDeck(newDeck);
-      setPlayerHand(pHand);
-      setDealerHand(dHand);
-      setGameState('playing');
-      setWinner(null);
+      setDeck(newDeck); setPlayerHand(pHand); setDealerHand(dHand);
+      setGameState('playing'); setWinner(null);
 
-      // Checar Blackjack natural
       if (calculateScore(pHand) === 21) handleGameOverAI('player', pHand, dHand, true);
     } catch (err) { 
-        console.error(err);
-        alert("Error procesando apuesta: " + err.message); 
+        console.error(err); alert("Error procesando apuesta: " + err.message); 
     }
     setProcesando(false);
   };
@@ -289,32 +235,25 @@ const generateRealBotPets = (targetValue) => {
     if (gameState !== 'playing' || procesando) return;
     const newDeck = [...deck];
     const newHand = [...playerHand, newDeck.pop()];
-    setPlayerHand(newHand);
-    setDeck(newDeck);
+    setPlayerHand(newHand); setDeck(newDeck);
     if (calculateScore(newHand) > 21) handleGameOverAI('dealer', newHand, dealerHand);
   };
 
   const standAI = () => {
     if (gameState !== 'playing' || procesando) return;
     setGameState('dealerTurn');
-    let dHand = [...dealerHand];
-    let dDeck = [...deck];
+    let dHand = [...dealerHand]; let dDeck = [...deck];
     while (calculateScore(dHand) < 17) dHand.push(dDeck.pop());
-    setDealerHand(dHand);
-    setDeck(dDeck);
+    setDealerHand(dHand); setDeck(dDeck);
     
-    const pScore = calculateScore(playerHand);
-    const dScore = calculateScore(dHand);
-
+    const pScore = calculateScore(playerHand); const dScore = calculateScore(dHand);
     if (dScore > 21 || pScore > dScore) handleGameOverAI('player', playerHand, dHand);
     else if (dScore > pScore) handleGameOverAI('dealer', playerHand, dHand);
     else handleGameOverAI('tie', playerHand, dHand);
   };
 
   const handleGameOverAI = async (result, pHand, dHand, isBlackjack = false) => {
-    setGameState('gameOver');
-    setWinner(result);
-    setProcesando(true);
+    setGameState('gameOver'); setWinner(result); setProcesando(true);
     try {
       if (currency === 'green') {
           let ganancia = 0;
@@ -327,54 +266,81 @@ const generateRealBotPets = (targetValue) => {
             setUserProfile(prev => ({ ...prev, saldo_verde: saldoRecuperado }));
           }
       } else {
-          // LÓGICA DE PAGO EN PETS (BD REAL)
           if (result === 'player') {
-              // Ganas: Te regresan tus pets + te insertan las de la IA
               const inserts = [];
               selectedPets.forEach(p => inserts.push({ user_id: currentUser.id, item_id: p.item_id }));
               botPets.forEach(p => inserts.push({ user_id: currentUser.id, item_id: p.item_id }));
               await supabase.from('inventory').insert(inserts);
-
-              // Actualizamos el saldo rojo reflejado en base de datos
-              const gananciaRojo = botPets.reduce((acc, curr) => acc + (curr.valor || 0), 0);
-              const nuevoRojo = (userProfile.saldo_rojo || 0) + gananciaRojo;
+              const nuevoRojo = (userProfile.saldo_rojo || 0) + botPets.reduce((acc, curr) => acc + (curr.valor || 0), 0);
               await supabase.from('profiles').update({ saldo_rojo: nuevoRojo }).eq('id', currentUser.id);
               setUserProfile(prev => ({...prev, saldo_rojo: nuevoRojo}));
-
           } else if (result === 'tie') {
-              // Empate: Solo te regresan tus pets
-              const inserts = selectedPets.map(p => ({ user_id: currentUser.id, item_id: p.item_id }));
-              await supabase.from('inventory').insert(inserts);
+              await supabase.from('inventory').insert(selectedPets.map(p => ({ user_id: currentUser.id, item_id: p.item_id })));
           } else if (result === 'dealer') {
-              // Pierdes: Ya se habían borrado al inicio. Solo actualizamos el saldo rojo
-              const perdidaRojo = selectedPets.reduce((acc, curr) => acc + (curr.valor || 0), 0);
-              const nuevoRojo = Math.max(0, (userProfile.saldo_rojo || 0) - perdidaRojo);
+              const nuevoRojo = Math.max(0, (userProfile.saldo_rojo || 0) - selectedPets.reduce((acc, curr) => acc + (curr.valor || 0), 0));
               await supabase.from('profiles').update({ saldo_rojo: nuevoRojo }).eq('id', currentUser.id);
               setUserProfile(prev => ({...prev, saldo_rojo: nuevoRojo}));
           }
       }
-
-      // Marcar Partida como Terminada
-      if (aiGameId) {
-          await supabase.from('partidas').update({ estado: 'completed', resultado: result }).eq('id', aiGameId);
-      }
-    } catch (err) {
-        console.error("Error pagando IA:", err);
-    }
+      if (aiGameId) await supabase.from('partidas').update({ estado: 'completed', resultado: result }).eq('id', aiGameId);
+    } catch (err) { console.error("Error pagando IA:", err); }
     setProcesando(false);
   };
 
+
   // ==========================================
-  // LÓGICA MODO MULTIJUGADOR (PvP)
+  // LÓGICA MODO MULTIJUGADOR (PvP) ÉPICO
   // ==========================================
- const createPvPGame = async () => {
+  
+  // 1. Creador abre la mesa vacía
+  const createPvPGame = async () => {
       if (!currentUser) return alert("Log in to play.");
-      if (currency === 'green' && (betAmount <= 0 || betAmount > saldoVerde)) return alert("Invalid Green Coin amount.");
-      if (currency === 'pets' && selectedPets.length === 0) return alert("Select pets to bet.");
-      
       setProcesando(true);
       try {
-          // Cobro en vivo desde el Frontend
+          const datosPartida = {
+              currency: 'none',
+              betAmount: 0,
+              p1: { id: currentUser.id, name: userProfile.username || 'Host', avatar: userProfile.avatar_url || '/default-avatar.png', hand: [], score: 0, status: 'waiting', pets: [] },
+              p2: null,
+              dealerHand: [],
+              dealerScore: 0,
+              currentTurn: 'waiting',
+              deck: []
+          };
+          const { data: newRoom, error } = await supabase.from('partidas').insert({
+              modo_juego: 'blackjack', creador_id: currentUser.id, apuesta_creador: [], datos_partida: datosPartida, estado: 'waiting'
+          }).select().single();
+          if (error) throw error;
+          setActivePvPGame(newRoom);
+      } catch(err) { alert("Error: " + err.message); }
+      setProcesando(false);
+  };
+
+  // 2. Retador se sienta en la mesa
+  const joinPvPGame = async (gameToJoin) => {
+      if(!currentUser) return alert("Log in first.");
+      setProcesando(true);
+      try {
+          const dp = {
+              ...gameToJoin.datos_partida,
+              p2: { id: currentUser.id, name: userProfile.username || 'Challenger', avatar: userProfile.avatar_url || '/default-avatar.png', hand: [], score: 0, status: 'waiting', pets: [] },
+          };
+          const { data: activeRoom, error } = await supabase.from('partidas').update({
+              retador_id: currentUser.id, apuesta_retador: [], datos_partida: dp, estado: 'negotiating'
+          }).eq('id', gameToJoin.id).select().single();
+          if (error) throw error;
+          setActivePvPGame(activeRoom);
+      } catch(err) { alert("Join Error: " + err.message); }
+      setProcesando(false);
+  };
+
+  // 3. El Host propone y paga la apuesta
+  const hostProposeBet = async () => {
+      if (currency === 'green' && (betAmount <= 0 || betAmount > saldoVerde)) return alert("Invalid Green Coin amount.");
+      if (currency === 'pets' && selectedPets.length === 0) return alert("Select pets to bet.");
+      setProcesando(true);
+      try {
+          // Cobrar al Host
           if (currency === 'green') {
               const nuevoSaldo = saldoVerde - betAmount;
               await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
@@ -384,102 +350,88 @@ const generateRealBotPets = (targetValue) => {
               await supabase.from('inventory').delete().in('id', petIds);
           }
 
-          const datosPartida = {
-              currency: currency,
-              betAmount: currency === 'green' ? betAmount : totalPetsValue,
-              p1: { 
-                  id: currentUser.id, 
-                  name: userProfile.username || 'Player 1', 
-                  avatar: userProfile.avatar_url || '/default-avatar.png',
-                  hand: [], 
-                  score: 0, 
-                  status: 'playing', 
-                  pets: currency === 'pets' ? selectedPets : [] 
-              },
-              p2: null,
-              dealerHand: [],
-              dealerScore: 0,
-              currentTurn: 'waiting',
-              deck: []
-          };
+          const dp = { ...activePvPGame.datos_partida, currency: currency, betAmount: currency === 'green' ? betAmount : totalPetsValue };
+          dp.p1.pets = currency === 'pets' ? selectedPets : [];
 
-          // Inserción directa enviando un Array vacío en apuesta_creador
-          const { data: newRoom, error } = await supabase.from('partidas').insert({
-              modo_juego: 'blackjack',
-              creador_id: currentUser.id,
-              apuesta_creador: [], // <--- ESTO EVITA EL ERROR DE BATTLES
-              datos_partida: datosPartida,
-              estado: 'waiting'
-          }).select().single();
-
+          const { data: activeRoom, error } = await supabase.from('partidas').update({
+              datos_partida: dp, estado: 'host_ready'
+          }).eq('id', activePvPGame.id).select().single();
           if (error) throw error;
-          setActivePvPGame(newRoom);
-      } catch(err) { 
-          alert("Error: " + err.message); 
-      }
+          setActivePvPGame(activeRoom);
+      } catch(err) { alert("Error proposing bet: " + err.message); }
       setProcesando(false);
   };
-  const handleJoinClick = (game) => {
-      if(!currentUser) return alert("Log in first.");
-      if(game.datos_partida.currency === 'green') {
-          if(saldoVerde < game.datos_partida.betAmount) return alert("Insufficient Green Coins.");
-          joinPvPGame(game, []);
-      } else {
-          setJoiningGameId(game.id);
-          openInventoryModal();
-      }
-  };
 
- const joinPvPGame = async (gameToJoin, petsToBet) => {
+  // 4. El Retador acepta, paga y reparte las cartas
+  const challengerAcceptBetAndDeal = async () => {
+      const requiredBet = activePvPGame.datos_partida.betAmount;
+      const cur = activePvPGame.datos_partida.currency;
+
+      if (cur === 'green' && saldoVerde < requiredBet) return alert("You don't have enough Green Coins to match this bet.");
+      if (cur === 'pets' && totalPetsValue < requiredBet * 0.98) return alert("Your pets value must match the Host's bet.");
+
       setProcesando(true);
       try {
-          // Cobro
-          if(gameToJoin.datos_partida.currency === 'green') {
-              const nuevoSaldo = saldoVerde - gameToJoin.datos_partida.betAmount;
+          // Cobrar al Retador
+          if (cur === 'green') {
+              const nuevoSaldo = saldoVerde - requiredBet;
               await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
               setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
           } else {
-              const petIds = petsToBet.map(p => p.inventarioId);
+              const petIds = selectedPets.map(p => p.inventarioId);
               await supabase.from('inventory').delete().in('id', petIds);
           }
 
           const freshDeck = createDeck(); 
+          const dp = { ...activePvPGame.datos_partida, deck: freshDeck, currentTurn: 'p1' };
+          dp.p2.pets = cur === 'pets' ? selectedPets : [];
           
-          const p2Data = {
-              id: currentUser.id,
-              name: userProfile.username || 'Player 2',
-              avatar: userProfile.avatar_url || '/default-avatar.png',
-              hand: [],
-              score: 0,
-              status: 'playing',
-              pets: petsToBet || []
-          };
+          // Repartir cartas
+          dp.p1.hand = [freshDeck.pop(), freshDeck.pop()];
+          dp.p2.hand = [freshDeck.pop(), freshDeck.pop()];
+          dp.dealerHand = [freshDeck.pop(), freshDeck.pop()]; 
+          dp.p1.score = calculateScore(dp.p1.hand);
+          dp.p2.score = calculateScore(dp.p2.hand);
+          
+          if (dp.p1.score === 21) dp.p1.status = 'stand';
+          if (dp.p2.score === 21) dp.p2.status = 'stand';
 
-          const dp = {
-              ...gameToJoin.datos_partida,
-              p2: p2Data,
-              deck: freshDeck,
-              currentTurn: 'p1'
-          };
+          if (dp.p1.status === 'stand' && dp.p2.status === 'stand') dp.currentTurn = 'dealer';
+          else if (dp.p1.status === 'stand') dp.currentTurn = 'p2';
 
-          // Update enviando array vacío al retador
           const { data: activeRoom, error } = await supabase.from('partidas').update({
-              retador_id: currentUser.id,
-              apuesta_retador: [], // <--- ESTO EVITA EL ERROR DE BATTLES
-              datos_partida: dp,
-              estado: 'playing' // Dispara la repartición de cartas automáticamente en el useEffect
-          }).eq('id', gameToJoin.id).select().single();
-
+              datos_partida: dp, estado: 'playing'
+          }).eq('id', activePvPGame.id).select().single();
           if (error) throw error;
-          
           setActivePvPGame(activeRoom);
-      } catch(err) { 
-          alert("Join Error: " + err.message); 
-      }
+      } catch(err) { alert("Error matching bet: " + err.message); }
       setProcesando(false);
-      setJoiningGameId(null);
   };
 
+  // 5. Salir / Cancelar Mesa
+  const leaveTable = async () => {
+      if (!activePvPGame) return;
+      // Si el Host sale después de haber propuesto la apuesta, hay que devolverle su dinero/pets
+      if (activePvPGame.estado === 'host_ready' && currentUser.id === activePvPGame.creador_id) {
+          const cur = activePvPGame.datos_partida.currency;
+          if (cur === 'green') {
+              const refund = saldoVerde + activePvPGame.datos_partida.betAmount;
+              await supabase.from('profiles').update({ saldo_verde: refund }).eq('id', currentUser.id);
+              setUserProfile(prev => ({...prev, saldo_verde: refund}));
+          } else {
+              const inserts = activePvPGame.datos_partida.p1.pets.map(p => ({ user_id: currentUser.id, item_id: p.item_id }));
+              await supabase.from('inventory').insert(inserts);
+          }
+      }
+      
+      if (activePvPGame.estado !== 'playing') {
+          // Destruir la sala o simplemente desvincular
+          await supabase.from('partidas').delete().eq('id', activePvPGame.id);
+      }
+      setActivePvPGame(null);
+  };
+
+  // Lógica in-game PvP
   const handlePvPAction = async (action) => {
       setProcesando(true);
       try {
@@ -539,12 +491,7 @@ const generateRealBotPets = (targetValue) => {
       const { data, error } = await supabase.from('inventory').select(`id, is_locked, items ( id, name, value, image_url, color )`).eq('user_id', currentUser.id).eq('is_locked', false);
       if (data && !error) {
           const mascotas = data.map(inv => ({ 
-              inventarioId: inv.id, 
-              item_id: inv.items.id, // NECESARIO PARA RE-INSERTAR
-              nombre: inv.items.name, 
-              valor: inv.items.value, 
-              imagen: inv.items.image_url, 
-              color: inv.items.color 
+              inventarioId: inv.id, item_id: inv.items.id, nombre: inv.items.name, valor: inv.items.value, imagen: inv.items.image_url, color: inv.items.color 
           }));
           setMyInventory(mascotas.sort((a,b) => b.valor - a.valor));
       }
@@ -557,13 +504,7 @@ const generateRealBotPets = (targetValue) => {
 
   const confirmPets = () => {
       setIsInventoryOpen(false);
-      if (joiningGameId) {
-          const gameToJoin = pvpLobbyGames.find(g => g.id === joiningGameId);
-          joinPvPGame(gameToJoin, selectedPets);
-      } else {
-          // AQUÍ GENERAMOS Y MOSTRAMOS LO QUE LA IA APUESTA AL INSTANTE
-          setBotPets(generateRealBotPets(totalPetsValue));
-      }
+      if (gameMode === 'ai') setBotPets(generateRealBotPets(totalPetsValue));
   };
 
   if (cargando) return (
@@ -573,19 +514,24 @@ const generateRealBotPets = (targetValue) => {
     </div>
   );
 
+  const isHost = activePvPGame?.creador_id === currentUser?.id;
+
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 font-sans overflow-hidden relative flex flex-col items-center">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[500px] bg-gradient-to-b from-[#6C63FF]/20 via-[#22c55e]/10 to-transparent blur-[120px] pointer-events-none z-0"></div>
 
+      {/* ========================================== */}
+      {/* INVENTORY MODAL */}
+      {/* ========================================== */}
       {isInventoryOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#14151f] border border-[#252839] rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl animate-bounce-in">
             <div className="p-4 md:p-6 border-b border-[#252839] flex justify-between items-center bg-[#0b0e14] rounded-t-2xl">
               <div>
                 <h2 className="text-xl md:text-2xl font-black uppercase tracking-widest text-white">Select Pets</h2>
-                {joiningGameId && <p className="text-[#ef4444] text-xs md:text-sm mt-1 font-bold">Match opponent's value to join!</p>}
+                {activePvPGame?.estado === 'host_ready' && !isHost && <p className="text-[#ef4444] text-xs md:text-sm mt-1 font-bold">Match Host's Bet of {formatValue(activePvPGame.datos_partida.betAmount)} to Start!</p>}
               </div>
-              <button onClick={() => {setIsInventoryOpen(false); setJoiningGameId(null);}} className="text-[#4a506b] hover:text-white transition-colors text-3xl">&times;</button>
+              <button onClick={() => setIsInventoryOpen(false)} className="text-[#4a506b] hover:text-white transition-colors text-3xl">&times;</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
               {myInventory.length === 0 ? (
@@ -614,7 +560,7 @@ const generateRealBotPets = (targetValue) => {
                 <p className="text-xl md:text-2xl font-black text-[#ef4444] flex items-center gap-2"><RedCoin cls="w-5 h-5 md:w-6 md:h-6"/> {formatValue(totalPetsValue)}</p>
               </div>
               <button onClick={confirmPets} disabled={selectedPets.length === 0} className="px-6 md:px-8 py-3 rounded-xl bg-[#ef4444] hover:bg-red-600 text-white font-black uppercase tracking-widest shadow-[0_0_15px_rgba(239,68,68,0.4)] disabled:opacity-50 transition-all text-xs md:text-base">
-                Confirm Bet
+                Confirm Selection
               </button>
             </div>
           </div>
@@ -623,7 +569,7 @@ const generateRealBotPets = (targetValue) => {
 
       {/* HEADER TABS */}
       {!activePvPGame && (
-          <div className="w-full max-w-[1200px] mb-8 relative z-10 flex justify-center">
+          <div className="w-full max-w-[1200px] mb-8 relative z-10 flex justify-center animate-fade-in">
              <div className="bg-[#14151f] p-1.5 rounded-2xl border border-[#252839] flex gap-2 shadow-lg">
                 <button onClick={() => setGameMode('ai')} className={`px-6 md:px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs md:text-sm transition-all ${gameMode === 'ai' ? 'bg-[#6C63FF] text-white shadow-[0_0_15px_rgba(108,99,255,0.4)]' : 'text-[#8f9ac6] hover:text-white'}`}>
                     Vs AI (PvE)
@@ -637,160 +583,135 @@ const generateRealBotPets = (targetValue) => {
 
       <div className={`w-full max-w-[1200px] relative z-10 flex flex-col lg:grid lg:grid-cols-3 gap-6 md:gap-8`}>
         
-        {/* ================= PANEL IZQUIERDO (CONTROLES) ================= */}
-        <div className={`order-2 lg:order-1 lg:col-span-1 bg-[#14151f]/90 backdrop-blur-md border border-[#252839] rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col relative overflow-hidden ${activePvPGame ? 'lg:col-span-3 lg:flex-row lg:items-center justify-between' : ''}`}>
-          <div className="absolute inset-0 bg-gradient-to-br from-[#6C63FF]/5 to-transparent pointer-events-none"></div>
-          
-          {!activePvPGame && (
-             <h2 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] uppercase tracking-widest mb-6 text-center drop-shadow-md relative z-10">
-                Blackjack 21
-             </h2>
-          )}
+        {/* ================= PANEL IZQUIERDO (CONTROLES PVE O LOBBY) ================= */}
+        {!activePvPGame && (
+          <div className="order-2 lg:order-1 lg:col-span-1 bg-[#14151f]/90 backdrop-blur-md border border-[#252839] rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col relative overflow-hidden animate-fade-in">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#6C63FF]/5 to-transparent pointer-events-none"></div>
+            
+            <h2 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] uppercase tracking-widest mb-6 text-center drop-shadow-md relative z-10">
+              Blackjack 21
+            </h2>
 
-          {gameMode === 'ai' && !activePvPGame ? (
-              <>
-                  <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-3 md:p-4 mb-6 shadow-inner relative z-10">
-                    <p className="text-[#8f9ac6] font-bold uppercase text-[10px] md:text-xs tracking-wider mb-2">Currency</p>
-                    <div className="flex bg-[#1c1f2e] p-1 rounded-lg">
-                      <button disabled={gameState !== 'betting'} onClick={() => setCurrency('green')} className={`flex-1 py-2 rounded-md font-black text-xs md:text-sm uppercase flex items-center justify-center gap-1 md:gap-2 transition-all ${currency === 'green' ? 'bg-[#22c55e]/20 border border-[#22c55e]/50 text-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'text-[#555b82] hover:text-white'}`}>
-                        <GreenCoin /> Green
-                      </button>
-                      <button disabled={gameState !== 'betting'} onClick={() => { setCurrency('pets'); if(gameState==='betting') openInventoryModal(); }} className={`flex-1 py-2 rounded-md font-black text-xs md:text-sm uppercase flex items-center justify-center gap-1 md:gap-2 transition-all ${currency === 'pets' ? 'bg-[#ef4444]/20 border border-[#ef4444]/50 text-[#ef4444] shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'text-[#555b82] hover:text-white'}`}>
-                        <RedCoin /> Pets
-                      </button>
+            {/* CONTROLES MODO PVE */}
+            {gameMode === 'ai' && (
+                <>
+                    <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-3 md:p-4 mb-6 shadow-inner relative z-10">
+                      <p className="text-[#8f9ac6] font-bold uppercase text-[10px] md:text-xs tracking-wider mb-2">Currency</p>
+                      <div className="flex bg-[#1c1f2e] p-1 rounded-lg">
+                        <button disabled={gameState !== 'betting'} onClick={() => setCurrency('green')} className={`flex-1 py-2 rounded-md font-black text-xs md:text-sm uppercase flex items-center justify-center gap-1 md:gap-2 transition-all ${currency === 'green' ? 'bg-[#22c55e]/20 border border-[#22c55e]/50 text-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'text-[#555b82] hover:text-white'}`}>
+                          <GreenCoin /> Green
+                        </button>
+                        <button disabled={gameState !== 'betting'} onClick={() => { setCurrency('pets'); if(gameState==='betting') openInventoryModal(); }} className={`flex-1 py-2 rounded-md font-black text-xs md:text-sm uppercase flex items-center justify-center gap-1 md:gap-2 transition-all ${currency === 'pets' ? 'bg-[#ef4444]/20 border border-[#ef4444]/50 text-[#ef4444] shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'text-[#555b82] hover:text-white'}`}>
+                          <RedCoin /> Pets
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  {currency === 'green' ? (
-                      <div className="mb-6 relative z-10">
-                        <label className="text-[#8f9ac6] font-bold uppercase text-[10px] md:text-xs tracking-wider mb-2 flex justify-between">
-                            <span>Bet Amount</span>
-                            <span>Balance: <GreenCoin cls="w-3 h-3 inline"/> {formatValue(saldoVerde)}</span>
-                        </label>
-                        <div className="flex bg-[#0b0e14] border border-[#252839] rounded-xl overflow-hidden transition-all focus-within:border-[#22c55e] focus-within:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-                          <div className="pl-3 md:pl-4 flex items-center justify-center bg-[#1c1f2e] border-r border-[#252839]"><GreenCoin cls="w-4 h-4 md:w-5 md:h-5"/></div>
-                          <input type="number" disabled={gameState !== 'betting' || procesando} value={betAmount} onChange={(e) => setBetAmount(Number(e.target.value))} className="w-full bg-transparent text-white font-bold p-2 md:p-3 outline-none text-sm md:text-base" />
-                          <button onClick={() => setBetAmount(saldoVerde)} disabled={gameState !== 'betting'} className="px-3 md:px-4 bg-[#1c1f2e] hover:bg-[#252839] border-l border-[#252839] font-black text-xs text-[#22c55e] transition-colors">MAX</button>
+                    {currency === 'green' ? (
+                        <div className="mb-6 relative z-10">
+                          <label className="text-[#8f9ac6] font-bold uppercase text-[10px] md:text-xs tracking-wider mb-2 flex justify-between">
+                              <span>Bet Amount</span>
+                              <span>Balance: <GreenCoin cls="w-3 h-3 inline"/> {formatValue(saldoVerde)}</span>
+                          </label>
+                          <div className="flex bg-[#0b0e14] border border-[#252839] rounded-xl overflow-hidden transition-all focus-within:border-[#22c55e] focus-within:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                            <div className="pl-3 md:pl-4 flex items-center justify-center bg-[#1c1f2e] border-r border-[#252839]"><GreenCoin cls="w-4 h-4 md:w-5 md:h-5"/></div>
+                            <input type="number" disabled={gameState !== 'betting' || procesando} value={betAmount} onChange={(e) => setBetAmount(Number(e.target.value))} className="w-full bg-transparent text-white font-bold p-2 md:p-3 outline-none text-sm md:text-base" />
+                            <button onClick={() => setBetAmount(saldoVerde)} disabled={gameState !== 'betting'} className="px-3 md:px-4 bg-[#1c1f2e] hover:bg-[#252839] border-l border-[#252839] font-black text-xs text-[#22c55e] transition-colors">MAX</button>
+                          </div>
                         </div>
-                      </div>
-                  ) : (
-                      <div className="mb-6 relative z-10 bg-[#0b0e14] border border-[#252839] rounded-xl p-3 md:p-4 text-center">
-                          <p className="text-[#8f9ac6] font-bold uppercase text-[10px] md:text-xs mb-2">Your Pet Bet</p>
-                          {selectedPets.length > 0 ? (
-                              <div className="flex justify-center flex-wrap gap-2 mb-2">
-                                  {selectedPets.slice(0,3).map((p,i) => <img key={i} src={p.imagen} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" />)}
-                                  {selectedPets.length > 3 && <span className="text-[#555b82] text-[10px] font-black self-center">+{selectedPets.length-3}</span>}
-                              </div>
-                          ) : (
-                              <p className="text-[#555b82] text-[10px] md:text-xs mb-3">No pets selected.</p>
-                          )}
-                          <div className="text-lg md:text-xl font-black text-[#ef4444] mb-3 flex items-center justify-center gap-1"><RedCoin /> {formatValue(totalPetsValue)}</div>
-                          
-                          {/* MUESTRA CLARA DE LO QUE OFRECE LA IA ANTES DE APOSTAR */}
-                          {gameState === 'betting' && botPets.length > 0 && (
-                              <div className="mt-4 p-3 bg-[#1c1f2e] border border-[#ef4444]/30 rounded-xl shadow-inner">
-                                  <p className="text-[#ef4444] text-[10px] uppercase font-black mb-2 flex items-center justify-center gap-1">🤖 AI is matching with:</p>
-                                  <div className="flex justify-center flex-wrap gap-2">
-                                      {botPets.slice(0,3).map((p,i) => <img key={i} src={p.imagen} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" title={p.nombre}/>)}
-                                      {botPets.length > 3 && <span className="text-[#555b82] text-[10px] font-black self-center">+{botPets.length-3}</span>}
-                                  </div>
-                              </div>
-                          )}
-
-                          {gameState === 'betting' && <button onClick={openInventoryModal} className="w-full py-2 mt-3 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest">Edit Pets</button>}
-                      </div>
-                  )}
-
-                  <div className="mt-auto relative z-10">
-                    {gameState === 'betting' ? (
-                      <button onClick={startGameAI} disabled={procesando} className={`w-full py-4 md:py-5 rounded-2xl font-black text-base md:text-xl text-white uppercase tracking-widest transition-all ${procesando ? 'bg-gray-600 opacity-50' : 'bg-[#6C63FF] hover:bg-[#5147D9] shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:scale-105'}`}>
-                        {procesando ? 'Betting...' : 'Deal Cards'}
-                      </button>
-                    ) : gameState === 'playing' ? (
-                      <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <button onClick={hitAI} disabled={procesando} className="py-3 md:py-4 bg-[#252839] hover:bg-[#2F3347] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md hover:-translate-y-1 transition-all text-xs md:text-base">Hit</button>
-                        <button onClick={standAI} disabled={procesando} className="py-3 md:py-4 bg-gradient-to-r from-[#ef4444] to-[#b91c1c] rounded-xl font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:-translate-y-1 transition-all text-xs md:text-base">Stand</button>
-                      </div>
                     ) : (
-                      <button onClick={() => {setGameState('betting'); setPlayerHand([]); setDealerHand([]); setBotPets([]); setSelectedPets([]);}} className="w-full py-3 md:py-4 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md transition-all text-xs md:text-base">New Round</button>
-                    )}
-                  </div>
-              </>
-          ) : gameMode === 'lobby' && !activePvPGame ? (
-              <div className="flex flex-col h-full relative z-10">
-                  <div className="flex flex-wrap justify-between items-center mb-4 md:mb-6 gap-2">
-                      <h3 className="text-sm md:text-xl font-black text-white uppercase tracking-widest flex items-center gap-1 md:gap-2"><span className="text-xl md:text-2xl">🌍</span> Live Tables</h3>
-                      <button onClick={createPvPGame} disabled={procesando} className="px-3 md:px-4 py-2 bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase text-[10px] md:text-xs rounded-lg shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                          Create Table
-                      </button>
-                  </div>
-                  
-                  <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-2 md:p-3 mb-4 flex gap-2">
-                     <button onClick={() => setCurrency('green')} className={`flex-1 py-1.5 rounded text-[10px] md:text-xs font-black uppercase ${currency==='green'?'bg-[#22c55e]/20 text-[#22c55e]':'text-[#555b82]'}`}>Green</button>
-                     <button onClick={() => { setCurrency('pets'); openInventoryModal(); }} className={`flex-1 py-1.5 rounded text-[10px] md:text-xs font-black uppercase ${currency==='pets'?'bg-[#ef4444]/20 text-[#ef4444]':'text-[#555b82]'}`}>Pets</button>
-                  </div>
+                        <div className="mb-6 relative z-10 bg-[#0b0e14] border border-[#252839] rounded-xl p-3 md:p-4 text-center">
+                            <p className="text-[#8f9ac6] font-bold uppercase text-[10px] md:text-xs mb-2">Your Pet Bet</p>
+                            {selectedPets.length > 0 ? (
+                                <div className="flex justify-center flex-wrap gap-2 mb-2">
+                                    {selectedPets.slice(0,3).map((p,i) => <img key={i} src={p.imagen} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" />)}
+                                    {selectedPets.length > 3 && <span className="text-[#555b82] text-[10px] font-black self-center">+{selectedPets.length-3}</span>}
+                                </div>
+                            ) : (
+                                <p className="text-[#555b82] text-[10px] md:text-xs mb-3">No pets selected.</p>
+                            )}
+                            <div className="text-lg md:text-xl font-black text-[#ef4444] mb-3 flex items-center justify-center gap-1"><RedCoin /> {formatValue(totalPetsValue)}</div>
+                            
+                            {gameState === 'betting' && botPets.length > 0 && (
+                                <div className="mt-4 p-3 bg-[#1c1f2e] border border-[#ef4444]/30 rounded-xl shadow-inner">
+                                    <p className="text-[#ef4444] text-[10px] uppercase font-black mb-2 flex items-center justify-center gap-1">🤖 AI is matching with:</p>
+                                    <div className="flex justify-center flex-wrap gap-2">
+                                        {botPets.slice(0,3).map((p,i) => <img key={i} src={p.imagen} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" title={p.nombre}/>)}
+                                        {botPets.length > 3 && <span className="text-[#555b82] text-[10px] font-black self-center">+{botPets.length-3}</span>}
+                                    </div>
+                                </div>
+                            )}
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-2 md:gap-3 min-h-[200px]">
-                      {pvpLobbyGames.length === 0 ? (
-                          <div className="text-center py-10 text-[#555b82] font-bold text-xs md:text-sm uppercase">No tables available. Create one!</div>
+                            {gameState === 'betting' && <button onClick={openInventoryModal} className="w-full py-2 mt-3 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest">Edit Pets</button>}
+                        </div>
+                    )}
+
+                    <div className="mt-auto relative z-10">
+                      {gameState === 'betting' ? (
+                        <button onClick={startGameAI} disabled={procesando} className={`w-full py-4 md:py-5 rounded-2xl font-black text-base md:text-xl text-white uppercase tracking-widest transition-all ${procesando ? 'bg-gray-600 opacity-50' : 'bg-[#6C63FF] hover:bg-[#5147D9] shadow-[0_0_20px_rgba(108,99,255,0.4)] hover:scale-105'}`}>
+                          {procesando ? 'Betting...' : 'Deal Cards'}
+                        </button>
+                      ) : gameState === 'playing' ? (
+                        <div className="grid grid-cols-2 gap-3 md:gap-4">
+                          <button onClick={hitAI} disabled={procesando} className="py-3 md:py-4 bg-[#252839] hover:bg-[#2F3347] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md hover:-translate-y-1 transition-all text-xs md:text-base">Hit</button>
+                          <button onClick={standAI} disabled={procesando} className="py-3 md:py-4 bg-gradient-to-r from-[#ef4444] to-[#b91c1c] rounded-xl font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:-translate-y-1 transition-all text-xs md:text-base">Stand</button>
+                        </div>
                       ) : (
-                          pvpLobbyGames.map(game => (
-                              <div key={game.id} className="bg-[#0b0e14] border border-[#252839] p-3 md:p-4 rounded-xl flex items-center justify-between hover:border-[#6C63FF]/50 transition-colors">
-                                  <div className="flex items-center gap-2 md:gap-3">
-                                      <img src={game.datos_partida.p1.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#252839]" />
-                                      <div>
-                                          <p className="text-xs md:text-sm font-bold text-white line-clamp-1">{game.datos_partida.p1.name}</p>
-                                          <p className="text-[10px] md:text-xs font-black flex items-center gap-1 mt-0.5" style={{color: game.datos_partida.currency === 'green' ? '#22c55e' : '#ef4444'}}>
-                                              {game.datos_partida.currency === 'green' ? <GreenCoin cls="w-2 h-2 md:w-3 md:h-3"/> : <RedCoin cls="w-2 h-2 md:w-3 md:h-3"/>}
-                                              {formatValue(game.datos_partida.betAmount)}
-                                          </p>
-                                      </div>
-                                  </div>
-                                  <button onClick={() => handleJoinClick(game)} disabled={game.creador_id === currentUser?.id || procesando} className="px-3 md:px-5 py-1.5 md:py-2 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] text-white font-black uppercase text-[10px] md:text-xs rounded-lg disabled:opacity-50">
-                                      {game.creador_id === currentUser?.id ? 'Waiting...' : 'Join'}
-                                  </button>
-                              </div>
-                          ))
+                        <button onClick={() => {setGameState('betting'); setPlayerHand([]); setDealerHand([]); setBotPets([]); setSelectedPets([]);}} className="w-full py-3 md:py-4 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md transition-all text-xs md:text-base">New Round</button>
                       )}
-                  </div>
-              </div>
-          ) : activePvPGame ? (
-              <>
-                 <div className="flex items-center gap-3 md:gap-4 relative z-10 w-full lg:w-auto">
-                    <button onClick={() => setActivePvPGame(null)} className="px-3 md:px-4 py-2 bg-[#0b0e14] border border-[#252839] text-[#8f9ac6] rounded-lg font-bold text-[10px] md:text-xs uppercase hover:text-white">Leave</button>
-                    <div>
-                        <h3 className="text-sm md:text-lg font-black text-white uppercase tracking-widest">PvP Match</h3>
-                        <p className="text-[#8f9ac6] text-[10px] md:text-xs font-bold flex items-center gap-1">
-                            Pot: {activePvPGame.datos_partida.currency==='green'?<GreenCoin cls="w-2 h-2 md:w-3 md:h-3"/>:<RedCoin cls="w-2 h-2 md:w-3 md:h-3"/>} 
-                            <span className={activePvPGame.datos_partida.currency==='green'?'text-[#22c55e]':'text-[#ef4444]'}>{formatValue(activePvPGame.datos_partida.betAmount * 2)}</span>
-                        </p>
                     </div>
-                 </div>
+                </>
+            )}
 
-                 <div className="flex gap-2 md:gap-4 mt-4 lg:mt-0 w-full lg:w-auto relative z-10">
-                    {activePvPGame.estado === 'playing' ? (
-                        activePvPGame.datos_partida.currentTurn === (currentUser?.id === activePvPGame.creador_id ? 'p1' : 'p2') ? (
-                            <>
-                               <button onClick={() => handlePvPAction('hit')} disabled={procesando} className="flex-1 lg:flex-none px-4 md:px-8 py-2 md:py-3 bg-[#252839] hover:bg-[#2F3347] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md hover:-translate-y-1 transition-all text-[10px] md:text-xs">Hit</button>
-                               <button onClick={() => handlePvPAction('stand')} disabled={procesando} className="flex-1 lg:flex-none px-4 md:px-8 py-2 md:py-3 bg-gradient-to-r from-[#ef4444] to-[#b91c1c] rounded-xl font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:-translate-y-1 transition-all text-[10px] md:text-xs">Stand</button>
-                            </>
+            {/* MODO LOBBY PVP */}
+            {gameMode === 'lobby' && (
+                <div className="flex flex-col h-full relative z-10">
+                    <div className="flex flex-col gap-4 mb-6">
+                        <div className="text-center">
+                            <p className="text-[#8f9ac6] text-xs font-bold mb-1">Create an empty table</p>
+                            <button onClick={createPvPGame} disabled={procesando} className="w-full py-4 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] text-black font-black uppercase text-sm rounded-xl shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-105 transition-all">
+                                Open New Table
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-4 border-t border-[#252839] pt-6"><span className="text-xl">🌍</span> Live Tables</h3>
+                    
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3 min-h-[200px]">
+                        {pvpLobbyGames.length === 0 ? (
+                            <div className="text-center py-10 text-[#555b82] font-bold text-xs md:text-sm uppercase bg-[#0b0e14] border border-[#252839] border-dashed rounded-xl">No tables available. Be the first!</div>
                         ) : (
-                            <div className="px-4 md:px-8 py-2 md:py-3 bg-[#0b0e14] border border-[#252839] rounded-xl font-black uppercase tracking-widest text-[#555b82] w-full text-center text-[10px] md:text-xs">Opponent's Turn...</div>
-                        )
-                    ) : activePvPGame.estado === 'waiting' ? (
-                        <div className="px-4 md:px-8 py-2 md:py-3 bg-[#0b0e14] border border-[#252839] rounded-xl font-black uppercase tracking-widest text-[#22c55e] w-full text-center animate-pulse text-[10px] md:text-xs">Waiting for challenger...</div>
-                    ) : (
-                        <div className="px-4 md:px-8 py-2 md:py-3 bg-[#0b0e14] border border-[#252839] rounded-xl font-black uppercase tracking-widest text-white w-full text-center text-[10px] md:text-xs">Game Over</div>
-                    )}
-                 </div>
-              </>
-          ) : null}
-        </div>
+                            pvpLobbyGames.map(game => (
+                                <div key={game.id} className="bg-[#0b0e14] border border-[#252839] p-3 md:p-4 rounded-xl flex items-center justify-between hover:border-[#6C63FF]/50 transition-colors group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <img src={game.datos_partida.p1.avatar} className="w-10 h-10 rounded-full border-2 border-[#252839]" />
+                                            {game.estado === 'waiting' && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0b0e14] animate-pulse"></div>}
+                                            {game.estado !== 'waiting' && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border-2 border-[#0b0e14]"></div>}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs md:text-sm font-bold text-white line-clamp-1">{game.datos_partida.p1.name}'s Table</p>
+                                            <p className="text-[10px] md:text-xs font-black text-[#555b82] uppercase mt-0.5">
+                                                {game.estado === 'waiting' ? 'Waiting for Challenger' : 'Match in progress'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => joinPvPGame(game)} disabled={game.creador_id === currentUser?.id || game.estado !== 'waiting' || procesando} className="px-4 py-2 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] text-white font-black uppercase text-[10px] md:text-xs rounded-lg disabled:opacity-50 transition-all group-hover:border-[#6C63FF]/50">
+                                        {game.creador_id === currentUser?.id ? 'My Table' : game.estado === 'waiting' ? 'Sit Down' : 'Full'}
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+          </div>
+        )}
 
-        {/* ================= PANEL DERECHO (LA MESA) ================= */}
-        <div className={`order-1 lg:order-2 bg-gradient-to-b from-[#0f111a] to-[#14151f] border-2 border-[#252839] rounded-3xl p-4 md:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col justify-between relative min-h-[400px] overflow-hidden ${activePvPGame ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
+        {/* ================= PANEL CENTRAL/DERECHO (LA MESA) ================= */}
+        <div className={`order-1 lg:order-2 bg-gradient-to-b from-[#0f111a] to-[#14151f] border-2 border-[#252839] rounded-3xl p-4 md:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col justify-between relative min-h-[400px] overflow-hidden animate-fade-in ${activePvPGame ? 'lg:col-span-3 min-h-[80vh]' : 'lg:col-span-2'}`}>
           <div className="absolute inset-2 md:inset-4 border-2 border-dashed border-[#6C63FF]/20 rounded-2xl pointer-events-none"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl md:text-9xl opacity-5 grayscale pointer-events-none">🃏</div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl md:text-[200px] opacity-5 grayscale pointer-events-none">🃏</div>
 
           {/* === MESA MODO PVE === */}
           {!activePvPGame && (
@@ -801,7 +722,7 @@ const generateRealBotPets = (targetValue) => {
                         🤖 AI Dealer {gameState === 'gameOver' && <span className="text-[#ef4444]">({calculateScore(dealerHand)})</span>}
                       </span>
                       {currency === 'pets' && botPets.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1 md:gap-2 bg-[#0b0e14] border border-[#252839] px-2 md:px-3 py-1 rounded-lg">
+                          <div className="flex flex-wrap items-center gap-1 md:gap-2 bg-[#0b0e14] border border-[#252839] px-2 md:px-3 py-1 rounded-lg animate-fade-in">
                               <span className="text-[8px] md:text-[10px] text-[#555b82] uppercase font-black">AI Bets:</span>
                               <div className="flex gap-1">
                                   {botPets.map((p,i) => <img key={i} src={p.imagen} className="w-5 h-5 md:w-6 md:h-6 object-contain" title={p.nombre}/>)}
@@ -813,7 +734,7 @@ const generateRealBotPets = (targetValue) => {
                     
                     <div className="flex justify-center min-h-[100px] md:min-h-[144px]">
                       {dealerHand.length === 0 ? (
-                          <div className="text-[#555b82] text-xs md:text-sm uppercase tracking-widest font-black self-center">Waiting for bets...</div>
+                          <div className="text-[#555b82] text-xs md:text-sm uppercase tracking-widest font-black self-center bg-[#0b0e14] px-6 py-3 rounded-xl border border-[#252839] border-dashed">Waiting for bets...</div>
                       ) : (
                           dealerHand.map((card, idx) => (
                             <PlayingCard key={`dealer-${idx}`} card={card} index={idx} hidden={idx === 1 && gameState === 'playing'} />
@@ -851,61 +772,191 @@ const generateRealBotPets = (targetValue) => {
 
           {/* === MESA MODO PVP === */}
           {activePvPGame && (
-              <div className="relative z-10 w-full flex flex-col items-center gap-4 md:gap-8 py-4 md:py-8">
-                  {/* Jugador 2 (Oponente - Arriba) */}
-                  {activePvPGame.estado !== 'waiting' && (
-                      <div className="w-full flex flex-col items-center">
-                          <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
-                              <img src={activePvPGame.datos_partida.p2?.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-[#252839]"/>
-                              <span className="px-3 md:px-4 py-1 bg-[#1c1f2e] border border-[#252839] rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest text-white shadow-md">
-                                  {activePvPGame.datos_partida.p2?.name} {activePvPGame.estado === 'completed' && `(${activePvPGame.datos_partida.p2?.score})`}
-                              </span>
-                          </div>
-                          <div className="flex justify-center min-h-[90px] md:min-h-[110px]">
-                              {activePvPGame.datos_partida.p2?.hand?.map((card, idx) => (
-                                  <PlayingCard key={`p2-${idx}`} card={card} index={idx} isSmall={true} />
-                              ))}
-                          </div>
+              <div className="relative z-10 w-full flex flex-col h-full animate-fade-in">
+                  
+                  {/* HEADER SALA PVP */}
+                  <div className="flex justify-between items-center bg-[#0b0e14]/80 p-4 rounded-xl border border-[#252839] mb-8 shadow-md">
+                      <div>
+                          <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-widest flex items-center gap-2">⚔️ VIP Table</h3>
+                          <p className="text-[#8f9ac6] text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                              {activePvPGame.estado === 'waiting' ? 'Waiting for Challenger...' : activePvPGame.estado === 'negotiating' ? 'Betting Phase' : activePvPGame.estado === 'host_ready' ? 'Waiting for Accept...' : 'Live Match'}
+                          </p>
                       </div>
-                  )}
-
-                  {/* Dealer PVP (Centro) */}
-                  {activePvPGame.estado !== 'waiting' && (
-                     <div className="w-full border-y border-[#252839]/50 py-3 md:py-4 flex flex-col items-center bg-[#0b0e14]/50 relative">
-                        <span className="text-[8px] md:text-[10px] text-[#8f9ac6] uppercase font-black tracking-widest mb-2">Dealer Cards {activePvPGame.estado === 'completed' && <span className="text-[#ef4444]">({activePvPGame.datos_partida.dealerScore})</span>}</span>
-                        <div className="flex justify-center min-h-[90px] md:min-h-[110px]">
-                            {activePvPGame.datos_partida.dealerHand?.length > 0 ? activePvPGame.datos_partida.dealerHand.map((card, idx) => (
-                                <PlayingCard key={`d-${idx}`} card={card} index={idx} hidden={idx === 1 && activePvPGame.estado === 'playing'} isSmall={true} />
-                            )) : <div className="text-[#555b82] text-[10px] md:text-xs font-bold uppercase mt-4">Waiting to deal...</div>}
-                        </div>
-
-                        {/* MENSAJE GANADOR PVP FLOTANTE */}
-                        {activePvPGame.estado === 'completed' && (
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
-                               <div className="px-6 py-2 rounded-2xl bg-[#0b0e14]/90 border border-[#252839] backdrop-blur-md shadow-2xl animate-bounce-in">
-                                  <h3 className="text-xl md:text-2xl font-black uppercase tracking-widest text-center text-white">
-                                     {getPvPResultMsg()}
-                                  </h3>
-                               </div>
-                            </div>
-                        )}
-                     </div>
-                  )}
-
-                  {/* Jugador 1 (Host - Abajo) */}
-                  <div className="w-full flex flex-col items-center mt-2 md:mt-0">
-                      <div className="flex justify-center min-h-[90px] md:min-h-[110px] mb-2 md:mb-4">
-                          {activePvPGame.datos_partida.p1?.hand?.map((card, idx) => (
-                              <PlayingCard key={`p1-${idx}`} card={card} index={idx} isSmall={true} />
-                          ))}
-                      </div>
-                      <div className="flex items-center gap-2 md:gap-3">
-                          <img src={activePvPGame.datos_partida.p1.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-[#252839]"/>
-                          <span className="px-3 md:px-4 py-1 bg-[#1c1f2e] border border-[#252839] rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest text-white shadow-md">
-                              {activePvPGame.datos_partida.p1.name} (Host) {activePvPGame.estado === 'completed' && `(${activePvPGame.datos_partida.p1?.score})`}
-                          </span>
-                      </div>
+                      <button onClick={leaveTable} className="px-4 py-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/50 rounded-lg font-black text-[10px] md:text-xs uppercase transition-colors">
+                          Leave Table
+                      </button>
                   </div>
+
+                  {/* FASE DE NEGOCIACIÓN (VS SCREEN) */}
+                  {(activePvPGame.estado === 'waiting' || activePvPGame.estado === 'negotiating' || activePvPGame.estado === 'host_ready') && (
+                      <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 flex-1 w-full max-w-5xl mx-auto">
+                          
+                          {/* HOST SIDE */}
+                          <div className={`flex-1 flex flex-col items-center p-6 md:p-10 rounded-3xl border-2 transition-all w-full ${isHost ? 'bg-[#1c1f2e] border-[#6C63FF] shadow-[0_0_30px_rgba(108,99,255,0.2)]' : 'bg-[#0b0e14] border-[#252839]'}`}>
+                              <img src={activePvPGame.datos_partida.p1.avatar} className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-[#252839] mb-4 object-cover shadow-xl"/>
+                              <h3 className="text-xl md:text-2xl font-black text-white uppercase mb-1 text-center w-full truncate">{activePvPGame.datos_partida.p1.name}</h3>
+                              <p className="text-[#8f9ac6] text-xs font-bold uppercase tracking-widest mb-8">Table Host</p>
+
+                              {activePvPGame.estado === 'waiting' && isHost && (
+                                  <div className="text-center animate-pulse">
+                                      <p className="text-[#22c55e] font-black uppercase text-sm mb-2">Table Open!</p>
+                                      <p className="text-[#555b82] text-xs font-bold">Waiting for someone to sit down...</p>
+                                  </div>
+                              )}
+                              
+                              {(activePvPGame.estado === 'negotiating' || activePvPGame.estado === 'host_ready') && (
+                                  <div className="w-full">
+                                      <p className="text-center text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest mb-3">Proposed Bet</p>
+                                      <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-6 text-center shadow-inner">
+                                          {activePvPGame.estado === 'negotiating' && isHost ? (
+                                              <div className="flex flex-col gap-4 animate-fade-in">
+                                                  <div className="flex bg-[#1c1f2e] p-1 rounded-lg">
+                                                      <button onClick={() => setCurrency('green')} className={`flex-1 py-2 rounded-md font-black text-xs uppercase flex items-center justify-center gap-2 transition-all ${currency === 'green' ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'text-[#555b82]'}`}><GreenCoin/> Green</button>
+                                                      <button onClick={() => {setCurrency('pets'); openInventoryModal();}} className={`flex-1 py-2 rounded-md font-black text-xs uppercase flex items-center justify-center gap-2 transition-all ${currency === 'pets' ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-[#555b82]'}`}><RedCoin/> Pets</button>
+                                                  </div>
+                                                  {currency === 'green' ? (
+                                                      <input type="number" value={betAmount} onChange={(e) => setBetAmount(Number(e.target.value))} className="w-full bg-[#1c1f2e] text-center text-white font-black p-3 rounded-lg outline-none border border-[#3b405a] focus:border-[#22c55e]" placeholder="Amount" />
+                                                  ) : (
+                                                      <div className="text-[#ef4444] font-black text-lg"><RedCoin/> {formatValue(totalPetsValue)}</div>
+                                                  )}
+                                                  <button onClick={hostProposeBet} disabled={procesando || (currency==='pets'&&selectedPets.length===0)} className="w-full py-3 bg-[#6C63FF] hover:bg-[#5147D9] text-white font-black rounded-lg uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(108,99,255,0.4)] disabled:opacity-50">Set Bet & Pay</button>
+                                              </div>
+                                          ) : (
+                                              <div className="animate-bounce-in">
+                                                  <span className={`text-4xl font-black flex items-center justify-center gap-3 ${activePvPGame.datos_partida.currency === 'green' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                                                      {activePvPGame.datos_partida.currency === 'green' ? <GreenCoin cls="w-8 h-8"/> : <RedCoin cls="w-8 h-8"/>}
+                                                      {formatValue(activePvPGame.datos_partida.betAmount)}
+                                                  </span>
+                                                  {activePvPGame.estado === 'host_ready' && isHost && <p className="text-[#555b82] text-[10px] font-black uppercase tracking-widest mt-4 animate-pulse">Waiting for challenger to match...</p>}
+                                              </div>
+                                          )}
+                                      </div>
+                                  </div>
+                              )}
+                          </div>
+
+                          {/* VS BADGE */}
+                          <div className="text-4xl md:text-6xl font-black italic text-[#252839] drop-shadow-[0_0_20px_rgba(0,0,0,1)] z-10 shrink-0">
+                              VS
+                          </div>
+
+                          {/* CHALLENGER SIDE */}
+                          <div className={`flex-1 flex flex-col items-center p-6 md:p-10 rounded-3xl border-2 transition-all w-full ${!isHost && activePvPGame.estado !== 'waiting' ? 'bg-[#1c1f2e] border-[#ef4444] shadow-[0_0_30px_rgba(239,68,68,0.2)]' : 'bg-[#0b0e14] border-[#252839]'}`}>
+                              {activePvPGame.estado === 'waiting' ? (
+                                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-dashed border-[#252839] bg-[#14151f] mb-4 flex items-center justify-center">
+                                      <span className="text-[#252839] text-4xl">?</span>
+                                  </div>
+                              ) : (
+                                  <img src={activePvPGame.datos_partida.p2.avatar} className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-[#252839] mb-4 object-cover shadow-xl animate-fade-in"/>
+                              )}
+                              
+                              <h3 className="text-xl md:text-2xl font-black text-[#8f9ac6] uppercase mb-1 text-center w-full truncate">
+                                  {activePvPGame.estado === 'waiting' ? 'Empty Seat' : activePvPGame.datos_partida.p2.name}
+                              </h3>
+                              <p className="text-[#555b82] text-xs font-bold uppercase tracking-widest mb-8">Challenger</p>
+
+                              {activePvPGame.estado === 'negotiating' && (
+                                  <div className="text-center w-full">
+                                      <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-6 text-center animate-pulse">
+                                          <p className="text-[#555b82] text-xs font-black uppercase">Host is selecting bet...</p>
+                                      </div>
+                                  </div>
+                              )}
+
+                              {activePvPGame.estado === 'host_ready' && (
+                                  <div className="w-full text-center">
+                                      <p className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest mb-3">Required to Join</p>
+                                      <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-6 shadow-inner">
+                                          <span className={`text-2xl md:text-3xl font-black flex items-center justify-center gap-2 mb-6 ${activePvPGame.datos_partida.currency === 'green' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                                              {activePvPGame.datos_partida.currency === 'green' ? <GreenCoin cls="w-6 h-6"/> : <RedCoin cls="w-6 h-6"/>}
+                                              {formatValue(activePvPGame.datos_partida.betAmount)}
+                                          </span>
+                                          {!isHost && (
+                                              activePvPGame.datos_partida.currency === 'green' ? (
+                                                  <button onClick={challengerAcceptBetAndDeal} disabled={procesando} className="w-full py-3 bg-[#22c55e] hover:bg-[#16a34a] text-black font-black rounded-lg uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(34,197,94,0.4)] disabled:opacity-50 transition-all hover:scale-105">Match & Deal</button>
+                                              ) : (
+                                                  <button onClick={openInventoryModal} disabled={procesando} className="w-full py-3 bg-[#ef4444] hover:bg-red-600 text-white font-black rounded-lg uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(239,68,68,0.4)] disabled:opacity-50 transition-all hover:scale-105">Select Pets to Match</button>
+                                              )
+                                          )}
+                                          {isHost && <p className="text-[#555b82] text-xs font-bold uppercase">Waiting...</p>}
+                                      </div>
+                                  </div>
+                              )}
+                          </div>
+
+                      </div>
+                  )}
+
+                  {/* FASE DE JUEGO (CARTAS) */}
+                  {(activePvPGame.estado === 'playing' || activePvPGame.estado === 'completed') && (
+                      <div className="flex-1 flex flex-col justify-between w-full h-full animate-fade-in">
+                          
+                          {/* JUGADOR 2 (Arriba) */}
+                          <div className="w-full flex flex-col items-center">
+                              <div className="flex items-center gap-3 mb-4">
+                                  <img src={activePvPGame.datos_partida.p2.avatar} className="w-10 h-10 rounded-full border-2 border-[#252839]"/>
+                                  <span className="px-4 py-1.5 bg-[#1c1f2e] border border-[#252839] rounded-full text-xs font-black uppercase tracking-widest text-white shadow-md">
+                                      {activePvPGame.datos_partida.p2.name} {activePvPGame.estado === 'completed' && <span className="text-[#ef4444]">({activePvPGame.datos_partida.p2.score})</span>}
+                                  </span>
+                              </div>
+                              <div className="flex justify-center min-h-[110px]">
+                                  {activePvPGame.datos_partida.p2.hand.map((card, idx) => (
+                                      <PlayingCard key={`p2-${idx}`} card={card} index={idx} isSmall={true} />
+                                  ))}
+                              </div>
+                          </div>
+
+                          {/* DEALER (Centro) */}
+                          <div className="w-full border-y border-[#252839]/50 py-6 my-4 flex flex-col items-center bg-[#0b0e14]/50 relative">
+                              <span className="text-[10px] text-[#8f9ac6] uppercase font-black tracking-widest mb-4">Dealer Cards {activePvPGame.estado === 'completed' && <span className="text-[#ef4444]">({activePvPGame.datos_partida.dealerScore})</span>}</span>
+                              <div className="flex justify-center min-h-[110px]">
+                                  {activePvPGame.datos_partida.dealerHand.length > 0 ? activePvPGame.datos_partida.dealerHand.map((card, idx) => (
+                                      <PlayingCard key={`d-${idx}`} card={card} index={idx} hidden={idx === 1 && activePvPGame.estado === 'playing'} isSmall={true} />
+                                  )) : null}
+                              </div>
+
+                              {activePvPGame.estado === 'completed' && (
+                                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+                                      <div className="px-8 py-3 rounded-2xl bg-[#0b0e14]/90 border border-[#252839] backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-bounce-in">
+                                          <h3 className="text-3xl font-black uppercase tracking-widest text-center text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                                              {getPvPResultMsg()}
+                                          </h3>
+                                      </div>
+                                  </div>
+                              )}
+                          </div>
+
+                          {/* JUGADOR 1 (Abajo) */}
+                          <div className="w-full flex flex-col items-center">
+                              <div className="flex justify-center min-h-[110px] mb-4">
+                                  {activePvPGame.datos_partida.p1.hand.map((card, idx) => (
+                                      <PlayingCard key={`p1-${idx}`} card={card} index={idx} isSmall={true} />
+                                  ))}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                  <img src={activePvPGame.datos_partida.p1.avatar} className="w-10 h-10 rounded-full border-2 border-[#252839]"/>
+                                  <span className="px-4 py-1.5 bg-[#1c1f2e] border border-[#252839] rounded-full text-xs font-black uppercase tracking-widest text-white shadow-md">
+                                      {activePvPGame.datos_partida.p1.name} (Host) {activePvPGame.estado === 'completed' && <span className="text-[#ef4444]">({activePvPGame.datos_partida.p1.score})</span>}
+                                  </span>
+                              </div>
+                          </div>
+
+                          {/* CONTROLES IN-GAME PVP */}
+                          <div className="mt-8 flex justify-center w-full relative z-20">
+                              {activePvPGame.estado === 'playing' && (
+                                  activePvPGame.datos_partida.currentTurn === (isHost ? 'p1' : 'p2') ? (
+                                      <div className="flex gap-4 w-full max-w-md animate-fade-in">
+                                          <button onClick={() => handlePvPAction('hit')} disabled={procesando} className="flex-1 py-4 bg-[#252839] hover:bg-[#2F3347] border border-[#3b405a] rounded-xl font-black uppercase tracking-widest text-white shadow-md hover:-translate-y-1 transition-all">Hit</button>
+                                          <button onClick={() => handlePvPAction('stand')} disabled={procesando} className="flex-1 py-4 bg-gradient-to-r from-[#ef4444] to-[#b91c1c] rounded-xl font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:-translate-y-1 transition-all">Stand</button>
+                                      </div>
+                                  ) : (
+                                      <div className="px-8 py-4 bg-[#0b0e14] border border-[#252839] rounded-xl font-black uppercase tracking-widest text-[#555b82] text-center w-full max-w-md animate-pulse">Opponent's Turn...</div>
+                                  )
+                              )}
+                          </div>
+                      </div>
+                  )}
+
               </div>
           )}
         </div>
@@ -922,6 +973,7 @@ const generateRealBotPets = (targetValue) => {
         .animate-card-deal { animation: cardDeal 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) both; }
         .animate-bounce-in { animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         
         @keyframes cardDeal {
           0% { opacity: 0; transform: translateY(-50px) scale(0.5) rotateY(90deg) rotateZ(-10deg); }
@@ -931,6 +983,10 @@ const generateRealBotPets = (targetValue) => {
           from { opacity: 0; transform: scale(0.3); }
           50% { transform: scale(1.1); }
           to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}} />
     </div>
