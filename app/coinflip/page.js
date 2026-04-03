@@ -16,6 +16,15 @@ const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" clas
 const imgMonedaHeads = '/heads.png';
 const imgMonedaTails = '/tails.png';
 
+// Helper para extraer las pets sin importar cómo las guardó la base de datos (viejo o nuevo formato)
+const extractPets = (apuesta) => {
+    if (!apuesta) return [];
+    if (Array.isArray(apuesta)) return apuesta; // Si es el formato nuevo (Array directo)
+    if (apuesta.detalle_completo && Array.isArray(apuesta.detalle_completo)) return apuesta.detalle_completo; // Formato viejo
+    if (apuesta.items && Array.isArray(apuesta.items) && typeof apuesta.items[0] === 'object') return apuesta.items; // Otro formato viejo
+    return [];
+};
+
 const formatGameToUI = (dbGame) => {
     return {
         id: dbGame.id,
@@ -24,12 +33,14 @@ const formatGameToUI = (dbGame) => {
         host: dbGame.datos_partida?.host_name || 'Player',
         avatar: dbGame.datos_partida?.avatar_creador || '/default-avatar.png',
         lado: dbGame.datos_partida?.lado_creador || 'Heads',
-        petsHost: dbGame.apuesta_creador || [],
+        // AQUÍ APLICAMOS EL FILTRO SALVAVIDAS:
+        petsHost: extractPets(dbGame.apuesta_creador),
         valorTotalHost: dbGame.datos_partida?.valor_total || 0,
         estado: dbGame.estado,
         challenger: dbGame.datos_partida?.challenger_name || 'Challenger',
         avatarChallenger: dbGame.datos_partida?.avatar_challenger || '/default-avatar.png',
-        petsChallenger: dbGame.apuesta_retador || [],
+        // AQUÍ TAMBIÉN:
+        petsChallenger: extractPets(dbGame.apuesta_retador),
         resultado: dbGame.resultado || null,
         creado_en: dbGame.creado_en,
         datos_partida_raw: dbGame.datos_partida || {}
