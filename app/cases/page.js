@@ -158,18 +158,28 @@ export default function CasesPage() {
       setUserProfile(prev => ({...prev, saldo_verde: nuevoSaldo}));
       
       // Mapear los ganadores e incrustarles el serial que devolvió Supabase
+      // Mapear los ganadores e incrustarles el serial que devolvió Supabase
       const finalWinners = winners.map((w, idx) => {
-          const isLtd = mapNameToLimited[w.name] || w.is_limited;
+          // Revisamos estrictamente si el item en la BD es TRUE, o si en el JSON de la caja dice TRUE.
+          // (Agrego w.limited por si en el JSON de tu caja lo escribiste como "limited" en vez de "is_limited")
+          const isLtd = mapNameToLimited[w.name] === true || w.is_limited === true || w.limited === true;
+          
           return {
               ...w, 
               isLimited: isLtd,
               maxQuantity: mapNameToMaxQ[w.name] || '???',
-              serial: isLtd && insertedInv ? (insertedInv[idx]?.serial_number || '???') : null
+              serial: isLtd && insertedInv ? (insertedInv[idx]?.serial_number || insertedInv[idx]?.serial || '???') : null
           }
       });
 
       setWinningItems(finalWinners);
-      if(foundLimited) setHasLimitedWin(true);
+      
+      // Si alguno de los resultados estrictamente tiene isLimited === true, activamos la pantalla épica
+      if (finalWinners.some(winner => winner.isLimited === true)) {
+          setHasLimitedWin(true);
+      } else {
+          setHasLimitedWin(false);
+      }
 
       const newTracks = finalWinners.map(w => 
         Array.from({length: 55}, (_, i) => 
@@ -345,8 +355,11 @@ export default function CasesPage() {
                   Contenido de la Caja
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {selectedCase.items.map((item, idx) => {
-                    const isLimitedItem = dbItemsMap[item.name]?.is_limited || item.is_limited;
+          
+                    // LECTURA ESTRICTA: Lee de la Base de datos o del JSON de la caja
+                    const isLimitedItem = dbItemsMap[item.name]?.is_limited === true || item.is_limited === true || item.limited === true;
 
                     return (
                     <div key={idx} className={`bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40 ${isLimitedItem ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : ''}`} style={!isLimitedItem ? { borderColor: `${item.color}40` } : {}}>
