@@ -13,7 +13,6 @@ const formatValue = (val) => {
   return val.toLocaleString();
 };
 
-// Función auxiliar para partir arrays grandes en pedacitos (chunks)
 const chunkArray = (array, size) => {
   const chunked = [];
   for (let i = 0; i < array.length; i += size) {
@@ -24,7 +23,7 @@ const chunkArray = (array, size) => {
 
 export default function WalletPage() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [tab, setTab] = useState('inventory'); // 'inventory' | 'market'
+  const [tab, setTab] = useState('inventory'); 
   
   // Datos Reales
   const [saldoVerde, setSaldoVerde] = useState(0);
@@ -32,7 +31,7 @@ export default function WalletPage() {
   const [inventario, setInventario] = useState([]);
   const [marketItems, setMarketItems] = useState([]);
   
-  // Estados de UI y Multi-Sell
+  // Estados de UI
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false); 
   const [selectedIds, setSelectedIds] = useState(new Set()); 
@@ -43,7 +42,6 @@ export default function WalletPage() {
 
   const fetchData = async () => {
     setCargando(true);
-    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         setCargando(false);
@@ -59,7 +57,6 @@ export default function WalletPage() {
 
     await cargarInventario(user.id);
     await cargarMarket();
-
     setCargando(false);
   };
 
@@ -70,7 +67,8 @@ export default function WalletPage() {
   const cargarInventario = async (uid) => {
     const { data, error } = await supabase
         .from('inventory')
-        .select(`id, item_id, is_limited, serial_number, original_owner, items (name, value, image_url, color)`)
+        // IMPORTANTE: Agregamos "locked" a la consulta
+        .select(`id, item_id, is_limited, serial_number, original_owner, locked, items (name, value, image_url, color)`)
         .eq('user_id', uid);
     
     if (error) return;
@@ -85,7 +83,8 @@ export default function WalletPage() {
             color: row.items.color || '#9ca3af',
             isLimited: row.is_limited || false,
             serial: row.serial_number || 0,
-            originalOwner: row.original_owner || 'Unknown'
+            originalOwner: row.original_owner || 'Unknown',
+            isLocked: row.locked || false // Propiedad de candado
         })));
     }
   };
@@ -120,24 +119,61 @@ export default function WalletPage() {
     return { sellPrice, feePercentage: (feePercentage * 100).toFixed(0) };
   };
 
-  const toggleSelect = (invId) => {
+  // LÓGICA DE SELECCIÓN Y CANDADO (LOCK)
+  const toggleSelect = (pet) => {
     if (tab !== 'inventory') return;
+    if (pet.isLocked) return; // No deja seleccionar pets bloqueadas
+
     const newSet = new Set(selectedIds);
-    if (newSet.has(invId)) newSet.delete(invId);
-    else newSet.add(invId);
+    if (newSet.has(pet.inventarioId)) newSet.delete(pet.inventarioId);
+    else newSet.add(pet.inventarioId);
     setSelectedIds(newSet);
   };
 
   const selectAll = () => {
-    if (selectedIds.size === filteredInventory.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filteredInventory.map(p => p.inventarioId)));
+    // Solo toma en cuenta las mascotas que NO están bloqueadas
+    const availablePets = filteredInventory.filter(p => !p.isLocked);
+    
+    if (selectedIds.size === availablePets.length && availablePets.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(availablePets.map(p => p.inventarioId)));
+    }
   };
 
-  // VENTA MÚLTIPLE BLINDADA CONTRA GLITCHES
+  const toggleLock = async (e, pet) => {
+    e.stopPropagation(); // Evita que se seleccione la card al clickear el candado
+    if (procesando) return;
+
+    const newLockedState = !pet.isLocked;
+
+    // Actualización visual inmediata
+    setInventario(prev => prev.map(p => p.inventarioId === pet.inventarioId ? {...p, isLocked: newLockedState} : p));
+    
+    // Si la bloquea y estaba seleccionada, la quita de la selección
+    if (newLockedState && selectedIds.has(pet.inventarioId)) {
+        const newSet = new Set(selectedIds);
+        newSet.delete(pet.inventarioId);
+        setSelectedIds(newSet);
+    }
+
+    // Actualizar Base de Datos
+    const { error } = await supabase.from('inventory').update({ locked: newLockedState }).eq('id', pet.inventarioId);
+    
+    if (error) {
+        alert("Error al intentar bloquear/desbloquear.");
+        setInventario(prev => prev.map(p => p.inventarioId === pet.inventarioId ? {...p, isLocked: !newLockedState} : p));
+    }
+  };
+
+  // VENTA MÚLTIPLE
   const venderSeleccionadas = async () => {
     if (procesando || selectedIds.size === 0) return;
     
-    const petsToSell = inventario.filter(p => selectedIds.has(p.inventarioId));
+    // Doble verificación de seguridad para no vender bloqueadas
+    const petsToSell = inventario.filter(p => selectedIds.has(p.inventarioId) && !p.isLocked);
+    if(petsToSell.length === 0) return;
+
     let totalSellPrice = 0;
     let marketInserts = [];
 
@@ -152,61 +188,50 @@ export default function WalletPage() {
     setProcesando(true);
     
     try {
-      // 1. PRIMERO BORRAMOS EN LOTES PEQUEÑOS
       const idsToDelete = Array.from(selectedIds);
       const deleteChunks = chunkArray(idsToDelete, 15);
       
       for (const chunk of deleteChunks) {
           const { error: delError } = await supabase.from('inventory').delete().in('id', chunk);
-          if (delError) {
-              throw new Error("La base de datos rechazó el borrado. Transacción cancelada por seguridad.");
-          }
+          if (delError) throw new Error("La base de datos rechazó el borrado.");
       }
 
-      // 2. INSERTAMOS AL MERCADO
       const insertChunks = chunkArray(marketInserts, 50);
       for (const chunk of insertChunks) {
           await supabase.from('marketplace').insert(chunk);
       }
 
-      // 3. DAR DINERO AL FINAL
       const nuevoSaldo = saldoVerde + totalSellPrice;
-      const { error: saldoError } = await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
+      await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
       
-      if (saldoError) throw new Error("Tus mascotas se vendieron pero hubo un error actualizando tu saldo.");
-
       setSaldoVerde(nuevoSaldo);
       setSelectedIds(new Set());
-      alert(`¡Venta Múltiple Exitosa!\nRecibiste: ${totalSellPrice.toLocaleString()} 🟢`);
-      
+      alert(`¡Venta Exitosa!\nRecibiste: ${totalSellPrice.toLocaleString()} 🟢`);
       await fetchData(); 
       
     } catch (error) {
       alert(`❌ Algo salió mal: ${error.message}`);
     }
-    
     setProcesando(false);
   };
 
   const comprarDelMarket = async (marketId, petName, precio, itemId) => {
     if (procesando) return;
-    if (saldoVerde < precio) return alert("No tienes suficiente Saldo Verde para comprar esto.");
+    if (saldoVerde < precio) return alert("No tienes suficiente Saldo Verde.");
     if (!confirm(`¿Comprar ${petName} por ${precio.toLocaleString()} 🟢?`)) return;
 
     setProcesando(true);
-    
     try {
       const nuevoSaldo = saldoVerde - precio;
       await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
       await supabase.from('inventory').insert({ user_id: currentUser.id, item_id: itemId });
       await supabase.from('marketplace').delete().eq('id', marketId);
 
-      alert(`¡Compraste ${petName} con éxito! Ve a revisar tu inventario.`);
+      alert(`¡Compraste ${petName}!`);
       await fetchData(); 
     } catch (error) {
-      alert("Error al intentar comprar la mascota.");
+      alert("Error al intentar comprar.");
     }
-    
     setProcesando(false);
   };
 
@@ -242,12 +267,11 @@ export default function WalletPage() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 animate-fade-in relative overflow-hidden font-sans pb-32">
-      {/* Luces Ambientales de Fondo */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[500px] bg-gradient-to-b from-[#6C63FF]/10 to-transparent blur-[150px] pointer-events-none z-0"></div>
 
       <div className="max-w-[1200px] mx-auto relative z-10">
         
-        {/* === HEADER === */}
+        {/* HEADER */}
         <div className="mb-10 text-center md:text-left">
           <h1 className="text-4xl md:text-5xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] mb-8">
             Economy & Vault
@@ -285,7 +309,7 @@ export default function WalletPage() {
           </div>
         </div>
 
-        {/* === TABS === */}
+        {/* TABS */}
         <div className="flex gap-4 mb-8 border-b border-[#252839] pb-4 relative z-10">
           <button 
             onClick={() => { setTab('inventory'); setSelectedIds(new Set()); }} 
@@ -301,11 +325,9 @@ export default function WalletPage() {
           </button>
         </div>
 
-        {/* === ZONA PRINCIPAL === */}
+        {/* ZONA PRINCIPAL */}
         <div className="bg-[#14151f]/80 backdrop-blur-xl border border-[#252839] rounded-[2rem] p-6 md:p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-h-[500px] relative z-10">
             
-            <img src="/teto.png" alt="Teto Decoración" className="absolute -right-10 -bottom-10 w-64 opacity-[0.03] pointer-events-none z-0" onError={(e) => e.target.style.display = 'none'} />
-
             {/* FILTROS */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 relative z-10">
                 <div className="flex items-center gap-4">
@@ -315,7 +337,7 @@ export default function WalletPage() {
                   </h2>
                   {tab === 'inventory' && filteredInventory.length > 0 && (
                     <button onClick={selectAll} className="text-[#8f9ac6] hover:text-white text-xs font-black uppercase tracking-widest transition-colors bg-[#0b0e14] px-4 py-2 rounded-lg border border-[#252839]">
-                      {selectedIds.size === filteredInventory.length ? 'Deselect All' : 'Select All'}
+                      {selectedIds.size === filteredInventory.filter(p => !p.isLocked).length && filteredInventory.filter(p => !p.isLocked).length > 0 ? 'Deselect All' : 'Select All'}
                     </button>
                   )}
                 </div>
@@ -351,13 +373,11 @@ export default function WalletPage() {
                 <div className="py-20 flex flex-col items-center justify-center bg-[#0b0e14]/50 rounded-3xl border-2 border-dashed border-[#252839] relative z-10">
                     <span className="text-6xl opacity-30 grayscale mb-6 drop-shadow-md">🎒</span>
                     <p className="text-[#8f9ac6] font-black text-2xl mb-2 uppercase tracking-widest">No pets found</p>
-                    <p className="text-[#555b82] text-sm font-bold text-center px-4">Your inventory is empty. Open some cases or buy in the market!</p>
                 </div>
             ) : tab === 'market' && filteredMarket.length === 0 ? (
                 <div className="py-20 flex flex-col items-center justify-center bg-[#0b0e14]/50 rounded-3xl border-2 border-dashed border-[#252839] relative z-10">
                     <span className="text-6xl opacity-30 grayscale mb-6 drop-shadow-md">🏪</span>
                     <p className="text-[#8f9ac6] font-black text-2xl mb-2 uppercase tracking-widest">Market is empty</p>
-                    <p className="text-[#555b82] text-sm font-bold text-center px-4">No one is selling anything right now. Check back later.</p>
                 </div>
             ) : (
                 /* GRID DE ITEMS CON DISEÑO ÉPICO Y MULTI-SELL */
@@ -370,48 +390,79 @@ export default function WalletPage() {
                       return (
                         <div 
                            key={pet.inventarioId} 
-                           onClick={() => toggleSelect(pet.inventarioId)}
-                           className={`cursor-pointer relative bg-[#0a0a0a] rounded-2xl p-1 flex flex-col items-center justify-between transition-all duration-300 group h-[260px] animate-fade-in-up border-2
-                            ${pet.isLimited ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : isSelected ? 'border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)]'}
-                            ${isSelected ? 'scale-105 -translate-y-2' : 'hover:-translate-y-1'}
+                           onClick={() => toggleSelect(pet)}
+                           className={`cursor-pointer relative bg-[#0a0a0a] rounded-2xl p-1 flex flex-col items-center justify-between transition-all duration-300 group h-[260px] animate-fade-in-up border-2 overflow-hidden
+                            ${pet.isLimited 
+                                ? `border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.5)] ${isSelected ? 'scale-105 -translate-y-2 ring-4 ring-[#22c55e]' : 'hover:-translate-y-2'}` 
+                                : isSelected 
+                                    ? 'border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105 -translate-y-2' 
+                                    : 'border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:-translate-y-1'
+                            }
+                            ${pet.isLocked ? 'grayscale-[40%] opacity-80 cursor-not-allowed' : ''}
                            `} 
                            style={{animationDelay: `${i * 30}ms`}}
                         >
-                            <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
-                                <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${pet.color} 0%, transparent 70%)` }}></div>
-                            </div>
-
+                            {/* DISEÑO MYTHIC ULTRA ÉPICO */}
                             {pet.isLimited && (
-                               <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-10" style={{ backgroundSize: '200% 200%', animation: 'shimmer 3s infinite linear' }}></div>
+                                <>
+                                    {/* Borde interior animado y fondo épico */}
+                                    <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
+                                        <div className="absolute -inset-[100%] animate-spin-slow" style={{ background: 'conic-gradient(from 0deg, transparent 0 340deg, rgba(250,204,21,0.6) 360deg)' }}></div>
+                                        <div className="absolute inset-[2px] bg-[#0a0a0a] rounded-xl z-0"></div>
+                                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(250,204,21,0.15)_0%,transparent_80%)] z-0"></div>
+                                    </div>
+                                    {/* Banner SUPERIOR Mítico */}
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-max z-30">
+                                        <div className="bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-[#0a0a0a] text-[9px] font-black px-4 py-1 rounded-sm uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(250,204,21,0.8)] border-b-2 border-yellow-200">
+                                            Mythic
+                                        </div>
+                                    </div>
+                                </>
                             )}
 
-                            <div className={`absolute top-3 left-3 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all z-20 shadow-lg
+                            {!pet.isLimited && (
+                                <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
+                                    <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${pet.color} 0%, transparent 70%)` }}></div>
+                                </div>
+                            )}
+
+                            {/* Checkbox de Selección */}
+                            <div className={`absolute top-2 left-2 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all z-20 shadow-lg
                                ${isSelected ? 'bg-[#22c55e] border-[#22c55e]' : 'bg-[#0a0a0a]/80 border-[#374151] backdrop-blur-sm group-hover:border-cyan-500/50'}
                             `}>
-                               {isSelected && <span className="text-[#0a0a0a] text-sm font-black">✓</span>}
+                                {isSelected && <span className="text-[#0a0a0a] text-sm font-black">✓</span>}
                             </div>
 
-                            {pet.isLimited && (
-                              <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-yellow-600 text-[#0a0a0a] font-black text-[10px] px-3 py-1 rounded-bl-xl rounded-tr-xl shadow-lg z-20 border-b-2 border-l-2 border-yellow-400">
-                                #{pet.serial}
-                              </div>
-                            )}
+                            {/* Botón de Candado (Lock/Unlock) */}
+                            <button 
+                                onClick={(e) => toggleLock(e, pet)}
+                                className={`absolute top-2 right-2 p-1.5 rounded-lg border-2 transition-all z-30 shadow-lg backdrop-blur-md hover:scale-110 active:scale-95
+                                    ${pet.isLocked ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-[#0a0a0a]/80 border-[#374151] text-gray-400 hover:text-white hover:border-gray-400'}
+                                `}
+                                title={pet.isLocked ? "Desbloquear mascota" : "Bloquear para no vender"}
+                            >
+                                {pet.isLocked ? '🔒' : '🔓'}
+                            </button>
 
                             <div className="relative w-full flex-1 flex items-center justify-center mt-6 mb-2 z-10">
-                                <div className="absolute w-20 h-20 rounded-full blur-[20px] opacity-40 group-hover:opacity-70 transition-opacity duration-300" style={{ backgroundColor: pet.color }}></div>
-                                <img src={pet.img} className={`w-24 h-24 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 relative z-10 ${isSelected ? 'scale-110' : 'group-hover:scale-125 group-hover:-translate-y-2'}`} alt={pet.nombre}/>
+                                <div className={`absolute w-20 h-20 rounded-full blur-[20px] transition-opacity duration-300 ${pet.isLimited ? 'opacity-70 bg-yellow-500 animate-pulse' : 'opacity-40 group-hover:opacity-70'}`} style={!pet.isLimited ? { backgroundColor: pet.color } : {}}></div>
+                                <img src={pet.img} className={`w-24 h-24 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 relative z-10 ${isSelected ? 'scale-110' : 'group-hover:scale-125 group-hover:-translate-y-2'} ${pet.isLimited ? 'animate-float' : ''}`} alt={pet.nombre}/>
                             </div>
                             
-                            <div className="w-full text-center z-10 bg-[#111827]/90 rounded-b-xl rounded-t-sm py-3 px-2 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${pet.color}, transparent)` }}></div>
+                            <div className="w-full text-center z-10 bg-[#111827]/90 rounded-b-xl rounded-t-sm pt-2 pb-3 px-2 backdrop-blur-md border-t border-[#374151]/50 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden flex flex-col items-center">
+                                <div className="absolute top-0 left-0 w-full h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${pet.isLimited ? '#facc15' : pet.color}, transparent)` }}></div>
                                 
-                                <div className="text-[12px] truncate text-white font-black uppercase tracking-widest px-1 mb-1" style={{textShadow: `0 2px 4px rgba(0,0,0,0.8)`}}>{pet.nombre}</div>
+                                <div className="text-[12px] truncate w-full text-white font-black uppercase tracking-widest px-1 mb-1" style={{textShadow: `0 2px 4px rgba(0,0,0,0.8)`, color: pet.isLimited ? '#facc15' : 'white'}}>{pet.nombre}</div>
                                 
+                                {/* Info Épica del Serial */}
                                 {pet.isLimited && (
-                                   <div className="text-[9px] font-bold text-yellow-500/80 truncate px-1 mb-1 uppercase tracking-wider">Original: {pet.originalOwner}</div>
+                                   <div className="flex flex-col items-center bg-[#0a0a0a] border border-yellow-500/40 w-full rounded p-1 mb-1 shadow-inner">
+                                       <span className="text-[11px] font-black text-yellow-400 uppercase tracking-widest">#{pet.serial}</span>
+                                       <span className="text-[8px] font-bold text-gray-400 truncate w-full uppercase">Own: {pet.originalOwner}</span>
+                                   </div>
                                 )}
 
-                                <div className="text-sm font-black text-gray-300 flex items-center justify-center gap-1.5 bg-[#0a0a0a]/50 py-1 rounded-lg border border-[#1f2937]">
+                                <div className="text-sm font-black text-gray-300 flex items-center justify-center w-full gap-1.5 bg-[#0a0a0a]/50 py-1 rounded-lg border border-[#1f2937] mt-1">
                                     <RedCoin cls="w-4 h-4 grayscale opacity-80"/> {formatValue(pet.valor)}
                                 </div>
                             </div>
@@ -421,7 +472,6 @@ export default function WalletPage() {
 
                     {tab === 'market' && filteredMarket.map((m, i) => (
                         <div key={m.marketId} className="relative bg-[#0a0a0a] rounded-2xl p-1 flex flex-col items-center justify-between transition-all duration-300 group h-[260px] animate-fade-in-up border-2 border-[#1f2937] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:-translate-y-2" style={{animationDelay: `${i * 30}ms`}}>
-                            
                             <div className="absolute inset-1 rounded-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-0 overflow-hidden">
                                 <div className="w-[150%] h-[150%] absolute -top-1/4 -left-1/4" style={{ background: `radial-gradient(circle at center, ${m.color} 0%, transparent 70%)` }}></div>
                             </div>
@@ -479,7 +529,9 @@ export default function WalletPage() {
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .animate-fade-in-up { opacity: 0; animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes shimmer { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
+        .animate-spin-slow { animation: spin 4s linear infinite; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(11, 14, 20, 0.5); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #252839; border-radius: 10px; border: 2px solid #0b0e14; }
@@ -492,6 +544,15 @@ export default function WalletPage() {
         @keyframes fadeInUp { 
             from { opacity: 0; transform: translateY(20px) scale(0.95); } 
             to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
         }
       `}} />
     </div>
