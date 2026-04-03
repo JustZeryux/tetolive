@@ -12,7 +12,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 
 const RedCoin = ({cls="w-4 h-4"}) => <img src="/red-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]`} alt="R" onError={e=>e.target.style.display='none'}/>;
 const GreenCoin = ({cls="w-4 h-4"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
-//yes
+
 const formatValue = (val) => {
   if (typeof val !== 'number') return val;
   if (val >= 1000000) return parseFloat((val / 1000000).toFixed(2)) + 'M';
@@ -29,7 +29,7 @@ const menuSections = [
       { name: 'Coinflip', path: '/coinflip', iconImg: '/Coinflip.png' },
       { name: 'Mines', path: '/mines', iconImg: '/Mines.png' },
       { name: 'Jackpot', path: '/jackpot', iconImg: '/Jackpot.png' },
-      { name: 'Blackjack', path: '/blackjack', iconImg: '/Coinflip.png' }, // <-- AQUÍ ESTÁ EL NUEVO MINIJUEGO WEY (Cámbiale el icono si tienes uno de cartas)
+      { name: 'Blackjack', path: '/blackjack', iconImg: '/Coinflip.png' }, 
     ]
   },
   {
@@ -138,7 +138,13 @@ export default function CasinoLayout({ children }) {
         setChatMessages(prev => [...prev, payload.new]);
       }).subscribe();
 
-// === SISTEMA DE TIPS (PROPINAS) ===
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+      if (chatChannel) supabase.removeChannel(chatChannel);
+    };
+  }, []);
+
+  // === SISTEMA DE TIPS (PROPINAS) ===
   const [isTipOpen, setIsTipOpen] = useState(false);
   const [tipUsername, setTipUsername] = useState('');
   const [tipCurrency, setTipCurrency] = useState('green');
@@ -152,34 +158,35 @@ export default function CasinoLayout({ children }) {
       setTipUsername('');
       setTipAmount('');
       setTipSelectedPets([]);
-      if (currentUser) {
+      if (currentUser && !currentUser.username.startsWith('Guest')) {
            const { data } = await supabase.from('inventory').select(`id, items ( id, name, value, image_url, color )`).eq('user_id', currentUser.id).eq('is_locked', false).limit(3000);
            if (data) {
                setTipMyPets(data.map(inv => ({ inventarioId: inv.id, ...inv.items })).sort((a,b) => b.value - a.value));
            }
+      } else {
+           setTipMyPets([]); // Limpiar para guests
       }
   };
 
   const enviarTip = async () => {
       if (!tipUsername) return alert("Ingresa el username del jugador.");
-      if (tipCurrency === 'green' && (tipAmount <= 0 || tipAmount > userProfile?.saldo_verde)) return alert("Monto inválido o no tienes suficiente saldo.");
+      // CORRECCIÓN MORTAL: Cambié userProfile?.saldo_verde por saldoVerde
+      if (tipCurrency === 'green' && (tipAmount <= 0 || tipAmount > saldoVerde)) return alert("Monto inválido o no tienes suficiente saldo.");
       if (tipCurrency === 'pets' && tipSelectedPets.length === 0) return alert("Selecciona mascotas para enviar.");
 
       setIsTipping(true);
       try {
-          // 1. Buscar si el usuario existe (insensible a mayúsculas/minúsculas)
           const { data: receiver, error: errRec } = await supabase.from('profiles').select('id, saldo_verde').ilike('username', tipUsername).single();
           if (errRec || !receiver) throw new Error("No se encontró ningún jugador con ese nombre.");
           if (receiver.id === currentUser.id) throw new Error("No puedes enviarte propinas a ti mismo xd.");
 
           if (tipCurrency === 'green') {
-              // 2A. Transferir Saldo Verde
-              await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - tipAmount }).eq('id', currentUser.id);
+              // CORRECCIÓN MORTAL: Usar saldoVerde directamente
+              await supabase.from('profiles').update({ saldo_verde: saldoVerde - tipAmount }).eq('id', currentUser.id);
               await supabase.from('profiles').update({ saldo_verde: receiver.saldo_verde + tipAmount }).eq('id', receiver.id);
-              setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - tipAmount}));
+              setSaldoVerde(prev => prev - tipAmount);
               alert(`¡Le has enviado ${tipAmount} Saldo Verde a ${tipUsername} 💸!`);
           } else {
-              // 2B. Transferir Pets
               const petIds = tipSelectedPets.map(p => p.inventarioId);
               await supabase.from('inventory').update({ user_id: receiver.id }).in('id', petIds);
               alert(`¡Le has enviado ${tipSelectedPets.length} mascotas a ${tipUsername} 🎁!`);
@@ -195,12 +202,6 @@ export default function CasinoLayout({ children }) {
       if (tipSelectedPets.find(p => p.inventarioId === pet.inventarioId)) setTipSelectedPets(prev => prev.filter(p => p.inventarioId !== pet.inventarioId));
       else setTipSelectedPets(prev => [...prev, pet]);
   };
-    
-    return () => {
-      if (channel) supabase.removeChannel(channel);
-      if (chatChannel) supabase.removeChannel(chatChannel);
-    };
-  }, []);
 
   // Auto-scroll del chat
   useEffect(() => {
@@ -319,10 +320,9 @@ export default function CasinoLayout({ children }) {
               </div>
             </div>
 
-            {/* Ocultamos el botón de depósito en celulares porque ya está en el menú de abajo */}
-<button onClick={abrirModalTip} className="px-4 py-2 bg-gradient-to-r from-[#6C63FF] to-[#5147D9] hover:from-[#7b73ff] hover:to-[#6C63FF] text-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-lg shadow-[0_0_15px_rgba(108,99,255,0.4)] transition-all hover:scale-105 flex items-center gap-2">
-   🎁 Tip Player
-</button>
+            <button onClick={abrirModalTip} className="px-4 py-2 bg-gradient-to-r from-[#6C63FF] to-[#5147D9] hover:from-[#7b73ff] hover:to-[#6C63FF] text-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-lg shadow-[0_0_15px_rgba(108,99,255,0.4)] transition-all hover:scale-105 flex items-center gap-2">
+               🎁 Tip Player
+            </button>
 
             <div className="flex items-center gap-2 md:gap-3 pl-1 md:pl-4 border-l border-[#222630]">
               <LoginButton />
@@ -332,14 +332,12 @@ export default function CasinoLayout({ children }) {
               ⚙️
             </button>
 
-            {/* En celular el chat se abre con el menú de abajo, así que lo ocultamos del header superior para ahorrar espacio */}
             <button onClick={() => setChatAbierto(!chatAbierto)} className={`hidden sm:block p-2 transition-colors rounded-lg ${chatAbierto ? 'text-white bg-[#222630]' : 'text-[#7c8291] hover:text-white hover:bg-[#1a1e29]'}`}>
               💬
             </button>
           </div>
         </header>
 
-        {/* Agregamos pb-[80px] en celulares para que el MobileBottomNav no tape el contenido de hasta abajo */}
         <main className="flex-1 overflow-y-auto custom-scrollbar relative pb-[80px] md:pb-0">
           {children}
         </main>
@@ -380,7 +378,6 @@ export default function CasinoLayout({ children }) {
                     <button className="bg-gradient-to-r from-[#6C63FF] to-[#5147D9] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-[0_2px_8px_rgba(108,99,255,0.25)]">
                       08:39
                     </button>
-                    {/* Botón para cerrar el chat en celular */}
                     <button onClick={() => setChatAbierto(false)} className="xl:hidden ml-1 p-1 text-[#7c8291] hover:text-white bg-[#14171f] rounded-lg">
                       &times;
                     </button>
@@ -448,9 +445,7 @@ export default function CasinoLayout({ children }) {
         )}
       </aside>
 
-{/* ========================================== */}
       {/* MODAL DE TIP / PROPINAS */}
-      {/* ========================================== */}
       {isTipOpen && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="bg-[#14151f] border border-[#252839] rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
@@ -462,7 +457,6 @@ export default function CasinoLayout({ children }) {
 
             <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                 
-                {/* 1. Input del Usuario */}
                 <div className="mb-6">
                     <label className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest mb-2 block">Receiver's Username</label>
                     <input 
@@ -474,23 +468,22 @@ export default function CasinoLayout({ children }) {
                     />
                 </div>
 
-                {/* 2. Selección de Moneda */}
                 <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-3 mb-6 flex gap-2">
                     <button onClick={() => setTipCurrency('green')} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase transition-all flex items-center justify-center gap-2 ${tipCurrency === 'green' ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'text-[#555b82] hover:text-white'}`}>💰 Green Coins</button>
                     <button onClick={() => setTipCurrency('pets')} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase transition-all flex items-center justify-center gap-2 ${tipCurrency === 'pets' ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-[#555b82] hover:text-white'}`}>🐾 Pets</button>
                 </div>
 
-                {/* 3. Cantidad a enviar */}
                 {tipCurrency === 'green' ? (
                     <div>
                         <label className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest mb-2 flex justify-between">
                             <span>Amount to send</span>
-                            <span>Your Balance: {userProfile?.saldo_verde || 0}</span>
+                            {/* CORRECCIÓN: Mostrar saldoVerde */}
+                            <span>Your Balance: {saldoVerde}</span>
                         </label>
                         <div className="flex bg-[#0b0e14] border border-[#252839] rounded-xl overflow-hidden focus-within:border-[#22c55e] transition-colors">
                             <div className="pl-4 flex items-center justify-center bg-[#1c1f2e] border-r border-[#252839]"><img src="/green-coin.png" className="w-5 h-5 drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]"/></div>
                             <input type="number" value={tipAmount} onChange={(e) => setTipAmount(Number(e.target.value))} placeholder="0" className="w-full bg-transparent text-white font-black p-3 outline-none" />
-                            <button onClick={() => setTipAmount(userProfile?.saldo_verde || 0)} className="px-4 bg-[#1c1f2e] hover:bg-[#252839] font-black text-xs text-[#22c55e] transition-colors border-l border-[#252839]">MAX</button>
+                            <button onClick={() => setTipAmount(saldoVerde)} className="px-4 bg-[#1c1f2e] hover:bg-[#252839] font-black text-xs text-[#22c55e] transition-colors border-l border-[#252839]">MAX</button>
                         </div>
                     </div>
                 ) : (
@@ -528,10 +521,9 @@ export default function CasinoLayout({ children }) {
           </div>
         </div>
       )}
-        {/* AQUI ESTÁ EL TETO PLAYER */}
+
       <TetoPlayer isMobileVisible={musicMovilAbierto} setIsMobileVisible={setMusicMovilAbierto} />
   
-      {/* MODALES Y TOASTS */}
       {cajeroAbierto && (
         <div className="fixed inset-0 bg-[#0b0e14]/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md animate-fade-in">
           <div className="bg-[#14171f] border border-[#222630] rounded-2xl w-full max-w-lg p-6 flex flex-col items-center">
@@ -545,8 +537,6 @@ export default function CasinoLayout({ children }) {
       {settingsAbierto && <SettingsModal onClose={() => setSettingsAbierto(false)} />}
       <EpicToasts />
 
-      
-      {/* ACTUALIZAMOS EL NAV PARA PASARLE LA FUNCIÓN DEL BOTÓN */}
       <MobileBottomNav 
         onOpenChat={() => setChatAbierto(!chatAbierto)} 
         onToggleMusic={() => setMusicMovilAbierto(!musicMovilAbierto)} 
