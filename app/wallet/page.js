@@ -67,13 +67,16 @@ export default function WalletPage() {
   const cargarInventario = async (uid) => {
     const { data, error } = await supabase
         .from('inventory')
-        // IMPORTANTE: Agregamos "locked" a la consulta
-        .select(`id, item_id, is_limited, serial_number, original_owner, locked, items (name, value, image_url, color)`)
+        // Extraemos is_limited directo de la tabla items conectada
+        .select(`id, item_id, serial_number, original_owner, locked, items (name, value, image_url, color, is_limited)`)
         .eq('user_id', uid);
     
     if (error) return;
 
     if (data) {
+        // Esto te servirá para confirmar en tu consola (F12) si Supabase realmente está mandando "is_limited: true"
+        console.log("Mascotas en wallet:", data); 
+
         setInventario(data.filter(row => row.items !== null).map(row => ({
             inventarioId: row.id,
             itemId: row.item_id,
@@ -81,14 +84,17 @@ export default function WalletPage() {
             valor: row.items.value,
             img: row.items.image_url,
             color: row.items.color || '#9ca3af',
-            isLimited: row.is_limited || false,
+            
+            // LECTURA ESTRICTA DEL BOOLEANO (Ignora el nombre)
+            isLimited: row.items.is_limited === true, 
+            
             serial: row.serial_number || 0,
             originalOwner: row.original_owner || 'Unknown',
-            isLocked: row.locked || false // Propiedad de candado
+            isLocked: row.locked === true 
         })));
     }
   };
-
+  
   const cargarMarket = async () => {
     const { data, error } = await supabase
         .from('marketplace')
