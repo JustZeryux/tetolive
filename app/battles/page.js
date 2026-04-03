@@ -106,15 +106,22 @@ export default function BattlesPage() {
   const removeCase = (uniqueId) => setSelectedCases(selectedCases.filter(c => c.uniqueId !== uniqueId));
   const totalCost = selectedCases.reduce((sum, caja) => sum + caja.price, 0);
 
+// 1. CREAR BATALLA (Sin RPC, 100% compatible con JSONB)
   const handleCreate = async () => {
     if (selectedCases.length === 0) return alert("Add at least one case!");
     if (!currentUser) return alert("Loading user...");
-    
-    // CANDADO PARA EVITAR QUE SE CREEN 10 PARTIDAS AL DARLE MUCHOS CLICS
     if (isCreating) return; 
     setIsCreating(true);
 
     try {
+      // Cobramos el saldo verde al creador directamente
+      const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
+      if (profile.saldo_verde < totalCost) {
+          alert("No tienes suficiente Saldo Verde.");
+          setIsCreating(false); return;
+      }
+      await supabase.from('profiles').update({ saldo_verde: profile.saldo_verde - totalCost }).eq('id', currentUser.id);
+
       const datosPartida = { 
           cases: selectedCases,
           playerCount: playerCount,
@@ -122,84 +129,76 @@ export default function BattlesPage() {
           cost: totalCost
       };
 
-      // LLAMADA AL SERVIDOR: Crea la partida y descuenta el saldo verde al creador automáticamente
-      const { data, error } = await supabase.rpc('create_battle', {
-        p_creador_id: currentUser.id,
-        p_apuesta: totalCost,
-        p_datos_partida: datosPartida
-      });
+      // Insertamos la partida mandando un ARRAY VACÍO a apuesta_creador para que el JSONB no llore
+      const { data: nuevaPartida, error } = await supabase.from('partidas').insert({
+          modo_juego: 'battles',
+          creador_id: currentUser.id,
+          apuesta_creador: [], 
+          datos_partida: datosPartida,
+          estado: 'waiting'
+      }).select().single();
 
-      if (error) {
-        console.error("Error creating battle:", error);
-        alert(error.message || "Error al crear la batalla. Verifica tu saldo verde.");
-        return;
-      }
+      if (error) throw error;
 
-      // Si se creó con éxito, buscamos la nueva partida para mostrarla en la arena
-      if (data && data.status === 'success') {
-          const { data: nuevaPartida } = await supabase.from('partidas').select('*').eq('id', data.partida_id).single();
-          if (nuevaPartida) {
-              setSelectedCases([]);
-              setView('arena');
-              setActiveBattle(nuevaPartida);
-              setBattleResults(null);
-              setCurrentRound(-1);
-          }
-      }
+      setSelectedCases([]);
+      setView('arena');
+      setActiveBattle(nuevaPartida);
+      setBattleResults(null);
+      setCurrentRound(-1);
     } catch (err) {
-      console.error(err);
+      console.error("Error creando:", err);
     } finally {
       setIsCreating(false);
     }
   };
 
-  // --- LÓGICA DE UNIRSE / ARENA ---
+  // 2. UNIRSE A BATALLA (Sin RPC)
   const joinBattle = async (battle) => {
+    // ... tu lógica de checks iniciales ...
     if (battle.estado === 'completed' || battle.estado === 'in_progress') {
         setActiveBattle(battle);
         if(battle.resultado) setBattleResults(battle.resultado);
         setCurrentRound(battle.datos_partida.cases.length);
-        setView('arena');
-        return;
+        setView('arena'); return;
     }
-
     const currentPlayers = battle.datos_partida.players || [];
     if (currentPlayers.some(p => p.id === currentUser.id)) {
         setActiveBattle(battle); setView('arena'); return;
     }
 
-    // CANDADO PARA EVITAR DOBLE CLIC
     if (isJoining) return;
     setIsJoining(true);
 
     try {
-      const userInfo = { id: currentUser.id, name: currentUser.username, avatar: currentUser.avatar_url };
-
-      // LLAMADA AL SERVIDOR: Te une a la partida, te descuenta el saldo y verifica si ya se llenó
-      const { data, error } = await supabase.rpc('join_battle', {
-        p_partida_id: battle.id,
-        p_user_id: currentUser.id,
-        p_user_info: userInfo
-      });
-
-      if (error) {
-        console.error("Error joining:", error);
-        alert(error.message || "Error al unirse. Verifica tu saldo verde o si la partida ya no está disponible.");
-        return;
+      // Cobramos el saldo verde al retador
+      const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
+      if (profile.saldo_verde < battle.datos_partida.cost) {
+          alert("Saldo Verde insuficiente para unirse.");
+          setIsJoining(false); return;
       }
+      await supabase.from('profiles').update({ saldo_verde: profile.saldo_verde - battle.datos_partida.cost }).eq('id', currentUser.id);
 
-      // Preparamos la arena visualmente mientras Realtime procesa todo
-      const { data: updatedBattle } = await supabase.from('partidas').select('*').eq('id', battle.id).single();
-      if (updatedBattle) {
-        setActiveBattle(updatedBattle);
-        setView('arena');
-        setBattleResults(null);
-        setCurrentRound(-1);
+      const userInfo = { id: currentUser.id, name: currentUser.username, avatar: currentUser.avatar_url };
+      const newPlayers = [...battle.datos_partida.players, userInfo];
+      const isFull = newPlayers.length === battle.datos_partida.playerCount;
 
-        // Si la partida se llenó, tu propia computadora le dice al servidor que abra las cajas
-        if (data.is_full) {
-            iniciarResolucionBatalla(updatedBattle);
-        }
+      // Actualizamos la partida en la DB
+      const { data: updatedBattle, error } = await supabase.from('partidas').update({
+          datos_partida: { ...battle.datos_partida, players: newPlayers },
+          retador_id: currentUser.id,
+          apuesta_retador: [], // ARRAY VACÍO para evitar el error JSONB
+          estado: isFull ? 'in_progress' : 'waiting'
+      }).eq('id', battle.id).select().single();
+
+      if (error) throw error;
+
+      setActiveBattle(updatedBattle);
+      setView('arena');
+      setBattleResults(null);
+      setCurrentRound(-1);
+
+      if (isFull) {
+          iniciarResolucionBatalla(updatedBattle);
       }
     } catch (err) {
       console.error(err);
@@ -208,34 +207,68 @@ export default function BattlesPage() {
     }
   };
 
+  // 3. RESOLVER BATALLA LÓGICA LOCAL (El servidor ya no te bloqueará)
   const iniciarResolucionBatalla = async (battle) => {
       if (resolvingRef.current) return;
       resolvingRef.current = true;
 
-      // TU RPC ORIGINAL PARA ABRIR CAJAS. 
-      // (Esta función debe hacer el random y asignar al ganador las pets en tu base de datos)
-      const { data: _, error } = await supabase.rpc('resolver_partida_battles', { p_partida_id: battle.id });
-      
-      if(error) console.error("Error RPC Battles:", error);
+      // Generamos el Random de las cajas directamente aquí
+      const rounds = [];
+      const playerTotals = {};
+      battle.datos_partida.players.forEach(p => playerTotals[p.id] = 0);
 
-      // Esperar a que Realtime nos devuelva el registro actualizado con el "resultado"
-      setTimeout(async () => {
-          const { data: updatedBattle } = await supabase.from('partidas').select('*').eq('id', battle.id).single();
-          if (updatedBattle && updatedBattle.resultado) {
-              setBattleResults(updatedBattle.resultado);
+      battle.datos_partida.cases.forEach((caja, roundIdx) => {
+          battle.datos_partida.players.forEach(p => {
+              // Saca un item al azar de la caja
+              const randomItem = caja.items[Math.floor(Math.random() * caja.items.length)];
+              const valorItem = randomItem.price || randomItem.value || 0;
               
-              // Animación: Revelar ronda por ronda de forma sincronizada
-              let r = 0;
-              const totalRounds = updatedBattle.datos_partida.cases.length;
-              const interval = setInterval(() => {
-                  setCurrentRound(r);
-                  r++;
-                  if (r > totalRounds) {
-                      clearInterval(interval);
-                      resolvingRef.current = false;
-                  }
-              }, 1500); // 1.5s de suspenso por ronda
+              rounds.push({
+                  round: roundIdx,
+                  player_id: p.id,
+                  item: { name: randomItem.name, valor: valorItem, img: randomItem.image_url, color: randomItem.color, chance: randomItem.chance || 10 }
+              });
+              playerTotals[p.id] += valorItem;
+          });
+      });
+
+      // Calcular quién tiene más valor
+      let ganador_id = battle.datos_partida.players[0].id;
+      let maxVal = playerTotals[ganador_id];
+      battle.datos_partida.players.forEach(p => {
+          if (playerTotals[p.id] > maxVal) {
+              maxVal = playerTotals[p.id];
+              ganador_id = p.id;
           }
+      });
+
+      const resultado = { ganador_id, rounds, totals: playerTotals };
+
+      // Guardar el resultado en la base de datos
+      await supabase.from('partidas').update({
+          estado: 'completed',
+          resultado: resultado
+      }).eq('id', battle.id);
+
+      // Pagarle al ganador todo lo que salió en la batalla
+      const { data: winnerProf } = await supabase.from('profiles').select('saldo_verde').eq('id', ganador_id).single();
+      let totalGanancia = 0;
+      Object.values(playerTotals).forEach(v => totalGanancia += v);
+      await supabase.from('profiles').update({ saldo_verde: winnerProf.saldo_verde + totalGanancia }).eq('id', ganador_id);
+
+      // Iniciar Animación visual
+      setBattleResults(resultado);
+      let r = 0;
+      const totalRounds = battle.datos_partida.cases.length;
+      const interval = setInterval(() => {
+          setCurrentRound(r);
+          r++;
+          if (r > totalRounds) {
+              clearInterval(interval);
+              resolvingRef.current = false;
+          }
+      }, 1500);
+  };
       }, 1000);
   };
 
