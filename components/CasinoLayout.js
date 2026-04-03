@@ -138,6 +138,64 @@ export default function CasinoLayout({ children }) {
         setChatMessages(prev => [...prev, payload.new]);
       }).subscribe();
 
+// === SISTEMA DE TIPS (PROPINAS) ===
+  const [isTipOpen, setIsTipOpen] = useState(false);
+  const [tipUsername, setTipUsername] = useState('');
+  const [tipCurrency, setTipCurrency] = useState('green');
+  const [tipAmount, setTipAmount] = useState('');
+  const [tipMyPets, setTipMyPets] = useState([]);
+  const [tipSelectedPets, setTipSelectedPets] = useState([]);
+  const [isTipping, setIsTipping] = useState(false);
+
+  const abrirModalTip = async () => {
+      setIsTipOpen(true);
+      setTipUsername('');
+      setTipAmount('');
+      setTipSelectedPets([]);
+      if (currentUser) {
+           const { data } = await supabase.from('inventory').select(`id, items ( id, name, value, image_url, color )`).eq('user_id', currentUser.id).eq('is_locked', false).limit(3000);
+           if (data) {
+               setTipMyPets(data.map(inv => ({ inventarioId: inv.id, ...inv.items })).sort((a,b) => b.value - a.value));
+           }
+      }
+  };
+
+  const enviarTip = async () => {
+      if (!tipUsername) return alert("Ingresa el username del jugador.");
+      if (tipCurrency === 'green' && (tipAmount <= 0 || tipAmount > userProfile?.saldo_verde)) return alert("Monto inválido o no tienes suficiente saldo.");
+      if (tipCurrency === 'pets' && tipSelectedPets.length === 0) return alert("Selecciona mascotas para enviar.");
+
+      setIsTipping(true);
+      try {
+          // 1. Buscar si el usuario existe (insensible a mayúsculas/minúsculas)
+          const { data: receiver, error: errRec } = await supabase.from('profiles').select('id, saldo_verde').ilike('username', tipUsername).single();
+          if (errRec || !receiver) throw new Error("No se encontró ningún jugador con ese nombre.");
+          if (receiver.id === currentUser.id) throw new Error("No puedes enviarte propinas a ti mismo xd.");
+
+          if (tipCurrency === 'green') {
+              // 2A. Transferir Saldo Verde
+              await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - tipAmount }).eq('id', currentUser.id);
+              await supabase.from('profiles').update({ saldo_verde: receiver.saldo_verde + tipAmount }).eq('id', receiver.id);
+              setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - tipAmount}));
+              alert(`¡Le has enviado ${tipAmount} Saldo Verde a ${tipUsername} 💸!`);
+          } else {
+              // 2B. Transferir Pets
+              const petIds = tipSelectedPets.map(p => p.inventarioId);
+              await supabase.from('inventory').update({ user_id: receiver.id }).in('id', petIds);
+              alert(`¡Le has enviado ${tipSelectedPets.length} mascotas a ${tipUsername} 🎁!`);
+          }
+          setIsTipOpen(false);
+      } catch (e) {
+          alert(e.message);
+      }
+      setIsTipping(false);
+  };
+
+  const toggleTipPet = (pet) => {
+      if (tipSelectedPets.find(p => p.inventarioId === pet.inventarioId)) setTipSelectedPets(prev => prev.filter(p => p.inventarioId !== pet.inventarioId));
+      else setTipSelectedPets(prev => [...prev, pet]);
+  };
+    
     return () => {
       if (channel) supabase.removeChannel(channel);
       if (chatChannel) supabase.removeChannel(chatChannel);
@@ -262,9 +320,9 @@ export default function CasinoLayout({ children }) {
             </div>
 
             {/* Ocultamos el botón de depósito en celulares porque ya está en el menú de abajo */}
-            <button onClick={() => setCajeroAbierto(true)} className="hidden md:block animate-shine bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] text-[#0b0e14] font-black px-6 py-2.5 rounded-lg text-xs tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:-translate-y-0.5">
-              DEPOSIT
-            </button>
+<button onClick={abrirModalTip} className="px-4 py-2 bg-gradient-to-r from-[#6C63FF] to-[#5147D9] hover:from-[#7b73ff] hover:to-[#6C63FF] text-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-lg shadow-[0_0_15px_rgba(108,99,255,0.4)] transition-all hover:scale-105 flex items-center gap-2">
+   🎁 Tip Player
+</button>
 
             <div className="flex items-center gap-2 md:gap-3 pl-1 md:pl-4 border-l border-[#222630]">
               <LoginButton />
@@ -390,6 +448,89 @@ export default function CasinoLayout({ children }) {
         )}
       </aside>
 
+{/* ========================================== */}
+      {/* MODAL DE TIP / PROPINAS */}
+      {/* ========================================== */}
+      {isTipOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#14151f] border border-[#252839] rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
+            
+            <div className="p-6 border-b border-[#252839] flex justify-between items-center bg-[#0b0e14]">
+              <h2 className="text-xl md:text-2xl font-black uppercase tracking-widest text-white flex items-center gap-2">🎁 Send Tip</h2>
+              <button onClick={() => setIsTipOpen(false)} className="text-[#4a506b] hover:text-white transition-colors text-3xl">&times;</button>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                
+                {/* 1. Input del Usuario */}
+                <div className="mb-6">
+                    <label className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest mb-2 block">Receiver's Username</label>
+                    <input 
+                        type="text" 
+                        value={tipUsername} 
+                        onChange={(e) => setTipUsername(e.target.value)} 
+                        placeholder="Enter username exactly..." 
+                        className="w-full bg-[#0b0e14] border border-[#252839] rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-[#6C63FF] transition-colors"
+                    />
+                </div>
+
+                {/* 2. Selección de Moneda */}
+                <div className="bg-[#0b0e14] border border-[#252839] rounded-xl p-3 mb-6 flex gap-2">
+                    <button onClick={() => setTipCurrency('green')} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase transition-all flex items-center justify-center gap-2 ${tipCurrency === 'green' ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'text-[#555b82] hover:text-white'}`}>💰 Green Coins</button>
+                    <button onClick={() => setTipCurrency('pets')} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase transition-all flex items-center justify-center gap-2 ${tipCurrency === 'pets' ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-[#555b82] hover:text-white'}`}>🐾 Pets</button>
+                </div>
+
+                {/* 3. Cantidad a enviar */}
+                {tipCurrency === 'green' ? (
+                    <div>
+                        <label className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest mb-2 flex justify-between">
+                            <span>Amount to send</span>
+                            <span>Your Balance: {userProfile?.saldo_verde || 0}</span>
+                        </label>
+                        <div className="flex bg-[#0b0e14] border border-[#252839] rounded-xl overflow-hidden focus-within:border-[#22c55e] transition-colors">
+                            <div className="pl-4 flex items-center justify-center bg-[#1c1f2e] border-r border-[#252839]"><img src="/green-coin.png" className="w-5 h-5 drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]"/></div>
+                            <input type="number" value={tipAmount} onChange={(e) => setTipAmount(Number(e.target.value))} placeholder="0" className="w-full bg-transparent text-white font-black p-3 outline-none" />
+                            <button onClick={() => setTipAmount(userProfile?.saldo_verde || 0)} className="px-4 bg-[#1c1f2e] hover:bg-[#252839] font-black text-xs text-[#22c55e] transition-colors border-l border-[#252839]">MAX</button>
+                        </div>
+                    </div>
+                ) : (
+                    <div>
+                        <label className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest mb-2 flex justify-between">
+                            <span>Select Pets to send</span>
+                            <span>Selected: {tipSelectedPets.length}</span>
+                        </label>
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-[250px] overflow-y-auto custom-scrollbar pr-2 bg-[#0b0e14] border border-[#252839] p-2 rounded-xl">
+                            {tipMyPets.length === 0 ? (
+                                <p className="col-span-full text-center text-[#555b82] text-xs font-bold py-6">Your inventory is empty.</p>
+                            ) : (
+                                tipMyPets.map(pet => {
+                                    const isSelected = tipSelectedPets.some(p => p.inventarioId === pet.inventarioId);
+                                    return (
+                                        <div key={pet.inventarioId} onClick={() => toggleTipPet(pet)} className={`relative bg-[#14151f] border rounded-lg p-2 cursor-pointer transition-all ${isSelected ? 'border-[#ef4444] shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'border-[#252839] hover:border-[#4a506b]'}`}>
+                                            {isSelected && <div className="absolute top-1 right-1 w-3 h-3 bg-[#ef4444] rounded-full"></div>}
+                                            <img src={pet.image_url} className="w-full h-10 object-contain drop-shadow-md mb-1"/>
+                                            <p className="text-[8px] font-black text-center text-white truncate" style={{color: pet.color}}>{pet.name}</p>
+                                        </div>
+                                    )
+                                })
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="p-6 border-t border-[#252839] bg-[#0b0e14] flex flex-col gap-3">
+              <button onClick={enviarTip} disabled={isTipping} className="w-full py-4 rounded-xl bg-gradient-to-r from-[#6C63FF] to-[#5147D9] hover:from-[#7b73ff] hover:to-[#6C63FF] text-white font-black uppercase tracking-widest shadow-[0_0_20px_rgba(108,99,255,0.4)] disabled:opacity-50 transition-all hover:scale-[1.02]">
+                {isTipping ? 'Sending...' : 'CONFIRM & SEND'}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+        {/* AQUI ESTÁ EL TETO PLAYER */}
+      <TetoPlayer isMobileVisible={musicMovilAbierto} setIsMobileVisible={setMusicMovilAbierto} />
+  
       {/* MODALES Y TOASTS */}
       {cajeroAbierto && (
         <div className="fixed inset-0 bg-[#0b0e14]/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md animate-fade-in">
@@ -403,8 +544,7 @@ export default function CasinoLayout({ children }) {
 
       {settingsAbierto && <SettingsModal onClose={() => setSettingsAbierto(false)} />}
       <EpicToasts />
-        {/* AQUI ESTÁ EL TETO PLAYER */}
-      <TetoPlayer isMobileVisible={musicMovilAbierto} setIsMobileVisible={setMusicMovilAbierto} />
+
       
       {/* ACTUALIZAMOS EL NAV PARA PASARLE LA FUNCIÓN DEL BOTÓN */}
       <MobileBottomNav 
