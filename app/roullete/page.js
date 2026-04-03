@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/utils/Supabase';
 
 // --- COMPONENTES VISUALES ---
@@ -8,20 +8,12 @@ const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" 
 const formatValue = (val) => {
   if (val >= 1000000) return parseFloat((val / 1000000).toFixed(2)) + 'M';
   if (val >= 1000) return parseFloat((val / 1000).toFixed(2)) + 'K';
-  return val?.toLocaleString();
+  return val?.toLocaleString() || '0';
 };
 
 const getAvatar = (url, name) => url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name || 'player'}&backgroundColor=b91c1c,000000`;
 
-const playSFX = (type) => {
-    try {
-        const audio = new Audio(`/sounds/${type}.mp3`);
-        audio.volume = type === 'bang' ? 1.0 : 0.7;
-        audio.play().catch(() => {});
-    } catch (e) {}
-};
-
-// SVG del Revólver (Más detallado)
+// SVG del Revólver Animado
 const GunSVG = ({ targetAngle, isShaking, isFiring, isSpinningCylinder }) => (
     <div className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isShaking ? 'animate-shake-hard' : ''} ${isFiring ? 'scale-125 drop-shadow-[0_0_50px_rgba(220,38,38,1)]' : 'drop-shadow-[0_25px_30px_rgba(0,0,0,0.9)]'}`} style={{ transform: `rotate(${targetAngle}deg)` }}>
         <svg width="220" height="220" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -29,7 +21,6 @@ const GunSVG = ({ targetAngle, isShaking, isFiring, isSpinningCylinder }) => (
             <path d="M130 290 L130 390 L190 390 L190 290 Z" fill="#333" />
             <path d="M120 280 L200 280 L250 230 L460 230 Q480 230 480 210 L480 170 Q480 150 460 150 L120 150 Z" fill="#444" stroke="#000" strokeWidth="8"/>
             <path d="M300 230 L300 260" stroke="#000" strokeWidth="8" />
-            {/* Cilindro que gira */}
             <g className={isSpinningCylinder ? "animate-spin-fast" : ""} style={{ transformOrigin: "280px 190px" }}>
                 <circle cx="280" cy="190" r="45" fill="#222" stroke="#000" strokeWidth="6"/>
                 <circle cx="280" cy="190" r="12" fill="#555" />
@@ -55,16 +46,10 @@ const GunSVG = ({ targetAngle, isShaking, isFiring, isSpinningCylinder }) => (
 export default function RussianRoulettePage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [userInventory, setUserInventory] = useState([]);
   
   const [view, setView] = useState('menu'); 
   const [mode, setMode] = useState('bot'); 
-  
-  // APUESTAS COMPLETAS (COINS Y PETS)
-  const [betType, setBetType] = useState('coins');
   const [coinBet, setCoinBet] = useState(10);
-  const [selectedPets, setSelectedPets] = useState([]);
-  const [botPets, setBotPets] = useState([]); // Pets generadas por TetoBot para la mesa
   
   // LOBBIES & MULTIPLAYER
   const [lobbies, setLobbies] = useState([]);
@@ -77,6 +62,7 @@ export default function RussianRoulettePage() {
   const [actionLog, setActionLog] = useState("WAITING...");
   const [isProcessing, setIsProcessing] = useState(false);
   const [potTotal, setPotTotal] = useState(0);
+  const [potPulse, setPotPulse] = useState(false); // Para brillar cuando entra alguien
   
   // EFECTOS
   const [gunAngle, setGunAngle] = useState(-90); 
@@ -90,56 +76,47 @@ export default function RussianRoulettePage() {
   const currentChamberRef = useRef(0);
   const [uiChamber, setUiChamber] = useState(0); 
 
+  // PRECARGA DE AUDIO SIN LATENCIA
+  const sfxRefs = useRef({ spin: null, click: null, bang: null, win: null });
+
   useEffect(() => {
+    // Inicializar Audio
+    if (typeof window !== 'undefined') {
+        sfxRefs.current.spin = new Audio('/sounds/spin.mp3');
+        sfxRefs.current.click = new Audio('/sounds/click.mp3');
+        sfxRefs.current.bang = new Audio('/sounds/bang.mp3');
+        sfxRefs.current.win = new Audio('/sounds/win.mp3');
+        
+        sfxRefs.current.bang.volume = 1.0;
+        sfxRefs.current.spin.volume = 0.8;
+        sfxRefs.current.click.volume = 0.8;
+        sfxRefs.current.win.volume = 0.9;
+    }
+
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUser(user);
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setUserProfile(profile);
-        
-        const { data: inv } = await supabase.from('inventory').select(`id, items (name, value, image_url, color)`).eq('user_id', user.id);
-        if (inv) {
-            setUserInventory(inv.map(i => ({ id: i.id, name: i.items.name, value: i.items.value, img: i.items.image_url, color: i.items.color })));
-        }
       }
     };
     init();
   }, []);
 
-  const togglePetSelection = (pet) => {
-      if (selectedPets.find(p => p.id === pet.id)) setSelectedPets(selectedPets.filter(p => p.id !== pet.id));
-      else setSelectedPets([...selectedPets, pet]);
+  const playSFX = (type) => {
+      if (sfxRefs.current[type]) {
+          sfxRefs.current[type].currentTime = 0; // Reinicia para disparos rápidos
+          sfxRefs.current[type].play().catch(() => {});
+      }
   };
-  const calculateSelectedValue = () => selectedPets.reduce((sum, p) => sum + p.value, 0);
 
   // --- MODO BOT (LOCAL) ---
   const startBotMatch = async () => {
-      const isCoin = betType === 'coins';
-      const myBetVal = isCoin ? coinBet : calculateSelectedValue();
+      if (userProfile.saldo_verde < coinBet) return alert("Insufficient coins!");
       
-      if (isCoin && userProfile.saldo_verde < myBetVal) return alert("Insufficient coins!");
-      if (!isCoin && selectedPets.length === 0) return alert("Select at least one pet!");
-      
-      // Cobro
-      if (isCoin) await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
-      
-      // Bot iguala la apuesta
-      let tetoPets = [];
-      if (!isCoin) {
-          const { data: allItems } = await supabase.from('items').select('*').gt('value', 0);
-          let currentVal = 0;
-          if (allItems) {
-              while (currentVal < myBetVal && tetoPets.length < 5) {
-                  const p = allItems[Math.floor(Math.random() * allItems.length)];
-                  tetoPets.push(p);
-                  currentVal += p.value;
-              }
-          }
-          setBotPets(tetoPets);
-      }
-      
-      setPotTotal(myBetVal * 2);
+      await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - coinBet }).eq('id', currentUser.id);
+      setPotTotal(coinBet * 2);
       
       const botPlayer = { id: 'bot', name: 'TetoBot', avatar: '/TetoGun.png', isDead: false };
       const mePlayer = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
@@ -147,7 +124,6 @@ export default function RussianRoulettePage() {
       setPlayers([mePlayer, botPlayer]);
       setTurnId(currentUser.id);
       
-      // Animación inicial de recargar
       setView('playing');
       setActionLog("LOADING CYLINDER...");
       setCylinderSpinning(true);
@@ -167,7 +143,7 @@ export default function RussianRoulettePage() {
   const executeBotTurn = async () => {
       setIsProcessing(true);
       setActionLog("TETOBOT IS THINKING...");
-      setGunAngle(-90); // Apunta al bot (arriba)
+      setGunAngle(-90); // Apunta al bot
       await new Promise(r => setTimeout(r, 1500));
       
       const isBullet = chambersRef.current[currentChamberRef.current];
@@ -187,7 +163,7 @@ export default function RussianRoulettePage() {
           setTimeout(() => endGame(currentUser.id, potTotal), 2500);
       } else {
           playSFX('click');
-          setActionLog("...CLICK. TETOBOT SURVIVED.");
+          setActionLog("...CLICK.");
           setTimeout(() => {
               currentChamberRef.current += 1;
               setUiChamber(currentChamberRef.current);
@@ -218,7 +194,6 @@ export default function RussianRoulettePage() {
   };
 
   const hostOnlineMatch = async () => {
-      if (betType === 'pets') return alert("Online Pet Betting currently disabled for safety.");
       if (userProfile.saldo_verde < coinBet) return alert("Insufficient coins.");
       
       await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - coinBet }).eq('id', currentUser.id);
@@ -234,7 +209,9 @@ export default function RussianRoulettePage() {
           setPlayers([me]);
           setPotTotal(coinBet);
           connectToRoom(data.id, true);
-          setView('lobby_room');
+          // Nos vamos directo a la mesa épica, pero en estado "waiting"
+          setView('playing_room'); 
+          setActionLog("WAITING FOR PLAYERS...");
       }
   };
 
@@ -251,7 +228,8 @@ export default function RussianRoulettePage() {
       setPlayers(updatedPlayers);
       setPotTotal(lobby.bet_amount * updatedPlayers.length);
       connectToRoom(lobby.id, false);
-      setView('lobby_room');
+      setView('playing_room');
+      setActionLog("WAITING FOR HOST TO START...");
   };
 
   const connectToRoom = (roomId, isHost) => {
@@ -261,6 +239,8 @@ export default function RussianRoulettePage() {
       channel.on('broadcast', { event: 'player_joined' }, payload => {
           setPlayers(payload.players);
           setPotTotal(currentRoom.bet_amount * payload.players.length);
+          setPotPulse(true);
+          setTimeout(() => setPotPulse(false), 500);
       });
       
       channel.on('broadcast', { event: 'game_start' }, payload => {
@@ -283,10 +263,28 @@ export default function RussianRoulettePage() {
           executeOnlineVisuals(payload.shooterId, payload.targetId, payload.isBullet);
       });
 
+      channel.on('broadcast', { event: 'reload_cylinder' }, payload => {
+          chambersRef.current = payload.chambers;
+          currentChamberRef.current = 0;
+          setUiChamber(0);
+          setActionLog("RELOADING CYLINDER...");
+          setCylinderSpinning(true);
+          playSFX('spin');
+          setTimeout(() => {
+              setCylinderSpinning(false);
+              setTurnId(payload.turnId);
+              setActionLog(payload.turnId === currentUser.id ? "YOUR TURN." : "MATCH CONTINUES.");
+              setIsProcessing(false);
+          }, 2000);
+      });
+
       channel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED' && isHost) {
               supabase.channel('lobby_updates').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roulette_lobbies', filter: `id=eq.${roomId}` }, (payload) => {
                   setPlayers(payload.new.players);
+                  setPotTotal(currentRoom.bet_amount * payload.new.players.length);
+                  setPotPulse(true);
+                  setTimeout(() => setPotPulse(false), 500);
                   channel.send({ type: 'broadcast', event: 'player_joined', payload: { players: payload.new.players } });
               }).subscribe();
           }
@@ -299,7 +297,6 @@ export default function RussianRoulettePage() {
       
       const newChambers = [false, false, false, false, false, false];
       newChambers[Math.floor(Math.random() * 6)] = true;
-      
       const firstTurn = players[0].id;
       
       setView('playing');
@@ -319,7 +316,7 @@ export default function RussianRoulettePage() {
       channelRef.current.send({ type: 'broadcast', event: 'game_start', payload: { chambers: newChambers, turnId: firstTurn } });
   };
 
-  // --- CORE GAMEPLAY (DISPARO) ---
+  // --- CORE GAMEPLAY ---
   const handleShoot = async (targetId) => {
       if (isProcessing || turnId !== currentUser.id || cylinderSpinning) return;
       setIsProcessing(true);
@@ -364,16 +361,52 @@ export default function RussianRoulettePage() {
       }
   };
 
+  // El FIX GIGANTE DE POSICIONES EN CIRCULO
+  const getPlayerPositionClass = (index, total) => {
+      // Index 0 es siempre el LocalPlayer (Abajo Centro)
+      if (index === 0) return "bottom-[-5%] left-1/2 -translate-x-1/2";
+      if (total === 2) return "top-[5%] left-1/2 -translate-x-1/2"; 
+      if (total === 3) return index === 1 ? "top-[15%] left-[-5%]" : "top-[15%] right-[-5%]";
+      if (total === 4) {
+          if(index===1) return "top-[40%] left-[-10%]";
+          if(index===2) return "top-[-5%] left-1/2 -translate-x-1/2";
+          if(index===3) return "top-[40%] right-[-10%]";
+      }
+      if (total >= 5) {
+          if(index===1) return "bottom-[15%] left-[-10%]";
+          if(index===2) return "top-[10%] left-[5%]";
+          if(index===3) return "top-[-5%] left-1/2 -translate-x-1/2";
+          if(index===4) return "top-[10%] right-[5%]";
+          if(index===5) return "bottom-[15%] right-[-10%]";
+      }
+      return "top-0";
+  };
+
+  const getSeatRotation = (index, total) => {
+       if (index === 0) return 90; // Local player, gun aims down
+       if (total === 2) return -90; // Top player, gun aims up
+       // Si disparamos a un Foe al azar, apuntamos al centro de la mesa (-90)
+       return -90; 
+  };
+
   const executeOnlineVisuals = async (shooterId, targetId, isBullet) => {
       const shooterName = players.find(p => p.id === shooterId)?.name;
-      const targetName = players.find(p => p.id === targetId)?.name;
       const shootingSelf = shooterId === targetId;
+      const myIndexInArray = players.findIndex(p => p.id === currentUser.id);
+      
+      // Mapear el array para que el jugador local siempre sea el index 0 visualmente
+      let visualPlayers = [...players];
+      if (myIndexInArray > 0) {
+          const me = visualPlayers.splice(myIndexInArray, 1)[0];
+          visualPlayers.unshift(me);
+      }
+      
+      const visualShooterIndex = visualPlayers.findIndex(p => p.id === shooterId);
+      
+      if (shootingSelf) setGunAngle(getSeatRotation(visualShooterIndex, visualPlayers.length));
+      else setGunAngle(-90); // Apunta al centro
 
-      if (targetId === currentUser.id) setGunAngle(90);
-      else if (shooterId === currentUser.id && targetId !== currentUser.id) setGunAngle(-90);
-      else setGunAngle(-90);
-
-      setActionLog(shootingSelf ? `${shooterName} AIMS AT THEMSELVES...` : `${shooterName} AIMS AT ${targetName}...`);
+      setActionLog(shootingSelf ? `${shooterName} AIMS AT THEMSELVES...` : `${shooterName} AIMS AT THE TABLE...`);
       
       await new Promise(r => setTimeout(r, 1500));
       setGunShaking(true);
@@ -384,11 +417,11 @@ export default function RussianRoulettePage() {
           playSFX('bang');
           setGunFiring(true);
           setScreenFlash(true);
-          setActionLog(`💥 BANG! ${targetName} IS DEAD! 💥`);
+          setActionLog(`💥 BANG! ${shooterName} IS DEAD! 💥`);
           
           setPlayers(prev => {
               const newPlayers = prev.map(p => p.id === targetId ? {...p, isDead: true} : p);
-              checkOnlineWinCondition(newPlayers);
+              checkOnlineWinCondition(newPlayers, targetId); // Manda el ID del muerto
               return newPlayers;
           });
       } else {
@@ -413,26 +446,49 @@ export default function RussianRoulettePage() {
       }
   };
 
-  const checkOnlineWinCondition = async (currentPlayers) => {
+  const checkOnlineWinCondition = async (currentPlayers, deadPlayerId) => {
       const alivePlayers = currentPlayers.filter(p => !p.isDead);
+      
       if (alivePlayers.length === 1) {
           const winner = alivePlayers[0];
           setTimeout(() => endGame(winner.id, currentRoom.bet_amount * currentPlayers.length), 3000);
       } else {
+          // LA MÁGIA DE LA RECARGA
+          // Si murio alguien, hay que vaciar el arma y cargar una nueva bala para los sobrevivientes
           setTimeout(() => {
                setGunFiring(false);
                setScreenFlash(false);
-               let nextIdx = currentPlayers.findIndex(p => p.isDead) + 1;
+               
+               let nextIdx = currentPlayers.findIndex(p => p.id === deadPlayerId) + 1;
+               let nextTurnId = null;
                while (nextIdx < currentPlayers.length * 2) {
                   const checkPlayer = currentPlayers[nextIdx % currentPlayers.length];
                   if (!checkPlayer.isDead) {
-                      setTurnId(checkPlayer.id);
-                      setActionLog(checkPlayer.id === currentUser.id ? "YOUR TURN." : `${checkPlayer.name}'S TURN.`);
+                      nextTurnId = checkPlayer.id;
                       break;
                   }
                   nextIdx++;
-              }
-              setIsProcessing(false);
+               }
+
+               if (currentRoom.host_id === currentUser.id) {
+                   const newChambers = [false, false, false, false, false, false];
+                   newChambers[Math.floor(Math.random() * 6)] = true;
+                   channelRef.current.send({ type: 'broadcast', event: 'reload_cylinder', payload: { chambers: newChambers, turnId: nextTurnId } });
+                   
+                   // Host local exec
+                   chambersRef.current = newChambers;
+                   currentChamberRef.current = 0;
+                   setUiChamber(0);
+                   setActionLog("RELOADING CYLINDER...");
+                   setCylinderSpinning(true);
+                   playSFX('spin');
+                   setTimeout(() => {
+                       setCylinderSpinning(false);
+                       setTurnId(nextTurnId);
+                       setActionLog(nextTurnId === currentUser.id ? "YOUR TURN." : "MATCH CONTINUES.");
+                       setIsProcessing(false);
+                   }, 2000);
+               }
           }, 3000);
       }
   };
@@ -441,18 +497,10 @@ export default function RussianRoulettePage() {
       if (winnerId === currentUser.id) {
           playSFX('win');
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde + prize }).eq('id', currentUser.id);
-          
-          if (betType === 'pets' && mode === 'bot') {
-              // Lógica para entregar botPets al usuario en DB (simplificada aquí visualmente)
-          }
-          
-          setActionLog(`🏆 YOU SURVIVED & WON ${formatValue(prize)}! 🏆`);
+          setActionLog(`🏆 YOU WON ${formatValue(prize)} COINS! 🏆`);
       } else {
-          if (betType === 'pets' && mode === 'bot') {
-              await supabase.from('inventory').delete().in('id', selectedPets.map(p=>p.id));
-          }
           const winnerName = players.find(p => p.id === winnerId)?.name || 'SOMEONE';
-          setActionLog(`💀 YOU DIED. ${winnerName} TAKES IT ALL. 💀`);
+          setActionLog(`💀 GAME OVER. ${winnerName} TAKES IT ALL. 💀`);
       }
       
       if (currentRoom && currentRoom.host_id === currentUser.id) {
@@ -460,231 +508,220 @@ export default function RussianRoulettePage() {
       }
       if(channelRef.current) supabase.removeChannel(channelRef.current);
       
-      setTimeout(() => setView('result'), 1500);
+      setTimeout(() => setView('result'), 2000);
       setGunFiring(false);
       setScreenFlash(false);
       setIsProcessing(false);
   };
 
-  // --- RENDERIZADOS ---
+  // --- MAPEO CIRCULAR VISUAL ---
+  const visualCirclePlayers = useMemo(() => {
+      if (players.length === 0) return [];
+      let mapped = [...players];
+      const myIdx = mapped.findIndex(p => p.id === currentUser?.id);
+      if (myIdx > 0) {
+          const me = mapped.splice(myIdx, 1)[0];
+          mapped.unshift(me);
+      }
+      return mapped;
+  }, [players, currentUser]);
+
   return (
     <div className={`min-h-[calc(100vh-80px)] bg-[#050505] text-white font-sans overflow-hidden transition-colors duration-100 ${screenFlash ? 'bg-red-900' : ''}`}>
       
       {screenFlash && <div className="fixed inset-0 bg-red-600/80 z-50 animate-flash pointer-events-none"></div>}
 
-      <div className="max-w-[1400px] mx-auto relative z-10 p-4 md:p-8">
+      <div className="max-w-[1400px] mx-auto relative z-10 p-4 md:p-8 flex flex-col justify-center min-h-[calc(100vh-100px)]">
         
         {/* === MENU PRINCIPAL === */}
         {view === 'menu' && (
-            <div className="flex flex-col items-center justify-center py-10 md:py-20 animate-fade-in relative">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-red-900/20 blur-[120px] rounded-full pointer-events-none"></div>
-                <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter mb-4 text-transparent bg-clip-text bg-gradient-to-b from-red-500 via-red-600 to-red-900 drop-shadow-[0_0_40px_rgba(220,38,38,0.5)] z-10">ROULETTE</h1>
-                <p className="text-gray-400 mb-16 tracking-[0.5em] uppercase font-bold border-b border-red-900/50 pb-4 z-10">High Stakes VIP Arena</p>
+            <div className="flex flex-col items-center justify-center animate-fade-in relative">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-900/10 blur-[100px] rounded-full pointer-events-none"></div>
+                <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-b from-red-500 to-red-800 drop-shadow-[0_0_50px_rgba(220,38,38,0.4)] z-10">ROULETTE</h1>
+                <p className="text-gray-400 mb-16 tracking-[0.5em] uppercase font-bold border-b border-red-900/50 pb-4 z-10">High Stakes Survival</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl z-10">
-                    <button onClick={() => { setMode('bot'); setView('betting'); }} className="group relative bg-[#0a0a0a] border-2 border-[#222] p-12 rounded-[3rem] overflow-hidden transition-all hover:scale-105 hover:border-red-600 hover:shadow-[0_0_50px_rgba(220,38,38,0.3)]">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-red-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <span className="text-7xl block mb-6 drop-shadow-2xl">🤖</span>
+                    <button onClick={() => { setMode('bot'); setView('betting'); }} className="group relative bg-[#0a0a0a] border-2 border-[#222] p-12 rounded-[2rem] overflow-hidden transition-all hover:scale-105 hover:border-red-600 hover:shadow-[0_0_50px_rgba(220,38,38,0.3)] flex flex-col items-center">
+                        <span className="text-7xl mb-4 group-hover:scale-125 transition-transform">🤖</span>
                         <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Local Duel</h3>
-                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Coins & Pets vs TetoBot</p>
+                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Play against TetoBot</p>
                     </button>
-                    <button onClick={openLobbies} className="group relative bg-[#0a0a0a] border-2 border-[#222] p-12 rounded-[3rem] overflow-hidden transition-all hover:scale-105 hover:border-blue-600 hover:shadow-[0_0_50px_rgba(37,99,235,0.3)]">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <span className="text-7xl block mb-6 drop-shadow-2xl">🌐</span>
-                        <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Multiplayer</h3>
+                    <button onClick={openLobbies} className="group relative bg-[#0a0a0a] border-2 border-[#222] p-12 rounded-[2rem] overflow-hidden transition-all hover:scale-105 hover:border-blue-600 hover:shadow-[0_0_50px_rgba(37,99,235,0.3)] flex flex-col items-center">
+                        <span className="text-7xl mb-4 group-hover:scale-125 transition-transform">🌐</span>
+                        <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Online Arena</h3>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Battle Royale (Up to 6)</p>
                     </button>
                 </div>
             </div>
         )}
 
-        {/* === SETUP APUESTA === */}
-        {view === 'betting' && (
-            <div className="animate-fade-in max-w-5xl mx-auto py-10">
-                <div className="flex items-center gap-4 mb-8">
-                    <button onClick={() => setView(mode === 'online' ? 'lobbies' : 'menu')} className="bg-[#111] hover:bg-[#222] border border-[#333] px-6 py-2 rounded-xl text-gray-400 hover:text-white font-bold uppercase tracking-widest transition-all text-sm">← Back</button>
-                    <h2 className="text-4xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Setup Bet</h2>
+        {/* LOBBIES (LISTA) */}
+        {view === 'lobbies' && (
+            <div className="animate-fade-in max-w-5xl mx-auto w-full">
+                <div className="flex justify-between items-center mb-10 bg-[#0a0a0a] p-6 rounded-3xl border border-[#222]">
+                    <button onClick={() => setView('menu')} className="text-gray-500 hover:text-white font-bold tracking-widest uppercase text-sm">← Back</button>
+                    <h2 className="text-2xl font-black uppercase tracking-widest text-blue-500 drop-shadow-[0_0_10px_rgba(37,99,235,0.5)]">Online Arenas</h2>
+                    <button onClick={() => setView('betting')} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all">Host Match</button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                    <div className="lg:col-span-3 bg-[#0a0a0a] rounded-[2rem] p-8 border border-[#222] shadow-2xl relative">
-                        <div className="flex gap-4 mb-8 bg-[#111] p-2 rounded-2xl border border-[#333]">
-                            <button onClick={() => setBetType('coins')} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'coins' ? (mode === 'online' ? 'bg-blue-600' : 'bg-red-600') + ' text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'}`}>Coins</button>
-                            <button onClick={() => setBetType('pets')} disabled={mode === 'online'} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'pets' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'} disabled:opacity-20`}>
-                                Pets {mode === 'online' && '(Local Only)'}
-                            </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {lobbies.length === 0 ? (
+                        <div className="col-span-full text-center text-gray-600 py-20 font-black uppercase tracking-widest text-xl border-2 border-dashed border-[#222] rounded-3xl">
+                            No active tables. Host one!
                         </div>
-
-                        {betType === 'coins' ? (
-                            <div className="py-10">
-                                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest mb-4">Wager Amount</p>
-                                <div className="bg-[#111] p-8 rounded-[2rem] border-2 border-[#333] flex items-center justify-between focus-within:border-white transition-colors">
-                                    <input type="number" value={coinBet} onChange={(e) => setCoinBet(Number(e.target.value))} className="bg-transparent text-5xl font-black outline-none w-full text-white" />
-                                    <GreenCoin cls="w-10 h-10"/>
+                    ) : lobbies.map(l => (
+                        <div key={l.id} className="bg-[#111]/80 backdrop-blur-md border border-[#333] p-6 rounded-3xl flex flex-col hover:border-blue-500/50 transition-colors group relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-blue-600/20 text-blue-400 font-black text-[10px] px-4 py-1 rounded-bl-xl uppercase tracking-widest">Open Lobby</div>
+                            <div className="flex items-center gap-4 mb-6">
+                                <img src={getAvatar(null, l.host_name)} className="w-16 h-16 rounded-full border-2 border-[#444]" />
+                                <div>
+                                    <p className="font-black text-xl tracking-wider text-white">{l.host_name}'s Table</p>
+                                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">{l.players?.length || 1} / 6 Players</p>
                                 </div>
                             </div>
-                        ) : (
-                            <div>
-                                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest mb-4 flex justify-between">
-                                    <span>Select Pets ({selectedPets.length})</span>
-                                    <span className="text-green-400">Total: {formatValue(calculateSelectedValue())}</span>
-                                </p>
-                                <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar p-2 bg-[#111] rounded-2xl border border-[#333]">
-                                    {userInventory.map(pet => (
-                                        <div key={pet.id} onClick={() => togglePetSelection(pet)} className={`relative p-3 rounded-xl border-2 cursor-pointer transition-all hover:-translate-y-1 ${selectedPets.find(p=>p.id===pet.id) ? 'border-red-500 bg-red-900/20 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'border-[#222] bg-[#0a0a0a]'}`}>
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-0 rounded-xl"></div>
-                                            <img src={pet.img} className="w-full h-16 object-contain mb-2 relative z-10 drop-shadow-md" alt={pet.name} />
-                                            <p className="text-[10px] font-black truncate text-center relative z-10 text-white">{pet.name}</p>
-                                            <p className="text-[9px] font-bold text-green-400 text-center relative z-10 flex items-center justify-center gap-1"><GreenCoin cls="w-3 h-3"/> {formatValue(pet.value)}</p>
-                                        </div>
-                                    ))}
+                            <div className="flex justify-between items-end border-t border-[#222] pt-4 mt-auto">
+                                <div>
+                                    <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Entry Fee</p>
+                                    <p className="font-black text-2xl text-green-400 flex items-center gap-2"><GreenCoin cls="w-6 h-6"/> {formatValue(l.bet_amount)}</p>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="lg:col-span-2 flex flex-col justify-between">
-                        <div className="bg-[#0a0a0a] rounded-[2rem] p-8 border border-[#222] shadow-2xl mb-6 flex-1 flex flex-col justify-center text-center">
-                            <h4 className="text-gray-600 font-black uppercase tracking-[0.3em] text-xs mb-8">Match Preview</h4>
-                            
-                            <div className="mb-6">
-                                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Total Pot</p>
-                                <p className={`text-6xl font-black drop-shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-3 ${mode === 'online' ? 'text-blue-500' : 'text-red-500'}`}>
-                                    {betType === 'coins' ? <><GreenCoin cls="w-12 h-12 grayscale opacity-50"/> {formatValue(coinBet * (mode === 'online' ? 2 : 2))}</> : 'PETS MIX'}
-                                </p>
-                            </div>
-                            
-                            <div className="flex justify-center items-center gap-4 border-t border-[#222] pt-6">
-                                <div className="text-right">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">You</p>
-                                    <p className="text-lg font-black text-white">{userProfile?.username}</p>
-                                </div>
-                                <span className="text-3xl font-black italic text-red-600 mx-2">VS</span>
-                                <div className="text-left">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{mode==='online' ? 'Lobby' : 'Bot'}</p>
-                                    <p className="text-lg font-black text-white">{mode === 'online' ? 'ANYONE' : 'TETOBOT'}</p>
-                                </div>
+                                <button onClick={() => joinOnlineMatch(l)} disabled={l.players?.length >= 6} className="bg-white text-black hover:bg-blue-500 hover:text-white px-8 py-3 rounded-xl font-black uppercase transition-all disabled:opacity-20">Join</button>
                             </div>
                         </div>
-                        
-                        <button onClick={mode === 'online' ? hostOnlineMatch : startBotMatch} className={`w-full py-6 text-white font-black text-2xl uppercase tracking-widest rounded-[2rem] transition-all active:scale-95 ${mode === 'online' ? 'bg-gradient-to-r from-blue-700 to-blue-500 hover:shadow-[0_0_40px_rgba(37,99,235,0.5)]' : 'bg-gradient-to-r from-red-700 to-red-500 hover:shadow-[0_0_40px_rgba(220,38,38,0.5)]'}`}>
-                            {mode === 'online' ? 'Create Arena' : 'Start Duel'}
-                        </button>
-                    </div>
+                    ))}
                 </div>
             </div>
         )}
 
-        {/* LOBBIES Y SALA DE ESPERA OMITIDOS PARA ESPACIO, MANTÉN LOS MISMOS QUE ARRIBA */}
-        
-        {/* === LA MESA VIP (GAMEPLAY ÉPICO) === */}
-        {view === 'playing' && (
-            <div className="flex flex-col items-center justify-center min-h-[85vh] relative py-10 w-full">
+        {/* SETUP APUESTA (FIXED UI) */}
+        {view === 'betting' && (
+            <div className="animate-fade-in max-w-2xl mx-auto w-full">
+                <div className="bg-[#0a0a0a] rounded-[2rem] p-10 border border-[#222] shadow-2xl relative">
+                    <div className="flex items-center gap-4 mb-10">
+                        <button onClick={() => setView(mode === 'online' ? 'lobbies' : 'menu')} className="bg-[#111] border border-[#333] px-6 py-2 rounded-xl text-gray-400 hover:text-white font-bold uppercase tracking-widest transition-all text-sm">← Back</button>
+                    </div>
+
+                    <h2 className="text-4xl font-black uppercase tracking-widest text-center mb-2">Set Wager</h2>
+                    <p className="text-center text-gray-500 uppercase tracking-widest text-xs font-bold mb-10 border-b border-[#222] pb-6">{mode === 'online' ? 'Multiplayer Arena' : 'Local vs Bot'}</p>
+
+                    <div className="bg-[#111] p-8 rounded-3xl border border-[#333] mb-10 focus-within:border-white transition-colors">
+                        <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-4">Amount</p>
+                        <div className="flex items-center justify-between">
+                            <input type="number" value={coinBet} onChange={(e) => setCoinBet(Number(e.target.value))} className="bg-transparent text-6xl font-black outline-none w-full text-white" />
+                            <GreenCoin cls="w-12 h-12"/>
+                        </div>
+                    </div>
+
+                    <button onClick={mode === 'online' ? hostOnlineMatch : startBotMatch} className={`w-full py-6 text-white font-black text-2xl uppercase tracking-widest rounded-2xl transition-all active:scale-95 ${mode === 'online' ? 'bg-gradient-to-r from-blue-700 to-blue-500 shadow-[0_5px_30px_rgba(37,99,235,0.4)]' : 'bg-gradient-to-r from-red-700 to-red-500 shadow-[0_5px_30px_rgba(220,38,38,0.4)]'}`}>
+                        {mode === 'online' ? 'Create Lobby' : 'Start Match'}
+                    </button>
+                </div>
+            </div>
+        )}
+
+        {/* === LA MESA UNIFICADA (LOBBY + GAMEPLAY EN LA MISMA MESA) === */}
+        {(view === 'playing' || view === 'playing_room') && (
+            <div className="relative w-full h-[70vh] flex items-center justify-center animate-fade-in mt-10">
                 
-                {/* --- THE VIP TABLE --- */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1000px] h-[65vh] max-h-[600px] bg-[#140808] border-[16px] border-[#1a1111] rounded-[600px] shadow-[0_0_100px_rgba(0,0,0,1),inset_0_0_150px_rgba(0,0,0,1)] z-0 flex items-center justify-center">
-                    {/* Textura Felt */}
+                {/* LA MESA (Fondo ovalado) */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] h-[55vh] max-h-[550px] bg-[#1a0f0f] border-[16px] border-[#1a1111] rounded-[600px] shadow-[0_0_100px_rgba(0,0,0,1),inset_0_0_150px_rgba(0,0,0,1)] z-0 flex items-center justify-center">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 rounded-[500px]"></div>
-                    {/* Borde Neón */}
-                    <div className="absolute inset-4 rounded-[500px] border-2 border-red-900/50 shadow-[inset_0_0_30px_rgba(220,38,38,0.2)]"></div>
+                    <div className="absolute inset-6 rounded-[500px] border-2 border-red-900/30"></div>
                     
-                    {/* --- EL POT EN EL CENTRO --- */}
-                    <div className="absolute z-0 flex flex-col items-center justify-center bg-black/40 p-8 rounded-full border border-red-900/30 backdrop-blur-sm shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+                    {/* EL POT EN EL CENTRO */}
+                    <div className={`absolute z-0 flex flex-col items-center justify-center bg-black/60 p-10 rounded-full border border-red-900/50 backdrop-blur-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all duration-300 ${potPulse ? 'scale-125 border-green-500 shadow-[0_0_50px_rgba(34,197,94,0.6)]' : ''}`}>
                         <span className="text-[10px] uppercase tracking-[0.4em] text-red-500/80 mb-2 font-black">Total Pot</span>
-                        {betType === 'coins' ? (
-                            <div className="text-5xl font-black text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] flex items-center gap-3">
-                                <GreenCoin cls="w-10 h-10"/> {formatValue(potTotal)}
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-6">
-                                <div className="flex -space-x-3">
-                                    {selectedPets.slice(0,3).map((p,i) => <img key={i} src={p.img} className="w-10 h-10 rounded-full border border-white/20 bg-black/50" />)}
-                                </div>
-                                <span className="text-xl font-black text-red-600 italic">VS</span>
-                                <div className="flex -space-x-3">
-                                    {botPets.slice(0,3).map((p,i) => <img key={i} src={p.img} className="w-10 h-10 rounded-full border border-white/20 bg-black/50" />)}
-                                </div>
-                            </div>
-                        )}
+                        <div className="text-6xl font-black text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] flex items-center gap-3">
+                            <GreenCoin cls="w-12 h-12"/> {formatValue(potTotal)}
+                        </div>
                     </div>
                 </div>
 
                 {/* TEXTO DE ACCIÓN CINEMÁTICO */}
-                <div className="absolute top-4 w-full text-center z-30 pointer-events-none">
-                    <p className={`text-4xl md:text-6xl font-black italic transition-all duration-300 uppercase tracking-[0.2em] bg-black/50 backdrop-blur-md inline-block px-10 py-4 rounded-full border border-white/10 ${actionLog.includes('BANG') ? 'text-red-600 scale-110 drop-shadow-[0_0_40px_rgba(220,38,38,1)] border-red-500/50' : 'text-white shadow-2xl'}`}>
+                <div className="absolute top-0 w-full text-center z-40 pointer-events-none">
+                    <p className={`text-3xl md:text-5xl font-black italic transition-all duration-300 uppercase tracking-[0.2em] bg-black/70 backdrop-blur-md inline-block px-10 py-4 rounded-full border border-white/10 shadow-2xl ${actionLog.includes('BANG') ? 'text-red-600 scale-110 drop-shadow-[0_0_40px_rgba(220,38,38,1)] border-red-500/50' : 'text-white'}`}>
                         {actionLog}
                     </p>
                 </div>
 
-                {/* --- JUGADORES OPONENTES --- */}
-                <div className="flex justify-around w-full max-w-[800px] relative z-20 mb-auto mt-24 px-10">
-                    {players.filter(p => p.id !== currentUser.id).map((p) => (
-                        <div key={p.id} className={`flex flex-col items-center transition-all duration-500 relative ${turnId === p.id ? 'scale-125 -translate-y-6 z-30' : 'opacity-70 scale-90'} ${p.isDead ? 'grayscale opacity-30' : ''}`}>
-                            
-                            {/* Spotlight */}
-                            {turnId === p.id && !p.isDead && <div className="absolute -top-20 w-40 h-60 bg-gradient-to-b from-white/20 to-transparent blur-xl rounded-full pointer-events-none"></div>}
+                {/* --- JUGADORES EN EL CÍRCULO (DINÁMICO) --- */}
+                <div className="absolute inset-0 z-20 pointer-events-none">
+                    {visualCirclePlayers.map((p, idx) => {
+                        const positionClass = getPlayerPositionClass(idx, visualCirclePlayers.length);
+                        const isMe = p.id === currentUser?.id;
+                        const isMyTurn = turnId === p.id;
+                        
+                        return (
+                            <div key={p.id} className={`absolute flex flex-col items-center transition-all duration-700 pointer-events-auto ${positionClass} ${isMyTurn ? 'scale-125 z-40' : 'opacity-80 scale-100 z-10'} ${p.isDead ? 'grayscale opacity-30 scale-75' : ''}`}>
+                                
+                                {/* Spotlight visual */}
+                                {isMyTurn && !p.isDead && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-white/10 blur-2xl rounded-full pointer-events-none"></div>}
 
-                            <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] p-1 bg-[#111] relative shadow-2xl ${turnId === p.id && !p.isDead ? 'border-white drop-shadow-[0_0_40px_rgba(255,255,255,0.6)]' : 'border-[#222]'}`}>
-                                <img src={p.avatar} className="w-full h-full object-cover rounded-full" />
-                                {p.isDead && <div className="absolute inset-0 flex items-center justify-center text-5xl bg-red-900/80 rounded-full backdrop-blur-sm animate-pulse">💀</div>}
+                                <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] p-1 bg-[#111] relative shadow-2xl ${isMyTurn && !p.isDead ? 'border-white drop-shadow-[0_0_40px_rgba(255,255,255,0.6)]' : 'border-[#222]'}`}>
+                                    <img src={p.avatar} className="w-full h-full object-cover rounded-full" />
+                                    {p.isDead && <div className="absolute inset-0 flex items-center justify-center text-5xl bg-red-900/80 rounded-full backdrop-blur-sm">💀</div>}
+                                </div>
+                                <div className={`mt-3 font-black text-[10px] px-6 py-2 rounded-full uppercase tracking-widest border border-[#333] shadow-lg ${isMe ? 'bg-red-600 text-white' : 'bg-[#0a0a0a] text-gray-400'}`}>
+                                    {isMe ? 'YOU' : p.name}
+                                </div>
+                                
+                                {/* Botones del Jugador Local */}
+                                {isMe && view === 'playing' && !p.isDead && turnId === currentUser.id && (
+                                    <div className="absolute top-[-80px] w-max flex gap-4">
+                                        <button 
+                                            disabled={isProcessing || cylinderSpinning} 
+                                            onClick={() => handleShoot(currentUser.id)}
+                                            className="bg-white hover:bg-gray-200 text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 text-xs md:text-sm"
+                                        >
+                                            Shoot Self
+                                        </button>
+                                        {mode === 'bot' && (
+                                            <button 
+                                                disabled={isProcessing || cylinderSpinning} 
+                                                onClick={() => handleShoot('bot')}
+                                                className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.3)] active:scale-95 text-xs md:text-sm"
+                                            >
+                                                Shoot Bot
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                            <div className="mt-4 bg-[#0a0a0a] text-white font-black text-[10px] px-6 py-2 rounded-full uppercase tracking-widest border border-[#333] shadow-lg">{p.name}</div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* --- EL ARMA EN EL CENTRO --- */}
-                <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center my-4 z-30 pointer-events-none">
-                    <GunSVG targetAngle={gunAngle} isShaking={gunShaking} isFiring={gunFiring} isSpinningCylinder={cylinderSpinning} />
-                    
-                    {/* UI del Cilindro flotante */}
-                    <div className="absolute -bottom-16 flex gap-3 bg-black/50 px-6 py-3 rounded-full border border-white/5 backdrop-blur-md">
-                        {[0, 1, 2, 3, 4, 5].map(idx => (
-                            <div key={idx} className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${idx === uiChamber ? 'border-red-500 bg-red-500 shadow-[0_0_15px_rgba(220,38,38,1)] scale-150' : idx < uiChamber ? 'border-[#333] bg-[#111] opacity-40' : 'border-gray-400 bg-transparent'}`}></div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* --- JUGADOR LOCAL (TÚ) --- */}
-                <div className={`relative z-30 w-full max-w-4xl mt-auto pt-20 flex justify-center items-end transition-all duration-500 ${turnId === currentUser.id ? 'scale-110' : 'opacity-80'}`}>
-                    
-                    {/* Spotlight Tú */}
-                    {turnId === currentUser.id && <div className="absolute bottom-0 w-60 h-80 bg-gradient-to-t from-white/10 to-transparent blur-3xl rounded-full pointer-events-none z-0"></div>}
-
-                    <div className="flex w-full justify-between items-center px-4 relative z-10">
-                        <button 
-                            disabled={isProcessing || turnId !== currentUser.id || players.find(p=>p.id===currentUser.id)?.isDead} 
-                            onClick={() => handleShoot(currentUser.id)}
-                            className="bg-white hover:bg-gray-200 text-black px-10 py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-10 disabled:cursor-not-allowed shadow-[0_10px_30px_rgba(255,255,255,0.2)] active:scale-95 text-sm md:text-lg border-4 border-white/20"
-                        >
-                            Shoot Self
-                        </button>
+                {view === 'playing' && (
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 flex items-center justify-center z-30 pointer-events-none mt-4">
+                        <GunSVG targetAngle={gunAngle} isShaking={gunShaking} isFiring={gunFiring} isSpinningCylinder={cylinderSpinning} />
                         
-                        <div className={`w-36 h-36 md:w-48 md:h-48 rounded-full border-[8px] p-2 bg-[#111] relative shadow-2xl shrink-0 mx-8 ${turnId === currentUser.id ? 'border-red-600 drop-shadow-[0_0_50px_rgba(220,38,38,0.8)]' : 'border-[#222]'}`}>
-                            <img src={getAvatar(userProfile?.avatar_url, userProfile?.username)} className="w-full h-full object-cover rounded-full" />
-                            {players.find(p=>p.id===currentUser.id)?.isDead && <div className="absolute inset-0 flex items-center justify-center text-7xl bg-red-900/80 rounded-full backdrop-blur-sm">💀</div>}
-                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white font-black text-sm px-8 py-2 rounded-full uppercase tracking-[0.2em] border-2 border-black shadow-2xl">YOU</div>
+                        {/* UI del Cilindro */}
+                        <div className="absolute -bottom-16 flex gap-2 bg-black/60 px-6 py-2 rounded-full border border-white/10 backdrop-blur-md">
+                            {[0, 1, 2, 3, 4, 5].map(idx => (
+                                <div key={idx} className={`w-3 h-3 rounded-full border transition-all duration-300 ${idx === uiChamber ? 'border-red-500 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,1)] scale-150' : idx < uiChamber ? 'border-[#333] bg-[#111] opacity-40' : 'border-gray-500 bg-transparent'}`}></div>
+                            ))}
                         </div>
+                    </div>
+                )}
 
-                        <button 
-                            disabled={isProcessing || turnId !== currentUser.id || players.find(p=>p.id===currentUser.id)?.isDead || mode === 'online'} 
-                            onClick={() => handleShoot('bot')}
-                            className="bg-[#111] text-gray-500 px-10 py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] disabled:opacity-20 shadow-xl text-sm md:text-lg border-2 border-[#222] relative group"
-                        >
-                            <span className="opacity-50">Shoot Foe</span>
+                {/* --- BOTON START (SOLO LOBBY HOST) --- */}
+                {view === 'playing_room' && currentRoom?.host_id === currentUser?.id && (
+                    <div className="absolute bottom-10 z-40">
+                        <button onClick={startOnlineGameHost} disabled={players.length < 2} className="bg-white text-black px-16 py-6 rounded-full font-black text-xl uppercase tracking-widest shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:scale-105 transition-all disabled:opacity-20">
+                            Start Match ({players.length}/6)
                         </button>
                     </div>
-                </div>
+                )}
             </div>
         )}
 
-        {/* --- PANTALLA DE RESULTADOS CINEMÁTICA --- */}
+        {/* --- PANTALLA DE RESULTADOS --- */}
         {view === 'result' && (
-            <div className="flex flex-col items-center justify-center py-40 animate-fade-in relative z-50">
-                <div className="absolute inset-0 bg-black/90 backdrop-blur-xl z-0 pointer-events-none"></div>
-                <div className="text-[200px] leading-none mb-8 z-10 drop-shadow-[0_0_80px_rgba(255,0,0,0.8)] animate-bounce-slight">{actionLog.includes('WON') ? '🏆' : '💀'}</div>
-                <h2 className={`text-5xl md:text-8xl font-black mb-16 text-center z-10 uppercase tracking-[0.2em] drop-shadow-2xl px-4 ${actionLog.includes('WON') ? 'text-yellow-400' : 'text-red-600'}`}>{actionLog}</h2>
-                <button onClick={() => { setView('menu'); setCurrentRoom(null); setPlayers([]); setBotPets([]); }} className="px-20 py-8 bg-white text-black text-2xl font-black uppercase tracking-widest rounded-full hover:bg-gray-200 transition-all shadow-[0_0_60px_rgba(255,255,255,0.5)] hover:scale-105 z-10 active:scale-95">
+            <div className="flex flex-col items-center justify-center h-full min-h-[60vh] animate-fade-in relative z-50">
+                <div className="absolute inset-0 bg-black/90 backdrop-blur-2xl z-0 pointer-events-none rounded-3xl"></div>
+                <div className="text-[180px] leading-none mb-6 z-10 drop-shadow-[0_0_60px_rgba(255,0,0,0.8)] animate-bounce-slight">{actionLog.includes('WON') ? '🏆' : '💀'}</div>
+                <h2 className={`text-4xl md:text-7xl font-black mb-16 text-center z-10 uppercase tracking-[0.2em] drop-shadow-2xl px-4 ${actionLog.includes('WON') ? 'text-yellow-400' : 'text-red-600'}`}>{actionLog}</h2>
+                <button onClick={() => { setView('menu'); setCurrentRoom(null); setPlayers([]); }} className="px-16 py-6 bg-white text-black text-xl font-black uppercase tracking-widest rounded-full hover:bg-gray-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:scale-105 z-10 active:scale-95">
                     EXIT ARENA
                 </button>
             </div>
@@ -718,10 +755,6 @@ export default function RussianRoulettePage() {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #0a0a0a; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
       `}</style>
     </div>
   );
