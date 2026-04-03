@@ -42,6 +42,7 @@ export default function WalletPage() {
     }
     setCurrentUser(user);
 
+    // Mantenemos la reparación por si acaso
     await supabase.rpc('reparar_pet_35k', { p_user_id: user.id });
 
     const { data: profile } = await supabase.from('profiles').select('saldo_verde, saldo_rojo').eq('id', user.id).single();
@@ -61,13 +62,18 @@ export default function WalletPage() {
   }, []);
 
   const cargarInventario = async (uid) => {
+    // CORRECCIÓN: Quitamos max_quantity de la tabla items porque no existe ahí.
     const { data, error } = await supabase
         .from('inventory')
-        // AHORA TRAEMOS LOS DATOS LIMITED DESDE LA DB
-        .select(`id, item_id, is_limited, serial_number, original_owner, items (name, value, image_url, color, max_quantity)`)
+        .select(`id, item_id, is_limited, serial_number, original_owner, items (name, value, image_url, color)`)
         .eq('user_id', uid);
     
-    if (!error && data) {
+    if (error) {
+        console.error("Error al cargar inventario:", error);
+        return;
+    }
+
+    if (data) {
         setInventario(data.filter(row => row.items !== null).map(row => ({
             inventarioId: row.id,
             itemId: row.item_id,
@@ -77,7 +83,6 @@ export default function WalletPage() {
             color: row.items.color || '#9ca3af',
             isLimited: row.is_limited || false,
             serial: row.serial_number || 0,
-            maxQuantity: row.items.max_quantity || 0,
             originalOwner: row.original_owner || 'Unknown'
         })));
     }
@@ -367,7 +372,7 @@ export default function WalletPage() {
                             {/* BADGE LIMITADO Y NÚMERO DE SERIE */}
                             {pet.isLimited && (
                               <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-yellow-600 text-[#0b0e14] font-black text-[9px] px-2 py-1 rounded-bl-lg rounded-tr-lg shadow-md z-20">
-                                #{pet.serial}/{pet.maxQuantity}
+                                #{pet.serial}
                               </div>
                             )}
 
