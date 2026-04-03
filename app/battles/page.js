@@ -20,15 +20,15 @@ export default function BattlesPage() {
   // Estados Creador
   const [selectedCases, setSelectedCases] = useState([]);
   const [playerCount, setPlayerCount] = useState(2); 
-  const [isCreating, setIsCreating] = useState(false); // CANDADO PARA EVITAR DOBLE CREACIÓN
+  const [isCreating, setIsCreating] = useState(false); 
 
-  // Estados Arena (Animación de Rondas)
+  // Estados Arena
   const [currentRound, setCurrentRound] = useState(-1);
   const [battleResults, setBattleResults] = useState(null);
-  const [isJoining, setIsJoining] = useState(false); // CANDADO PARA EVITAR UNIÓN MÚLTIPLE
+  const [isJoining, setIsJoining] = useState(false); 
   const resolvingRef = useRef(false);
 
-  // --- SOLUCIÓN AL ERROR DE LAS CAJAS ---
+  // Cajas Disponibles
   const [availableCases, setAvailableCases] = useState([]);  
   
   useEffect(() => {
@@ -84,7 +84,8 @@ export default function BattlesPage() {
                         iniciarResolucionBatalla(payload.new);
                     } else if (payload.new.estado === 'completed' && !resolvingRef.current) {
                         setBattleResults(payload.new.resultado);
-                        setCurrentRound(payload.new.datos_partida.cases.length); // Mostrar todo
+                        // ARMADURA ANTI-CRASH:
+                        setCurrentRound((payload.new.datos_partida?.cases || []).length); 
                     }
                     return payload.new;
                 }
@@ -106,7 +107,6 @@ export default function BattlesPage() {
   const removeCase = (uniqueId) => setSelectedCases(selectedCases.filter(c => c.uniqueId !== uniqueId));
   const totalCost = selectedCases.reduce((sum, caja) => sum + caja.price, 0);
 
-// 1. CREAR BATALLA (Sin RPC, 100% compatible con JSONB)
   const handleCreate = async () => {
     if (selectedCases.length === 0) return alert("Add at least one case!");
     if (!currentUser) return alert("Loading user...");
@@ -114,7 +114,6 @@ export default function BattlesPage() {
     setIsCreating(true);
 
     try {
-      // Cobramos el saldo verde al creador directamente
       const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
       if (profile.saldo_verde < totalCost) {
           alert("No tienes suficiente Saldo Verde.");
@@ -129,7 +128,6 @@ export default function BattlesPage() {
           cost: totalCost
       };
 
-      // Insertamos la partida mandando un ARRAY VACÍO a apuesta_creador para que el JSONB no llore
       const { data: nuevaPartida, error } = await supabase.from('partidas').insert({
           modo_juego: 'battles',
           creador_id: currentUser.id,
@@ -152,16 +150,18 @@ export default function BattlesPage() {
     }
   };
 
-  // 2. UNIRSE A BATALLA (Sin RPC)
   const joinBattle = async (battle) => {
-    // ... tu lógica de checks iniciales ...
+    // ARMADURA ANTI-CRASH:
+    const battleCases = battle.datos_partida?.cases || [];
+    const currentPlayers = battle.datos_partida?.players || [];
+
     if (battle.estado === 'completed' || battle.estado === 'in_progress') {
         setActiveBattle(battle);
         if(battle.resultado) setBattleResults(battle.resultado);
-        setCurrentRound(battle.datos_partida.cases.length);
+        setCurrentRound(battleCases.length);
         setView('arena'); return;
     }
-    const currentPlayers = battle.datos_partida.players || [];
+    
     if (currentPlayers.some(p => p.id === currentUser.id)) {
         setActiveBattle(battle); setView('arena'); return;
     }
@@ -170,23 +170,21 @@ export default function BattlesPage() {
     setIsJoining(true);
 
     try {
-      // Cobramos el saldo verde al retador
       const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
-      if (profile.saldo_verde < battle.datos_partida.cost) {
+      if (profile.saldo_verde < (battle.datos_partida?.cost || 0)) {
           alert("Saldo Verde insuficiente para unirse.");
           setIsJoining(false); return;
       }
-      await supabase.from('profiles').update({ saldo_verde: profile.saldo_verde - battle.datos_partida.cost }).eq('id', currentUser.id);
+      await supabase.from('profiles').update({ saldo_verde: profile.saldo_verde - (battle.datos_partida?.cost || 0) }).eq('id', currentUser.id);
 
       const userInfo = { id: currentUser.id, name: currentUser.username, avatar: currentUser.avatar_url };
-      const newPlayers = [...battle.datos_partida.players, userInfo];
-      const isFull = newPlayers.length === battle.datos_partida.playerCount;
+      const newPlayers = [...currentPlayers, userInfo];
+      const isFull = newPlayers.length === (battle.datos_partida?.playerCount || 2);
 
-      // Actualizamos la partida en la DB
       const { data: updatedBattle, error } = await supabase.from('partidas').update({
           datos_partida: { ...battle.datos_partida, players: newPlayers },
           retador_id: currentUser.id,
-          apuesta_retador: [], // ARRAY VACÍO para evitar el error JSONB
+          apuesta_retador: [], 
           estado: isFull ? 'in_progress' : 'waiting'
       }).eq('id', battle.id).select().single();
 
@@ -207,19 +205,26 @@ export default function BattlesPage() {
     }
   };
 
-  // 3. RESOLVER BATALLA LÓGICA LOCAL (El servidor ya no te bloqueará)
   const iniciarResolucionBatalla = async (battle) => {
       if (resolvingRef.current) return;
       resolvingRef.current = true;
 
-      // Generamos el Random de las cajas directamente aquí
       const rounds = [];
       const playerTotals = {};
-      battle.datos_partida.players.forEach(p => playerTotals[p.id] = 0);
+      
+      // ARMADURA ANTI-CRASH:
+      const battlePlayers = battle.datos_partida?.players || [];
+      const battleCases = battle.datos_partida?.cases || [];
 
-      battle.datos_partida.cases.forEach((caja, roundIdx) => {
-          battle.datos_partida.players.forEach(p => {
-              // Saca un item al azar de la caja
+      if (battlePlayers.length === 0 || battleCases.length === 0) {
+          resolvingRef.current = false;
+          return;
+      }
+
+      battlePlayers.forEach(p => playerTotals[p.id] = 0);
+
+      battleCases.forEach((caja, roundIdx) => {
+          battlePlayers.forEach(p => {
               const randomItem = caja.items[Math.floor(Math.random() * caja.items.length)];
               const valorItem = randomItem.price || randomItem.value || 0;
               
@@ -232,10 +237,9 @@ export default function BattlesPage() {
           });
       });
 
-      // Calcular quién tiene más valor
-      let ganador_id = battle.datos_partida.players[0].id;
+      let ganador_id = battlePlayers[0].id;
       let maxVal = playerTotals[ganador_id];
-      battle.datos_partida.players.forEach(p => {
+      battlePlayers.forEach(p => {
           if (playerTotals[p.id] > maxVal) {
               maxVal = playerTotals[p.id];
               ganador_id = p.id;
@@ -244,22 +248,19 @@ export default function BattlesPage() {
 
       const resultado = { ganador_id, rounds, totals: playerTotals };
 
-      // Guardar el resultado en la base de datos
       await supabase.from('partidas').update({
           estado: 'completed',
           resultado: resultado
       }).eq('id', battle.id);
 
-      // Pagarle al ganador todo lo que salió en la batalla
       const { data: winnerProf } = await supabase.from('profiles').select('saldo_verde').eq('id', ganador_id).single();
       let totalGanancia = 0;
       Object.values(playerTotals).forEach(v => totalGanancia += v);
       await supabase.from('profiles').update({ saldo_verde: winnerProf.saldo_verde + totalGanancia }).eq('id', ganador_id);
 
-      // Iniciar Animación visual
       setBattleResults(resultado);
       let r = 0;
-      const totalRounds = battle.datos_partida.cases.length;
+      const totalRounds = battleCases.length;
       const interval = setInterval(() => {
           setCurrentRound(r);
           r++;
@@ -270,14 +271,12 @@ export default function BattlesPage() {
       }, 1500);
   };
 
-  // Helper para buscar el item sacado en una ronda
   const getPlayerItemForRound = (playerId, roundIndex) => {
       if (!battleResults || !battleResults.rounds) return null;
       const roll = battleResults.rounds.find(r => r.round === roundIndex && r.player_id === playerId);
       return roll ? roll.item : null;
   };
 
-  // Helper para calcular el total visual hasta la ronda actual
   const getPlayerVisualTotal = (playerId) => {
       if (!battleResults || !battleResults.rounds || currentRound < 0) return 0;
       let total = 0;
@@ -315,67 +314,67 @@ export default function BattlesPage() {
             <div className="space-y-4">
               {battles.length === 0 && <p className="text-[#8f9ac6] text-center py-10">No active battles. Create one!</p>}
               
-{battles.map((battle) => {
-    const isCompleted = battle.estado === 'completed';
-    // ARMADURA ANTI-CRASH: Si no hay datos, le asignamos objetos o arreglos vacíos
-    const pData = battle.datos_partida || {};
-    const battleCases = pData.cases || [];
-    const battlePlayers = pData.players || [];
-    
-    return (
-    <div key={battle.id} className={`bg-[#1c1f2e] border ${isCompleted ? 'border-[#252839] opacity-80' : 'border-[#252839] hover:border-[#ef4444]/50'} rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-6 transition-all shadow-lg group relative`}>
-      
-      {isCompleted && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
+              {battles.map((battle) => {
+                  const isCompleted = battle.estado === 'completed';
+                  // ARMADURA ANTI-CRASH APLICADA AQUÍ:
+                  const pData = battle.datos_partida || {};
+                  const battleCases = pData.cases || [];
+                  const battlePlayers = pData.players || [];
+                  
+                  return (
+                  <div key={battle.id} className={`bg-[#1c1f2e] border ${isCompleted ? 'border-[#252839] opacity-80' : 'border-[#252839] hover:border-[#ef4444]/50'} rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-6 transition-all shadow-lg group relative`}>
+                    
+                    {isCompleted && <div className="absolute top-0 left-0 bg-[#252839] text-[#8f9ac6] text-[9px] font-black uppercase px-2 py-0.5 rounded-tl-2xl rounded-br-lg tracking-widest">Finished</div>}
 
-      {/* Jugadores */}
-      <div className="flex items-center gap-2 w-full xl:w-auto justify-center xl:justify-start pt-4 xl:pt-0">
-        {Array.from({ length: pData.playerCount || 2 }).map((_, idx) => {
-          const user = battlePlayers[idx];
-          const isWinner = isCompleted && battle.resultado?.ganador_id === user?.id;
-          
-          return (
-          <div key={idx} className="relative flex items-center">
-            {isWinner && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl z-20 drop-shadow-md">👑</span>}
-            {user ? (
-              <div className={`w-12 h-12 rounded-full border-2 ${isWinner ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'border-[#ef4444]'} overflow-hidden bg-[#141323] z-10`}>
-                <img src={user.avatar} className="w-full h-full object-cover" alt="player"/>
-              </div>
-            ) : (
-              <div className="w-12 h-12 rounded-full border-2 border-dashed border-[#555b82] flex items-center justify-center bg-[#141323]/50 z-10">
-                <span className="text-[#555b82] font-black">?</span>
-              </div>
-            )}
-          </div>
-        )})}
-      </div>
+                    {/* Jugadores */}
+                    <div className="flex items-center gap-2 w-full xl:w-auto justify-center xl:justify-start pt-4 xl:pt-0">
+                      {Array.from({ length: pData.playerCount || 2 }).map((_, idx) => {
+                        const user = battlePlayers[idx];
+                        const isWinner = isCompleted && battle.resultado?.ganador_id === user?.id;
+                        
+                        return (
+                        <div key={idx} className="relative flex items-center">
+                          {isWinner && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl z-20 drop-shadow-md">👑</span>}
+                          {user ? (
+                            <div className={`w-12 h-12 rounded-full border-2 ${isWinner ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'border-[#ef4444]'} overflow-hidden bg-[#141323] z-10`}>
+                              <img src={user.avatar} className="w-full h-full object-cover" alt="player"/>
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 rounded-full border-2 border-dashed border-[#555b82] flex items-center justify-center bg-[#141323]/50 z-10">
+                              <span className="text-[#555b82] font-black">?</span>
+                            </div>
+                          )}
+                        </div>
+                      )})}
+                    </div>
 
-      {/* Cajas a abrir */}
-      <div className="flex-1 w-full bg-[#141323] border border-[#252839] rounded-xl p-3 flex items-center gap-3 overflow-x-auto custom-scrollbar">
-        {battleCases.map((caja, idx) => (
-          <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center">
-            <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${caja.color || '#fff'} 0%, transparent 70%)` }}></div>
-            <img src={caja.image_url} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color || '#fff'}80)`}}/>
-          </div>
-        ))}
-        <span className="text-[#555b82] font-black text-xs ml-2 shrink-0">{battleCases.length} Rounds</span>
-      </div>
+                    {/* Cajas a abrir */}
+                    <div className="flex-1 w-full bg-[#141323] border border-[#252839] rounded-xl p-3 flex items-center gap-3 overflow-x-auto custom-scrollbar">
+                      {battleCases.map((caja, idx) => (
+                        <div key={idx} className="relative w-12 h-12 shrink-0 bg-[#1c1f2e] border border-[#252839] rounded-lg flex items-center justify-center">
+                          <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${caja.color || '#fff'} 0%, transparent 70%)` }}></div>
+                          <img src={caja.image_url} className="w-8 h-8 object-contain drop-shadow-md z-10" alt="case" style={{filter: `drop-shadow(0 0 5px ${caja.color || '#fff'}80)`}}/>
+                        </div>
+                      ))}
+                      <span className="text-[#555b82] font-black text-xs ml-2 shrink-0">{battleCases.length} Rounds</span>
+                    </div>
 
-      {/* Costo y Botón */}
-      <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto justify-between xl:justify-end">
-        <div className="text-center sm:text-right">
-          <p className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest">Total Cost</p>
-          <p className={`text-xl font-black flex items-center gap-1.5 ${isCompleted ? 'text-[#8f9ac6]' : 'text-white'}`}><GreenCoin cls="w-5 h-5"/> {formatValue(pData.cost || 0)}</p>
-        </div>
-        <button 
-          onClick={() => joinBattle(battle)}
-          disabled={isJoining}
-          className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md group-hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'} disabled:opacity-50`}
-        >
-          {isJoining ? 'Wait...' : (isCompleted ? 'View Battle' : (battlePlayers.some(p => p.id === currentUser?.id) ? 'View' : 'Join Battle'))}
-        </button>
-      </div>
-    </div>
-  )})}
+                    {/* Costo y Botón */}
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto justify-between xl:justify-end">
+                      <div className="text-center sm:text-right">
+                        <p className="text-[#8f9ac6] text-[10px] font-black uppercase tracking-widest">Total Cost</p>
+                        <p className={`text-xl font-black flex items-center gap-1.5 ${isCompleted ? 'text-[#8f9ac6]' : 'text-white'}`}><GreenCoin cls="w-5 h-5"/> {formatValue(pData.cost || 0)}</p>
+                      </div>
+                      <button 
+                        onClick={() => joinBattle(battle)}
+                        disabled={isJoining}
+                        className={`w-full sm:w-32 py-3 border font-black rounded-xl text-xs uppercase tracking-widest transition-all ${isCompleted ? 'bg-[#2a2e44] text-[#8f9ac6] border-[#3f4354] hover:bg-[#32364f]' : 'bg-[#2a2e44] hover:bg-gradient-to-r hover:from-[#ef4444] hover:to-[#dc2626] border-[#3f4354] hover:border-transparent text-white shadow-md group-hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'} disabled:opacity-50`}
+                      >
+                        {isJoining ? 'Wait...' : (isCompleted ? 'View Battle' : (battlePlayers.some(p => p.id === currentUser?.id) ? 'View' : 'Join Battle'))}
+                      </button>
+                    </div>
+                  </div>
+              )})}
             </div>
           </div>
         )}
@@ -483,15 +482,16 @@ export default function BattlesPage() {
                 <div className="flex justify-between items-center mb-8 border-b border-[#252839] pb-6">
                     <div>
                         <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-1">Battle Arena</h2>
-                        <p className="text-[#8f9ac6] font-bold text-sm">{activeBattle.datos_partida.cases.length} Rounds • Total Value: <span className="text-[#3AFF4E]"><GreenCoin/> {formatValue(activeBattle.datos_partida.cost)}</span></p>
+                        {/* ARMADURA ANTI-CRASH APLICADA AQUÍ */}
+                        <p className="text-[#8f9ac6] font-bold text-sm">{(activeBattle.datos_partida?.cases || []).length} Rounds • Total Value: <span className="text-[#3AFF4E]"><GreenCoin/> {formatValue(activeBattle.datos_partida?.cost || 0)}</span></p>
                     </div>
                     {activeBattle.estado === 'waiting' && (
                         <div className="flex items-center gap-3 bg-[#141323] border border-[#2F3347] px-4 py-2 rounded-lg animate-pulse">
                             <span className="w-3 h-3 rounded-full bg-[#facc15]"></span>
-                            <span className="text-[#facc15] font-black text-sm tracking-widest uppercase">Waiting for players ({activeBattle.datos_partida.players.length}/{activeBattle.datos_partida.playerCount})</span>
+                            <span className="text-[#facc15] font-black text-sm tracking-widest uppercase">Waiting for players ({(activeBattle.datos_partida?.players || []).length}/{activeBattle.datos_partida?.playerCount || 2})</span>
                         </div>
                     )}
-                    {currentRound >= activeBattle.datos_partida.cases.length && (
+                    {currentRound >= (activeBattle.datos_partida?.cases || []).length && (
                         <div className="flex items-center gap-3 bg-[#141323] border border-[#3AFF4E] px-4 py-2 rounded-lg">
                             <span className="text-[#3AFF4E] font-black text-lg tracking-widest uppercase">Battle Completed</span>
                         </div>
@@ -499,11 +499,11 @@ export default function BattlesPage() {
                 </div>
 
                 {/* COLUMNAS DE JUGADORES */}
-                <div className="flex-1 grid gap-4 relative" style={{ gridTemplateColumns: `repeat(${activeBattle.datos_partida.playerCount}, minmax(0, 1fr))` }}>
+                <div className="flex-1 grid gap-4 relative" style={{ gridTemplateColumns: `repeat(${activeBattle.datos_partida?.playerCount || 2}, minmax(0, 1fr))` }}>
                     
-                    {Array.from({ length: activeBattle.datos_partida.playerCount }).map((_, pIdx) => {
-                        const player = activeBattle.datos_partida.players[pIdx];
-                        const isWinner = battleResults && battleResults.ganador_id === player?.id && currentRound >= activeBattle.datos_partida.cases.length;
+                    {Array.from({ length: activeBattle.datos_partida?.playerCount || 2 }).map((_, pIdx) => {
+                        const player = (activeBattle.datos_partida?.players || [])[pIdx];
+                        const isWinner = battleResults && battleResults.ganador_id === player?.id && currentRound >= (activeBattle.datos_partida?.cases || []).length;
                         const currentTotal = player ? getPlayerVisualTotal(player.id) : 0;
 
                         return (
@@ -535,7 +535,7 @@ export default function BattlesPage() {
 
                             {/* Rondas (Cajas/Items) */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-2 relative">
-                                {activeBattle.datos_partida.cases.map((caja, rIdx) => {
+                                {(activeBattle.datos_partida?.cases || []).map((caja, rIdx) => {
                                     const revealedItem = player && rIdx <= currentRound ? getPlayerItemForRound(player.id, rIdx) : null;
                                     const isCurrentSpinning = activeBattle.estado !== 'waiting' && rIdx === currentRound && !revealedItem;
 
