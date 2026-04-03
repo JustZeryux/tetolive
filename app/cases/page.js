@@ -172,7 +172,11 @@ export default function CasesPage() {
                  realItemId = itemData.id;
                  isLim = itemData.is_limited;
              }
-             else throw new Error(`No encontramos el ID real de "${rawWinner.name}" en la base de datos.`);
+             else {
+                 // Rollback saldo
+                 await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
+                 throw new Error(`No encontramos el ID real de "${rawWinner.name}" en la base de datos. Se reembolsó tu saldo.`);
+             }
           }
           
           if (isLim) foundLimited = true;
@@ -191,7 +195,12 @@ export default function CasesPage() {
 
       const { data: insertedInv, error: invError } = await supabase.from('inventory').insert(inventoryInserts).select();
 
-      if (invError) throw new Error("Fallo al insertar en el inventario: " + invError.message);
+      if (invError) {
+          // --- ROLLBACK DE SEGURIDAD ---
+          // Si el trigger de la base de datos falla, regresamos el dinero para evitar enojos
+          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
+          throw new Error("Fallo al insertar en el inventario. Se te devolvió tu saldo automáticamente. " + invError.message);
+      }
 
       setWinningItems(winners);
       if (foundLimited) setHasLimitedWin(true);
@@ -213,7 +222,11 @@ export default function CasesPage() {
               el.style.transform = `translateX(0px)`;
               setTimeout(() => {
                 el.style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.15, 1)';
-                const itemWidth = window.innerWidth < 768 ? 130 : 160;
+                
+                // --- FIX: CÁLCULO EXACTO DEL ANCHO DE LAS CARTAS ---
+                // Para x1 es w-[180px], para múltiples es w-[120px]. Más mx-1 (4px * 2 = 8px).
+                const isMulti = quantity > 1;
+                const itemWidth = isMulti ? 128 : 188; 
                 el.style.transform = `translateX(-${(WINNING_INDEX * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)}px)`;
               }, 50);
             }
@@ -222,7 +235,9 @@ export default function CasesPage() {
       }, 100);
 
       setTimeout(() => {
+        // --- FIX DEL CONGELAMIENTO: CAMBIAR LA VISTA AL FINALIZAR EL SPIN ---
         setSpinning(false);
+        setView('result'); 
 
         // --- EFECTO ÉPICO PARA LIMITEDS (FLASH DE PANTALLA Y SONIDO) ---
         if (foundLimited) {
@@ -253,7 +268,7 @@ export default function CasesPage() {
       console.error(error);
       alert(error.message);
       setSpinning(false);
-      setView('store');
+      setView('store'); // Si falla antes de girar, lo regresamos a la tienda
     }
   };
 
