@@ -208,51 +208,79 @@ export default function BloxypotCoinflip() {
     setCreatorSelectedPets(sorted.slice(0, 3));
   };
 
-  const handleCreateGame = async () => {
-    if (!currentUser) return alert("Debes iniciar sesión.");
-    if (creatorSelectedPets.length === 0) return alert("Debes seleccionar al menos una pet.");
-    if (!creatorSide) return alert("Debes elegir Heads o Tails.");
-    if (isCreating) return;
+ const handleCreate = async () => {
+      // 1. Validaciones básicas
+      if (!currentUser) return alert("Inicia sesión para jugar.");
+      if (currency === 'green' && (betAmount <= 0 || betAmount > saldoVerde)) return alert("Saldo verde inválido o insuficiente.");
+      if (currency === 'pets' && selectedPets.length === 0) return alert("Selecciona pets para apostar primero.");
+      
+      // Bloqueo de doble click
+      if (isCreating) return;
+      setIsCreating(true);
 
-    setIsCreating(true);
+      try {
+          // 🚨 2. EL ANTI-SPAM (Máximo 2 partidas activas por usuario)
+          const { data: activeGames } = await supabase
+              .from('partidas')
+              .select('id')
+              .eq('creador_id', currentUser.id)
+              .eq('modo_juego', 'coinflip') // Asegúrate de que así se llame el modo en tu DB
+              .eq('estado', 'waiting');
 
-    const valorTotal = creatorSelectedPets.reduce((sum, pet) => sum + pet.valor, 0);
+          if (activeGames && activeGames.length >= 2) {
+              alert("¡Cálmate wey! 🛑 Ya tienes 2 partidas en espera. Deja que alguien se una a esas primero.");
+              setIsCreating(false);
+              return;
+          }
 
-    const datosPartidaIniciales = {
-        lado_creador: creatorSide,
-        valor_total: valorTotal,
-        host_name: currentUser.username,
-        avatar_creador: currentUser.avatar_url
-    };
+          // 3. COBRO EN VIVO (Verde o Pets)
+          if (currency === 'green') {
+              const nuevoSaldo = saldoVerde - betAmount;
+              const { error: errCobro } = await supabase.from('profiles').update({ saldo_verde: nuevoSaldo }).eq('id', currentUser.id);
+              if (errCobro) throw new Error("Error al cobrar Saldo Verde.");
+              setUserProfile(prev => ({ ...prev, saldo_verde: nuevoSaldo }));
+          } else {
+              const petIds = selectedPets.map(p => p.inventarioId);
+              const { error: errDel } = await supabase.from('inventory').delete().in('id', petIds);
+              if (errDel) throw new Error("Error al apostar las pets.");
+          }
 
-    const { data: nuevaPartida, error } = await supabase
-        .from('partidas')
-        .insert({
-            modo_juego: 'coinflip',
-            creador_id: currentUser.id,
-            apuesta_creador: { items: creatorSelectedPets }, 
-            datos_partida: datosPartidaIniciales,
-            estado: 'waiting'
-        })
-        .select()
-        .single();
+          // 4. PREPARAR DATOS DE LA PARTIDA
+          const datosPartida = {
+              currency: currency,
+              betAmount: currency === 'green' ? betAmount : totalPetsValue,
+              side: selectedSide, // Asumiendo que tienes un estado selectedSide ('heads' o 'tails')
+              p1: { 
+                  id: currentUser.id, 
+                  name: userProfile.username || 'Player 1', 
+                  avatar: userProfile.avatar_url || '/default-avatar.png'
+              }
+          };
 
-    if (!error && nuevaPartida) {
-        // Bloqueamos las mascotas temporalmente para UI
-        const idsA_Bloquear = creatorSelectedPets.map(p => p.inventarioId);
-        setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
+          // 5. CREAR LA PARTIDA EN LA BASE DE DATOS
+          const { error } = await supabase.from('partidas').insert({
+              modo_juego: 'coinflip',
+              creador_id: currentUser.id,
+              // FIX PARA QUE NO TRUENE LA BD CON JSONB CUANDO ES SALDO VERDE:
+              apuesta_creador: currency === 'pets' ? selectedPets : [], 
+              datos_partida: datosPartida,
+              estado: 'waiting'
+          });
 
-        const uiData = formatGameToUI(nuevaPartida);
-        setPartidaSeleccionada(uiData);
-        setVistaActual('esperando'); 
-        setCreatorSelectedPets([]); 
-        setCreatorSide(null);
-    } else {
-        console.error("Error al crear partida:", error);
-        alert("Hubo un error al crear la partida.");
-    }
-    
-    setIsCreating(false);
+          if (error) throw error;
+
+          // 6. LIMPIAR LA MESA DESPUÉS DE CREAR
+          if (currency === 'pets') {
+              setSelectedPets([]);
+          }
+          alert("¡Coinflip creado con éxito! Esperando rival...");
+          
+      } catch (err) {
+          console.error("Error creando coinflip:", err);
+          alert("Error: " + err.message);
+      } finally {
+          setIsCreating(false);
+      }
   };
 
   const cancelarPartida = async () => {
