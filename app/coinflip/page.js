@@ -53,6 +53,21 @@ const playAudio = (src, vol = 0.5) => {
     } catch (e) {}
 };
 
+// --- MINI PET GRID COMPONENT PARA ARENA ---
+const MiniPetGrid = ({ pets }) => {
+    if(!pets || pets.length === 0) return null;
+    return (
+        <div className="flex justify-center flex-wrap gap-1 mt-3 w-full max-w-[140px] md:max-w-[180px] animate-fade-in">
+            {pets.slice(0, 8).map((p,i) => (
+                <div key={i} className="w-7 h-7 md:w-9 md:h-9 bg-[#0b0e14] border border-[#252839] rounded-md shadow-inner flex items-center justify-center p-0.5 hover:scale-110 hover:border-[#6C63FF] transition-all" title={p.nombre || p.name}>
+                    <img src={p.image_url || p.imagen || p.url} className="w-full h-full object-contain drop-shadow-md" alt="pet"/>
+                </div>
+            ))}
+            {pets.length > 8 && <div className="w-7 h-7 md:w-9 md:h-9 bg-[#0b0e14] border border-[#252839] rounded-md flex items-center justify-center text-[#8f9ac6] text-[9px] font-black shadow-inner">+{pets.length - 8}</div>}
+        </div>
+    )
+};
+
 export default function BloxypotCoinflip() {
   const [currentUser, setCurrentUser] = useState(null);
   const [misPets, setMisPets] = useState([]);
@@ -67,6 +82,7 @@ export default function BloxypotCoinflip() {
   const [rotacion, setRotacion] = useState(0);
   const [ganador, setGanador] = useState(null);
   const [mostrarImpacto, setMostrarImpacto] = useState(false);
+  const [isSpectatingCompleted, setIsSpectatingCompleted] = useState(false);
   const animacionIniciada = useRef(false);
 
   // Estados Creador
@@ -112,37 +128,19 @@ export default function BloxypotCoinflip() {
 
             if (inventoryData && !error) {
                 const mascotasReales = inventoryData.map(inv => ({
-                    inventarioId: inv.id,
-                    item_id: inv.items.id,
-                    nombre: inv.items.name,
-                    valor: inv.items.value,
-                    image_url: inv.items.image_url, 
-                    color: inv.items.color
+                    inventarioId: inv.id, item_id: inv.items.id, nombre: inv.items.name, valor: inv.items.value, image_url: inv.items.image_url, color: inv.items.color
                 }));
                 setMisPets(mascotasReales.sort((a, b) => b.valor - a.valor));
-            } else {
-                setMisPets([]); 
-            }
+            } else { setMisPets([]); }
         }
     };
-
     initUserAndInventory();
 
     // 2. CARGAR PARTIDAS
     const cargarPartidas = async () => {
-      const { data, error } = await supabase
-        .from('partidas')
-        .select('*')
-        .eq('modo_juego', 'coinflip')
-        .in('estado', ['waiting', 'in_progress', 'completed'])
-        .order('creado_en', { ascending: false })
-        .limit(30); 
-      
-      if (!error && data) {
-        setLobbyGames(data.map(formatGameToUI));
-      }
+      const { data, error } = await supabase.from('partidas').select('*').eq('modo_juego', 'coinflip').in('estado', ['waiting', 'in_progress', 'completed']).order('creado_en', { ascending: false }).limit(30); 
+      if (!error && data) setLobbyGames(data.map(formatGameToUI));
     };
-
     cargarPartidas();
 
     // 3. REALTIME LOBBY
@@ -150,9 +148,7 @@ export default function BloxypotCoinflip() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.coinflip" }, 
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const formatted = formatGameToUI(payload.new);
-            setLobbyGames(prev => [formatted, ...prev]);
-            
+            setLobbyGames(prev => [formatGameToUI(payload.new), ...prev]);
           } else if (payload.eventType === 'UPDATE') {
             const formatted = formatGameToUI(payload.new);
             setLobbyGames(prev => {
@@ -178,14 +174,10 @@ export default function BloxypotCoinflip() {
                 }
                 return prevPartida;
             });
-
           } else if (payload.eventType === 'DELETE') {
             setLobbyGames(prev => prev.filter(game => game.id !== payload.old.id));
             setPartidaSeleccionada((prev) => {
-               if(prev && prev.id === payload.old.id) {
-                   setVistaActual('lobby');
-                   return null;
-               }
+               if(prev && prev.id === payload.old.id) { setVistaActual('lobby'); return null; }
                return prev;
             });
           }
@@ -197,9 +189,7 @@ export default function BloxypotCoinflip() {
   // --- FUNCIÓN ANTI-LAG ---
   const handleScrollInventario = (e) => {
       const { scrollTop, clientHeight, scrollHeight } = e.target;
-      if (scrollHeight - scrollTop <= clientHeight + 100) {
-          setVisiblePetsCount(prev => prev + 60);
-      }
+      if (scrollHeight - scrollTop <= clientHeight + 100) setVisiblePetsCount(prev => prev + 60);
   };
 
   // --- LÓGICA DE CREACIÓN ---
@@ -212,11 +202,8 @@ export default function BloxypotCoinflip() {
   const totalCreatorValue = useMemo(() => creatorSelectedPets.reduce((sum, p) => sum + (typeof p.valor === 'number' ? p.valor : 0), 0), [creatorSelectedPets]);
   
   const toggleCreatorPet = (pet) => {
-    if(creatorSelectedPets.some(p => p.inventarioId === pet.inventarioId)) {
-        setCreatorSelectedPets(prev => prev.filter(p => p.inventarioId !== pet.inventarioId));
-    } else {
-        setCreatorSelectedPets(prev => [...prev, pet]);
-    }
+    if(creatorSelectedPets.some(p => p.inventarioId === pet.inventarioId)) setCreatorSelectedPets(prev => prev.filter(p => p.inventarioId !== pet.inventarioId));
+    else setCreatorSelectedPets(prev => [...prev, pet]);
   };
 
   const handleAutoSelectCreate = () => {
@@ -233,7 +220,6 @@ export default function BloxypotCoinflip() {
       setIsCreating(true);
 
       try {
-          // Checar si ya tiene partida creada
           const { data: activeGames } = await supabase.from('partidas').select('id').eq('creador_id', currentUser.id).eq('modo_juego', 'coinflip').eq('estado', 'waiting');
           if (activeGames && activeGames.length >= 1) {
               alert("You already have a game waiting in the lobby. Cancel it first if you want to create a new one!");
@@ -242,20 +228,13 @@ export default function BloxypotCoinflip() {
               return;
           }
 
-          // LOCK PETS (NO BORRAR)
           const petIds = creatorSelectedPets.map(p => p.inventarioId);
           const { error: errLock } = await supabase.from('inventory').update({ is_locked: true }).in('id', petIds);
           if (errLock) throw new Error("Error locking pets.");
 
-          // Quitar temporalmente del UI de inventario
           setMisPets(prev => prev.filter(p => !petIds.includes(p.inventarioId)));
 
-          const datosPartida = {
-              host_name: currentUser.username, 
-              avatar_creador: currentUser.avatar_url,
-              lado_creador: creatorSide,
-              valor_total: totalCreatorValue
-          };
+          const datosPartida = { host_name: currentUser.username, avatar_creador: currentUser.avatar_url, lado_creador: creatorSide, valor_total: totalCreatorValue };
 
           const { data: nuevaPartida, error } = await supabase.from('partidas').insert({
               modo_juego: 'coinflip', creador_id: currentUser.id, apuesta_creador: creatorSelectedPets, datos_partida: datosPartida, estado: 'waiting'
@@ -278,28 +257,38 @@ export default function BloxypotCoinflip() {
       }
   };
 
-  // --- LÓGICA DE CANCELACIÓN (Sin Ghosting) ---
+  // --- LÓGICA DE CANCELACIÓN ---
   const cancelarPartida = async (gameId) => {
       if (!currentUser || isCanceling) return;
       setIsCanceling(true);
       
       try {
-          const { data: partida } = await supabase.from('partidas').select('*').eq('id', gameId).single();
-          if (!partida || partida.estado !== 'waiting') {
-              alert("This game cannot be canceled anymore (Someone might have joined!).");
+          const { data: partida, error: fetchErr } = await supabase.from('partidas').select('*').eq('id', gameId).single();
+          if (fetchErr || !partida) {
+              setLobbyGames(prev => prev.filter(g => g.id !== gameId));
+              setVistaActual('lobby');
               setIsCanceling(false);
               return;
           }
 
-          // DESBLOQUEAR LAS PETS (Para devolverlas)
-          const petsDelCreador = extractPets(partida.apuesta_creador);
-          const petIds = petsDelCreador.map(p => p.inventarioId);
-          
-          if (petIds.length > 0) {
-              await supabase.from('inventory').update({ is_locked: false }).in('id', petIds);
+          if (partida.estado !== 'waiting') {
+              alert("This game cannot be canceled anymore (Someone joined!).");
+              setIsCanceling(false);
+              return;
           }
 
-          await supabase.from('partidas').delete().eq('id', gameId);
+          // FORZAMOS LA DEVOLUCIÓN DE LAS PETS
+          const petsDelCreador = extractPets(partida.apuesta_creador);
+          const petIds = petsDelCreador.map(p => p.inventarioId || p.id).filter(Boolean);
+          
+          if (petIds.length > 0) {
+              const { error: unlockErr } = await supabase.from('inventory').update({ is_locked: false }).in('id', petIds);
+              if (unlockErr) console.error("Unlock error (Might already be unlocked):", unlockErr);
+          }
+
+          // DESTRUIMOS LA PARTIDA SÍ O SÍ
+          const { error: delErr } = await supabase.from('partidas').delete().eq('id', gameId);
+          if (delErr) throw delErr;
           
           // Actualización UI inmediata para evitar ghosting visual
           setLobbyGames(prev => prev.filter(g => g.id !== gameId));
@@ -307,7 +296,7 @@ export default function BloxypotCoinflip() {
           setVistaActual('lobby');
           alert("Game canceled! Pets are back in your inventory.");
           
-          // Refrescar inventario
+          // Refrescar inventario local
           const { data: inventoryData } = await supabase.from('inventory').select(`id, is_locked, items ( id, name, value, image_url, color )`).eq('user_id', currentUser.id).eq('is_locked', false).limit(3000); 
           if (inventoryData) {
               setMisPets(inventoryData.map(inv => ({ inventarioId: inv.id, item_id: inv.items.id, nombre: inv.items.name, valor: inv.items.value, image_url: inv.items.image_url, color: inv.items.color })).sort((a, b) => b.valor - a.valor));
@@ -315,12 +304,13 @@ export default function BloxypotCoinflip() {
 
       } catch (err) {
           console.error("Cancel error:", err);
+          alert("Error deleting game: " + err.message);
       } finally {
           setIsCanceling(false);
       }
   };
 
-  // --- LÓGICA JOIN (Transferencia sin destruir mascotas) ---
+  // --- LÓGICA JOIN ---
   const abrirModalJoin = (juego) => { 
       setSelectedPetsToJoin([]); 
       setVisiblePetsCount(60);
@@ -339,11 +329,13 @@ export default function BloxypotCoinflip() {
           setGirando(false);
           setGanador(caraFinal);
           setMostrarImpacto(true);
+          setIsSpectatingCompleted(true); // Fix 3D Snap Bug para espectadores
           setRotacion(caraFinal === 'Heads' ? 0 : 180);
       } else {
           setGirando(false);
           setGanador(null);
           setMostrarImpacto(false);
+          setIsSpectatingCompleted(false);
           setRotacion(0);
       }
   };
@@ -380,35 +372,26 @@ export default function BloxypotCoinflip() {
     setIsJoining(true);
 
     try {
-      const nuevosDatosPartida = {
-          ...partidaSeleccionada.datos_partida_raw,
-          challenger_name: currentUser.username,
-          avatar_challenger: currentUser.avatar_url
-      };
-
+      const nuevosDatosPartida = { ...partidaSeleccionada.datos_partida_raw, challenger_name: currentUser.username, avatar_challenger: currentUser.avatar_url };
       const resultadoMoneda = Math.random() < 0.5 ? 'Heads' : 'Tails';
       const ganaCreador = resultadoMoneda === partidaSeleccionada.lado;
       
       const ganadorId = ganaCreador ? partidaSeleccionada.creador_id : currentUser.id;
       const ladoGanadorStatus = ganaCreador ? 'creador_gana' : 'retador_gana';
-
       const resultadoPartida = { ganador: ganadorId, lado: ladoGanadorStatus, cara_moneda: resultadoMoneda };
 
-      // 1. Marcar partida terminada
       const { error } = await supabase.from('partidas')
         .update({ retador_id: currentUser.id, apuesta_retador: selectedPetsToJoin, estado: 'completed', resultado: resultadoPartida, datos_partida: nuevosDatosPartida })
         .eq('id', partidaSeleccionada.id);
 
       if (error) throw error;
 
-      // 2. TRANSFERIR LA PROPIEDAD EXACTA DE LAS MASCOTAS (Mantiene los seriales)
-      const hostPetIds = partidaSeleccionada.petsHost.map(p => p.inventarioId);
+      // TRANSFERENCIA DE PROPIEDAD EXACTA (Previene clonación y respeta serials)
+      const hostPetIds = partidaSeleccionada.petsHost.map(p => p.inventarioId || p.id).filter(Boolean);
       const challengerPetIds = selectedPetsToJoin.map(p => p.inventarioId);
       const allPetIdsInGame = [...hostPetIds, ...challengerPetIds];
 
-      await supabase.from('inventory')
-          .update({ user_id: ganadorId, is_locked: false })
-          .in('id', allPetIdsInGame);
+      await supabase.from('inventory').update({ user_id: ganadorId, is_locked: false }).in('id', allPetIdsInGame);
 
       const idsA_Bloquear = selectedPetsToJoin.map(p => p.inventarioId);
       setMisPets(prev => prev.filter(p => !idsA_Bloquear.includes(p.inventarioId)));
@@ -421,6 +404,7 @@ export default function BloxypotCoinflip() {
       });
       
       setPartidaSeleccionada(uiData);
+      setIsSpectatingCompleted(false);
       iniciarCinematicaMoneda(uiData);
 
     } catch (err) {
@@ -436,7 +420,7 @@ export default function BloxypotCoinflip() {
     if (animacionIniciada.current) return; 
     animacionIniciada.current = true;
     
-    setGirando(false); setGanador(null); setMostrarImpacto(false); setCuentaRegresiva(3);
+    setGirando(false); setGanador(null); setMostrarImpacto(false); setIsSpectatingCompleted(false); setCuentaRegresiva(3);
     
     let contador = 3;
     playAudio('/sounds/click.mp3', 0.5);
@@ -458,13 +442,12 @@ export default function BloxypotCoinflip() {
             setTimeout(() => {
               setRotacion(prevRotacion => {
                 const ganaHeadsVisual = caraFinal === 'Heads';
-                const vueltasBase = prevRotacion + 3600; // 10 vueltas locas
+                const vueltasBase = prevRotacion + 3600; 
                 const nuevaRot = ganaHeadsVisual ? vueltasBase + (360 - (vueltasBase % 360)) : vueltasBase + (180 - (vueltasBase % 360)) + 360;
                 
                 setTimeout(() => { 
                     setGirando(false); setGanador(caraFinal); playAudio('/sounds/win.mp3', 0.8);
                     
-                    // Flash screen effect
                     const flash = document.createElement('div');
                     flash.className = "fixed inset-0 bg-white z-[999] pointer-events-none transition-opacity duration-300 opacity-0";
                     document.body.appendChild(flash);
@@ -483,16 +466,16 @@ export default function BloxypotCoinflip() {
 
   // --- COMPONENTES VISUALES ---
   const AvatarVS = ({ img, side, isWaiting = false, isWinner = false, isLoser = false }) => (
-    <div className={`relative box-border h-16 w-16 md:h-20 md:w-20 rounded-full border-2 md:border-[4px] border-solid bg-[#1C1F2E] transition-all duration-500 shrink-0 
+    <div className={`relative box-border h-16 w-16 md:h-24 md:w-24 rounded-full border-2 md:border-[4px] border-solid bg-[#1C1F2E] transition-all duration-500 shrink-0 
         ${isWaiting ? 'border-[#2F3347] border-dashed opacity-60' : 
-          isWinner ? (side === 'Heads' ? 'border-[#facc15] shadow-[0_0_40px_rgba(250,204,21,0.8)] scale-110 z-20' : 'border-[#a855f7] shadow-[0_0_40px_rgba(168,85,247,0.8)] scale-110 z-20') : 
-          isLoser ? 'border-[#252839] opacity-40 scale-90 grayscale' :
+          isWinner ? (side === 'Heads' ? 'border-[#facc15] shadow-[0_0_50px_rgba(250,204,21,1)] z-20' : 'border-[#a855f7] shadow-[0_0_50px_rgba(168,85,247,1)] z-20') : 
+          isLoser ? 'border-[#252839]' :
           (side === 'Heads' ? 'border-[#facc15] shadow-[0_0_15px_rgba(250,204,21,0.3)]' : 'border-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,0.3)]')}`}>
       <div className="block h-full w-full overflow-hidden rounded-full bg-[#141323] flex items-center justify-center text-xl">
         {isWaiting ? '?' : <img src={img} className="block w-full h-full object-cover" alt="avatar"/>}
       </div>
       {!isWaiting && (
-        <div className={`absolute right-0 top-0 h-6 w-6 md:h-8 md:w-8 overflow-hidden rounded-full translate-x-1/4 -translate-y-1/4 shadow-md bg-[#0b0e14] border-2 ${side === 'Heads' ? 'border-[#facc15]' : 'border-[#a855f7]'}`}>
+        <div className={`absolute right-0 top-0 h-6 w-6 md:h-10 md:w-10 overflow-hidden rounded-full translate-x-1/4 -translate-y-1/4 shadow-md bg-[#0b0e14] border-2 md:border-4 ${side === 'Heads' ? 'border-[#facc15]' : 'border-[#a855f7]'}`}>
           <img className="block w-full h-full object-contain p-1" src={side === 'Heads' ? imgMonedaHeads : imgMonedaTails} alt={side} />
         </div>
       )}
@@ -501,7 +484,6 @@ export default function BloxypotCoinflip() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white font-sans p-4 md:p-8 relative overflow-hidden">
-      
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#6C63FF] opacity-10 blur-[150px] pointer-events-none z-0"></div>
       <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#ef4444] opacity-5 blur-[150px] pointer-events-none z-0"></div>
 
@@ -569,12 +551,12 @@ export default function BloxypotCoinflip() {
                         return (
                         <div key={i} className="relative box-border block h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 shadow-[0_0_10px_rgba(0,0,0,0.5)] group hover:-translate-y-2 hover:z-50 transition-transform" style={{zIndex: 10 - i}}>
                           <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: `radial-gradient(circle at 50% 50%, ${pet.color || '#9ca3af'} 0%, transparent 70%)` }}></div>
-                          <img src={pet.image_url} className="block w-full h-full object-contain scale-110 drop-shadow-md relative z-10" alt="pet"/>
+                          <img src={pet.image_url || pet.url || pet.imagen} className="block w-full h-full object-contain scale-110 drop-shadow-md relative z-10" alt="pet"/>
                         </div>
                       )})}
                       {game.petsHost?.length > 5 && (
                         <div className="relative box-border flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-lg border border-[#252839] bg-[#0b0e14] overflow-hidden -ml-3 z-[5]">
-                          <img src={game.petsHost[5].image_url} className="block w-full h-full object-contain blur-[3px] opacity-30" alt="pet"/>
+                          <img src={game.petsHost[5].image_url || game.petsHost[5].imagen || game.petsHost[5].url} className="block w-full h-full object-contain blur-[3px] opacity-30" alt="pet"/>
                           <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md bg-black/50 backdrop-blur-[1px]">+{game.petsHost.length - 5}</span>
                         </div>
                       )}
@@ -593,7 +575,6 @@ export default function BloxypotCoinflip() {
                   </div>
 
                   <div className="flex justify-center xl:justify-end gap-3 w-full mt-2 xl:mt-0">
-                    {/* Botón de Cancelar directo en el Lobby (Evita el Ghosting) */}
                     {game.estado === 'waiting' && currentUser && game.creador_id === currentUser.id && (
                         <button onClick={() => cancelarPartida(game.id)} disabled={isCanceling} className="w-full xl:w-28 cursor-pointer py-3 text-xs font-black rounded-xl border border-red-500/50 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white shadow-[0_0_15px_rgba(239,68,68,0.1)] transition-all uppercase tracking-widest hover:scale-105 active:scale-95 disabled:opacity-50">
                           {isCanceling ? '...' : 'CANCEL'}
@@ -705,89 +686,104 @@ export default function BloxypotCoinflip() {
                         Minimize to Lobby
                     </button>
                     
-                    <button onClick={() => cancelarPartida(partidaSeleccionada.id)} disabled={isCanceling} className="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500 hover:text-black text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)] disabled:opacity-50">
-                        {isCanceling ? '...' : 'Cancel Match'}
+                    <button onClick={() => cancelarPartida(partidaSeleccionada.id)} disabled={isCanceling} className="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all bg-red-500/10 border border-red-500/50 hover:bg-red-500 hover:text-white text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)] disabled:opacity-50">
+                        {isCanceling ? 'CANCeling...' : 'Cancel Match'}
                     </button>
                 </div>
             </div>
         )}
 
-        {/* ARENA VIEW (El combate) */}
-        {vistaActual === 'arena' && partidaSeleccionada && (
+        {/* ARENA VIEW (El combate épico) */}
+        {vistaActual === 'arena' && partidaSeleccionada && (() => {
+            // Lógica para determinar quién se desliza a dónde
+            const hostGana = mostrarImpacto && ganador === partidaSeleccionada.lado;
+            const challengerGana = mostrarImpacto && ganador !== partidaSeleccionada.lado && ganador !== null;
+
+            return (
           <div className="w-full flex flex-col items-center animate-fade-in mt-4">
-            <button onClick={() => {setVistaActual('lobby'); animacionIniciada.current = false;}} className="self-start text-[#8f9ac6] hover:text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors mb-8 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b]">
+            <button onClick={() => {setVistaActual('lobby'); animacionIniciada.current = false;}} className="self-start text-[#8f9ac6] hover:text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors mb-8 bg-[#14151f] px-6 py-3 rounded-xl border border-[#252839] hover:border-[#4a506b] z-50">
               ← Exit Arena
             </button>
-            <div className="flex items-center justify-between w-full max-w-4xl bg-[#14151f] p-8 md:p-12 rounded-[3rem] border border-[#252839] shadow-2xl mb-16 relative overflow-hidden">
+            
+            {/* CONTENEDOR PRINCIPAL ARENA (Avatars, Textos y Mascotas) */}
+            <div className="flex items-start justify-between w-full max-w-5xl bg-[#14151f] p-8 md:p-12 rounded-[3rem] border border-[#252839] shadow-2xl mb-16 relative overflow-hidden h-[320px]">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#facc15]/5 via-transparent to-[#a855f7]/5 pointer-events-none"></div>
                 
-                {/* HOST */}
-                <div className="flex flex-col items-center gap-4 relative z-10 w-1/3">
+                {/* HOST (Izquierda) */}
+                <div className={`flex flex-col items-center gap-2 relative z-20 w-1/3 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] ${hostGana ? 'translate-x-[100%] scale-125 pt-4' : challengerGana ? '-translate-x-[50%] opacity-0 scale-75' : 'translate-x-0'}`}>
                     <AvatarVS 
                         img={partidaSeleccionada.avatar} 
                         side={partidaSeleccionada.lado} 
-                        isWinner={mostrarImpacto && ganador === partidaSeleccionada.lado}
-                        isLoser={mostrarImpacto && ganador !== partidaSeleccionada.lado}
+                        isWinner={hostGana}
+                        isLoser={challengerGana}
                     />
-                    <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 ${mostrarImpacto && ganador === partidaSeleccionada.lado ? 'text-white' : (mostrarImpacto ? 'text-[#8f9ac6]' : 'text-white')}`}>{partidaSeleccionada.host}</span>
-                    <span className="text-[#facc15] font-black text-xs uppercase tracking-widest bg-[#facc15]/10 px-3 py-1 rounded-full border border-[#facc15]/20">Host</span>
-                </div>
-
-                {/* VS AND TOTAL VALUE */}
-                <div className="flex flex-col items-center w-1/3 relative z-10">
-                    <div className="text-4xl md:text-5xl font-black text-[#252839] italic">VS</div>
-                    <div className="mt-4 flex items-center gap-2 text-2xl md:text-3xl font-black text-white bg-[#0b0e14] px-6 py-3 rounded-2xl border border-[#252839] shadow-inner">
-                       <RedCoin cls="w-6 h-6 md:w-8 md:h-8"/> {formatValue(partidaSeleccionada.valorTotalHost * 2)}
+                    <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 mt-2 ${hostGana ? 'text-white drop-shadow-md' : 'text-white'}`}>{partidaSeleccionada.host}</span>
+                    <span className="text-[#facc15] font-black text-[10px] uppercase tracking-widest bg-[#facc15]/10 px-3 py-1 rounded-full border border-[#facc15]/20">Host</span>
+                    {/* EXHIBICIÓN DE PETS DEL HOST */}
+                    <div className={`transition-opacity duration-500 ${mostrarImpacto ? 'opacity-0' : 'opacity-100'}`}>
+                       <MiniPetGrid pets={partidaSeleccionada.petsHost} />
                     </div>
                 </div>
 
-                {/* CHALLENGER */}
-                <div className="flex flex-col items-center gap-4 relative z-10 w-1/3">
+                {/* VS AND TOTAL VALUE (Centro) */}
+                <div className={`flex flex-col items-center justify-start pt-6 w-1/3 relative z-10 transition-opacity duration-500 ${mostrarImpacto ? 'opacity-0' : 'opacity-100'}`}>
+                    <div className="text-4xl md:text-5xl font-black text-[#252839] italic">VS</div>
+                    <div className="mt-4 flex items-center gap-2 text-xl md:text-3xl font-black text-white bg-[#0b0e14] px-4 py-2 md:px-6 md:py-3 rounded-2xl border border-[#252839] shadow-inner">
+                       <RedCoin cls="w-5 h-5 md:w-8 md:h-8"/> {formatValue(partidaSeleccionada.valorTotalHost * 2)}
+                    </div>
+                </div>
+
+                {/* CHALLENGER (Derecha) */}
+                <div className={`flex flex-col items-center gap-2 relative z-20 w-1/3 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] ${challengerGana ? '-translate-x-[100%] scale-125 pt-4' : hostGana ? 'translate-x-[50%] opacity-0 scale-75' : 'translate-x-0'}`}>
                     {partidaSeleccionada.estado === 'in_progress' || partidaSeleccionada.estado === 'completed' ? (
                         <>
                            <AvatarVS 
                               img={partidaSeleccionada.avatarChallenger} 
                               side={partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads'} 
-                              isWinner={mostrarImpacto && ganador === (partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads')}
-                              isLoser={mostrarImpacto && ganador !== (partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads')}
+                              isWinner={challengerGana}
+                              isLoser={hostGana}
                            />
-                           <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 ${mostrarImpacto && ganador === (partidaSeleccionada.lado === 'Heads' ? 'Tails' : 'Heads') ? 'text-white' : (mostrarImpacto ? 'text-[#8f9ac6]' : 'text-white')}`}>{partidaSeleccionada.challenger}</span>
-                           <span className="text-[#a855f7] font-black text-xs uppercase tracking-widest bg-[#a855f7]/10 px-3 py-1 rounded-full border border-[#a855f7]/20">Challenger</span>
+                           <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 mt-2 ${challengerGana ? 'text-white drop-shadow-md' : 'text-white'}`}>{partidaSeleccionada.challenger}</span>
+                           <span className="text-[#a855f7] font-black text-[10px] uppercase tracking-widest bg-[#a855f7]/10 px-3 py-1 rounded-full border border-[#a855f7]/20">Challenger</span>
+                           {/* EXHIBICIÓN DE PETS DEL CHALLENGER */}
+                           <div className={`transition-opacity duration-500 ${mostrarImpacto ? 'opacity-0' : 'opacity-100'}`}>
+                              <MiniPetGrid pets={partidaSeleccionada.petsChallenger} />
+                           </div>
                         </>
                     ) : (
-                        <>
+                        <div className="flex flex-col items-center pt-4">
                            <AvatarVS isWaiting={true} />
-                           <span className="text-[#8f9ac6] font-bold text-lg">Waiting...</span>
-                        </>
+                           <span className="text-[#8f9ac6] font-bold text-sm mt-4">Waiting...</span>
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* COINFLIP ANIMATION STAGE (Forzado CSS 3D Seguro) */}
-            <div className="relative flex justify-center items-center h-64 md:h-80 mb-16 w-full">
+            <div className="relative flex justify-center items-center h-48 md:h-64 mb-16 w-full -mt-20 z-30">
               {cuentaRegresiva !== null && (
                   <div className="absolute inset-0 flex items-center justify-center z-50 animate-ping-slow">
-                      <span className="text-[180px] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.8)] opacity-90">{cuentaRegresiva}</span>
+                      <span className="text-[150px] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.8)] opacity-90">{cuentaRegresiva}</span>
                   </div>
               )}
               
-              <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[120px] rounded-full transition-all duration-700 ease-out z-0 pointer-events-none ${mostrarImpacto ? 'opacity-50 scale-[2.5]' : 'opacity-0 scale-50'}`}></div>
+              <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[120px] rounded-full transition-all duration-700 ease-out z-0 pointer-events-none ${mostrarImpacto ? 'opacity-40 scale-[2.5]' : 'opacity-0 scale-50'}`}></div>
               
-              <div className={`relative w-48 h-48 md:w-64 md:h-64 perspective-[1200px] z-10 ${cuentaRegresiva !== null ? 'opacity-10 blur-md scale-90' : 'opacity-100'}`}
-                   style={{ transform: girando ? 'translateY(-120px) scale(1.6)' : (mostrarImpacto ? 'translateY(0px) scale(1.1)' : 'translateY(0px) scale(1)'), transition: girando ? 'transform 2.5s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'transform 0.8s cubic-bezier(0.5, 0, 0.2, 1)' }}
+              <div className={`relative w-40 h-40 md:w-56 md:h-56 perspective-[1200px] z-10 ${cuentaRegresiva !== null ? 'opacity-10 blur-md scale-90' : 'opacity-100'}`}
+                   style={{ transform: girando ? 'translateY(-100px) scale(1.4)' : (mostrarImpacto ? 'translateY(40px) scale(1)' : 'translateY(0px) scale(1)'), transition: girando ? 'transform 2.5s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'transform 0.8s cubic-bezier(0.5, 0, 0.2, 1)' }}
               >
                 {/* LA MONEDA 3D - FIXED CSS */}
                 <div className="w-full h-full relative preserve-3d drop-shadow-[0_30px_30px_rgba(0,0,0,0.8)]"
-                  style={{ transitionDuration: girando ? '4s' : '0s', transitionTimingFunction: 'cubic-bezier(0.1, 0.8, 0.1, 1)', transform: `rotateY(${rotacion}deg) ${girando ? 'rotateX(20deg)' : 'rotateX(0deg)'}` }}
+                  style={{ transition: isSpectatingCompleted ? 'none' : (girando ? 'transform 4s cubic-bezier(0.1, 0.8, 0.1, 1)' : 'transform 0.5s ease-out'), transform: `rotateY(${rotacion}deg) ${girando ? 'rotateX(20deg)' : 'rotateX(0deg)'}` }}
                 >
                   {/* LADO FRONTAL (HEADS) */}
-                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_100px_rgba(250,204,21,1)]' : 'border-[#252839] shadow-inner'}`}
+                  <div className={`absolute inset-0 backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_100px_rgba(250,204,21,1)]' : 'border-[#252839] shadow-inner'}`}
                        style={{ transform: 'rotateY(0deg)' }}>
                     <img src={imgMonedaHeads} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Heads" />
                   </div>
 
                   {/* LADO TRASERO (TAILS) */}
-                  <div className={`absolute w-full h-full backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_100px_rgba(168,85,247,1)]' : 'border-[#252839] shadow-inner'}`}
+                  <div className={`absolute inset-0 backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_100px_rgba(168,85,247,1)]' : 'border-[#252839] shadow-inner'}`}
                        style={{ transform: 'rotateY(180deg)' }}>
                     <img src={imgMonedaTails} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Tails" />
                   </div>
@@ -795,11 +791,12 @@ export default function BloxypotCoinflip() {
               </div>
             </div>
 
-            <h2 className={`text-4xl md:text-6xl font-black uppercase tracking-[0.3em] min-h-[60px] transition-all duration-500 z-10 ${mostrarImpacto ? (ganador === 'Heads' ? 'text-[#facc15] drop-shadow-[0_0_30px_#facc15] animate-bounce-in' : 'text-[#a855f7] drop-shadow-[0_0_30px_#a855f7] animate-bounce-in') : 'text-white'}`}>
+            <h2 className={`text-4xl md:text-5xl font-black uppercase tracking-[0.2em] min-h-[60px] transition-all duration-500 z-40 ${mostrarImpacto ? (ganador === 'Heads' ? 'text-[#facc15] drop-shadow-[0_0_30px_#facc15] animate-bounce-in' : 'text-[#a855f7] drop-shadow-[0_0_30px_#a855f7] animate-bounce-in') : 'text-white'}`}>
               {cuentaRegresiva !== null ? 'PREPARING' : (ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING' : (partidaSeleccionada.estado === 'waiting' ? 'WAITING' : 'READY')))}
             </h2>
           </div>
-        )}
+          );
+        })()}
 
       </div>
 
