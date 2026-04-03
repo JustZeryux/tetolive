@@ -46,6 +46,13 @@ export default function Home() {
       img: '/Coinflip.png', // <-- Usamos la imagen que tenías, luego la cambias por Blackjack.png
       auraColor: '#10b981' // Verde Casino (Emerald)
     },
+    {
+      name: 'Roullete', 
+      desc: 'Beat the Dealer With Guns', 
+      path: '/roullete', 
+      img: '/TetoGun.png', // <-- Usamos la imagen que tenías, luego la cambias por Blackjack.png
+      auraColor: '#ff0000' // Verde
+    },
   ];
 
   return (
