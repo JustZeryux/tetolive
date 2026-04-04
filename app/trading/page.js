@@ -30,6 +30,10 @@ export default function TradingRoomPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [epicTradeData, setEpicTradeData] = useState(null);
 
+  // --- NEW: DIRECT TRADE NOTIFICATIONS ---
+  const [usersList, setUsersList] = useState([]);
+  const [incomingTrade, setIncomingTrade] = useState(null);
+
   // --- TRADE STATES ---
   const [myOffer, setMyOffer] = useState({ coins: '', items: [] });
   const [partnerOffer, setPartnerOffer] = useState({ coins: '', items: [] });
@@ -39,7 +43,7 @@ export default function TradingRoomPage() {
 
   const [partnerInfo, setPartnerInfo] = useState({ name: 'Waiting...', avatar: '' });
 
-  // --- FIX 1: EXTRACCIÓN BLINDADA DEL INVENTARIO ---
+  // --- INVENTORY FETCH ---
   const fetchInventory = async (userId) => {
       const { data: inv, error } = await supabase.from('inventory').select(`id, item_id, items (*)`).eq('user_id', userId);
       if (error) console.error("Error fetching inventory:", error);
@@ -63,6 +67,11 @@ export default function TradingRoomPage() {
       }
   };
 
+  const fetchUsers = async (myId) => {
+      const { data } = await supabase.from('profiles').select('id, username, avatar_url').neq('id', myId).limit(30);
+      if (data) setUsersList(data);
+  };
+
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -70,15 +79,84 @@ export default function TradingRoomPage() {
         setCurrentUser(user);
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setUserProfile(profile);
+        
         await fetchInventory(user.id);
+        fetchUsers(user.id);
+        setupRealtimeNotifications(user.id);
 
         const { data: allItems } = await supabase.from('items').select('*').gt('value', 0);
         if (allItems) setBotFullInventory(allItems);
       }
     };
     init();
-    return () => cleanupChannel();
+    return () => {
+        cleanupChannel();
+        supabase.removeAllChannels();
+    };
   }, []);
+
+  // --- DIRECT P2P INVITATIONS (REALTIME MAGIC) ---
+  const setupRealtimeNotifications = (myId) => {
+      supabase.channel('trade_notifications')
+        // Escucha invitaciones directas hacia mí
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trading_lobbies', filter: `guest_id=eq.${myId}` }, (payload) => {
+            if (payload.new.status === 'pending_invite') {
+                showToast(`¡${payload.new.host_name} te ha enviado un Trade!`, "success");
+                setIncomingTrade(payload.new);
+            }
+        })
+        // Escucha si aceptaron o rechazaron mi invitación
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trading_lobbies', filter: `host_id=eq.${myId}` }, (payload) => {
+            if (payload.new.status === 'trading' && payload.old.status === 'pending_invite') {
+                showToast("¡Tradeo aceptado! Entrando al lobby...", "success");
+                setCurrentRoom(payload.new);
+                setPartnerInfo({ name: payload.new.guest_name, avatar: getAvatar(payload.new.guest_avatar, payload.new.guest_name) });
+                connectToRoom(payload.new.id, true);
+                setMode('online');
+                setView('trading');
+            } else if (payload.new.status === 'cancelled' && payload.old.status === 'pending_invite') {
+                showToast("Tu petición de tradeo fue rechazada.", "error");
+            }
+        })
+        .subscribe();
+  };
+
+  const sendDirectTradeRequest = async (targetId, targetName) => {
+      const { error } = await supabase.from('trading_lobbies').insert({
+          host_id: currentUser.id,
+          host_name: userProfile.username,
+          host_avatar: userProfile.avatar_url,
+          guest_id: targetId,
+          host_offer: { coins: '', items: [] },
+          guest_offer: { coins: '', items: [] },
+          status: 'pending_invite'
+      });
+      if (!error) {
+          showToast(`Petición enviada a ${targetName}. Esperando respuesta...`, "success");
+      } else {
+          showToast("Error al enviar la petición.", "error");
+      }
+  };
+
+  const respondToTradeInvite = async (tradeId, accept) => {
+      const status = accept ? 'trading' : 'cancelled';
+      const { data, error } = await supabase.from('trading_lobbies').update({
+          status, 
+          guest_name: userProfile.username, 
+          guest_avatar: userProfile.avatar_url
+      }).eq('id', tradeId).select().single();
+
+      if (!error) {
+          setIncomingTrade(null);
+          if (accept && data) {
+              setCurrentRoom(data);
+              setPartnerInfo({ name: data.host_name, avatar: getAvatar(data.host_avatar, data.host_name) });
+              connectToRoom(data.id, false);
+              setMode('online');
+              setView('trading');
+          }
+      }
+  };
 
   const cleanupChannel = () => {
       if (activeChannelRef.current) {
@@ -93,7 +171,6 @@ export default function TradingRoomPage() {
       return coins + itemsValue;
   };
 
-  // --- ANTI-SCAM ENGINE ---
   const handleMyOfferChange = (newOffer) => {
       if (myConfirmations >= 1) return; 
       setMyOffer(newOffer);
@@ -116,7 +193,7 @@ export default function TradingRoomPage() {
       await supabase.from('trading_lobbies').update(updates).eq('id', currentRoom.id);
   };
 
-  // --- BOT LOGIC ---
+  // --- BOT LOGIC (BALANCEADO Y JUSTO) ---
   const simulateBotResponse = (playerOffer) => {
       const playerValue = calculateTotalValue(playerOffer);
       if (playerValue === 0) {
@@ -126,13 +203,19 @@ export default function TradingRoomPage() {
 
       let botItems = [];
       let currentBotVal = 0;
-      const targetVal = playerValue * (0.9 + Math.random() * 0.2); 
+      // Botón justo: Retorna entre 95% y 105% del valor apostado
+      const targetVal = playerValue * (0.95 + Math.random() * 0.1); 
 
-      const shuffled = [...botFullInventory].sort(() => 0.5 - Math.random());
-      for (const item of shuffled) {
+      // Ordenamos las mascotas del bot de mayor a menor para dar items de calidad
+      const sortedFullInv = [...botFullInventory].sort((a, b) => b.value - a.value);
+      
+      for (const item of sortedFullInv) {
           if (currentBotVal + item.value <= targetVal && botItems.length < 6) {
-              botItems.push({...item, item_id: item.id, inv_id: `bot_${Math.random()}`, image_url: item.image_url || item.image || item.img});
-              currentBotVal += item.value;
+              // 80% de probabilidad de agarrar el item (para dar un poco de aleatoriedad natural)
+              if (Math.random() > 0.2) {
+                  botItems.push({...item, item_id: item.id, inv_id: `bot_${Math.random()}`, image_url: item.image_url || item.image || item.img});
+                  currentBotVal += item.value;
+              }
           }
       }
 
@@ -211,7 +294,6 @@ export default function TradingRoomPage() {
       }
   };
 
-  // --- FIX 2: MOTOR DE EJECUCIÓN SINCRONIZADA ---
   const connectToRoom = (roomId, isHost) => {
       cleanupChannel();
 
@@ -234,12 +316,10 @@ export default function TradingRoomPage() {
               setPartnerConfirmations(room.host_confirm);
           }
 
-          // FIX 2.1: El host escucha cuando AMBOS llegan a 2 y manda el estado "completed"
           if (isHost && room.host_confirm === 2 && room.guest_confirm === 2 && room.status === 'trading') {
               executeOnlineSwapInDB(room.id);
           }
 
-          // FIX 2.2: Ambos escuchan el evento "completed" para procesar su inventario localmente
           if (room.status === 'completed') {
               const received = isHost ? room.guest_offer : room.host_offer;
               const given = isHost ? room.host_offer : room.guest_offer;
@@ -257,20 +337,16 @@ export default function TradingRoomPage() {
       await supabase.from('trading_lobbies').update({ status: 'completed' }).eq('id', roomId);
   };
 
-  // --- FIX 3: RLS BYPASS Y ACTUALIZACIÓN AISLADA ---
   const handleTradeSuccessOnline = async (receivedOffer, myOfferGiven) => {
-      // 1. Me quito las mascotas que di
       if (myOfferGiven.items.length > 0) {
           await supabase.from('inventory').delete().in('id', myOfferGiven.items.map(i => i.inv_id));
       }
       
-      // 2. Me agrego las mascotas que recibí
       if (receivedOffer.items.length > 0) {
           const insertPayload = receivedOffer.items.map(p => ({ user_id: currentUser.id, item_id: p.item_id || p.id }));
           await supabase.from('inventory').insert(insertPayload);
       }
 
-      // 3. Matemáticas de monedas usando la base de datos fresca para evitar desincronización
       const coinDiff = (Number(receivedOffer.coins) || 0) - (Number(myOfferGiven.coins) || 0);
       const { data: latestProfile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
       const currentBalance = latestProfile ? latestProfile.saldo_verde : userProfile.saldo_verde;
@@ -329,8 +405,8 @@ export default function TradingRoomPage() {
       setPartnerConfirmations(0);
       setEpicTradeData(null);
       setIsProcessing(false);
+      setIncomingTrade(null);
   };
-
 
   // --- UI HELPERS ---
   const toggleItemInOffer = (pet) => {
@@ -348,6 +424,23 @@ export default function TradingRoomPage() {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#050505] text-white font-sans overflow-hidden transition-colors duration-300">
       
+      {/* --- INCOMING DIRECT TRADE NOTIFICATION MODAL --- */}
+      {incomingTrade && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#0a0a0a] border-2 border-cyan-500 p-8 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.3)] text-center max-w-md w-full mx-4">
+            <div className="text-6xl mb-4 animate-bounce">🤝</div>
+            <h2 className="text-white text-3xl font-black uppercase tracking-widest mb-2">Trade Request</h2>
+            <p className="text-gray-400 font-bold mb-8">
+              <span className="text-cyan-400 font-black">{incomingTrade.host_name}</span> quiere intercambiar contigo.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button onClick={() => respondToTradeInvite(incomingTrade.id, true)} className="flex-1 bg-cyan-500 text-black py-4 rounded-xl font-black uppercase tracking-widest hover:bg-cyan-400 active:scale-95 transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)]">Aceptar</button>
+              <button onClick={() => respondToTradeInvite(incomingTrade.id, false)} className="flex-1 bg-red-900/30 text-red-500 border border-red-900/50 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-red-900/50 active:scale-95 transition-all">Rechazar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1600px] mx-auto relative z-10 p-4 flex flex-col justify-center min-h-[calc(100vh-100px)]">
         
         {/* === MENU === */}
@@ -372,7 +465,7 @@ export default function TradingRoomPage() {
             </div>
         )}
 
-        {/* === LOBBIES === */}
+        {/* === LOBBIES / P2P LIST === */}
         {view === 'lobbies' && (
             <div className="animate-fade-in max-w-5xl mx-auto w-full">
                 <div className="flex justify-between items-center mb-8 bg-[#0a0a0a] p-6 rounded-[2rem] border border-[#222] shadow-xl">
@@ -381,10 +474,10 @@ export default function TradingRoomPage() {
                     <button onClick={createTradeRoom} className="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all active:scale-95">Host Trade</button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
                     {lobbies.length === 0 ? (
-                        <div className="col-span-full text-center text-gray-600 py-32 font-black uppercase tracking-widest text-2xl border-2 border-dashed border-[#222] rounded-[2rem]">
-                            No active trades. Host one!
+                        <div className="col-span-full text-center text-gray-600 py-16 font-black uppercase tracking-widest text-xl border-2 border-dashed border-[#222] rounded-[2rem]">
+                            No active public tables. Host one!
                         </div>
                     ) : lobbies.map(l => (
                         <div key={l.id} className="bg-[#111] border border-[#333] p-8 rounded-[2rem] flex flex-col hover:border-cyan-500 transition-colors group relative shadow-2xl">
@@ -399,6 +492,25 @@ export default function TradingRoomPage() {
                         </div>
                     ))}
                 </div>
+
+                {/* PLAYERS LIST (DIRECT TRADES) */}
+                <div className="bg-[#0a0a0a] border border-[#222] rounded-[2rem] p-8 shadow-2xl">
+                    <h2 className="text-xl font-black uppercase tracking-widest text-gray-400 mb-6 border-b border-[#222] pb-4">Online Players (Direct Invite)</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {usersList.length === 0 ? (
+                             <p className="text-gray-600 font-bold col-span-full text-center py-8">No hay otros jugadores en este momento.</p>
+                        ) : usersList.map(u => (
+                            <div key={u.id} className="bg-[#111] border border-[#333] p-4 rounded-xl flex items-center justify-between hover:border-cyan-500/50 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <img src={getAvatar(u.avatar_url, u.username)} className="w-10 h-10 rounded-full border border-[#555] object-cover"/>
+                                    <span className="font-bold text-white text-sm truncate max-w-[100px]">{u.username}</span>
+                                </div>
+                                <button onClick={() => sendDirectTradeRequest(u.id, u.username)} className="bg-white text-black px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-cyan-500 hover:text-white transition-all shadow-md">Invite</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
             </div>
         )}
 
@@ -515,7 +627,7 @@ export default function TradingRoomPage() {
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-50">
                         <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-6 shadow-[0_0_15px_#06b6d4]"></div>
                         <p className="text-cyan-400 font-black uppercase tracking-widest text-xl animate-pulse">Waiting for partner...</p>
-                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-2">Room is open</p>
+                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-2">Room is open or Waiting to Accept...</p>
                     </div>
                 )}
 
