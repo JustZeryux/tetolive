@@ -24,6 +24,12 @@ export default function CasesPage() {
   
   const [quantity, setQuantity] = useState(1);
 
+  // --- NUEVOS ESTADOS PARA FUNCIONES ACTIVABLES ---
+  const [isFastRoll, setIsFastRoll] = useState(false);
+  const [isAutoOpen, setIsAutoOpen] = useState(false);
+  const [triggerOpen, setTriggerOpen] = useState(false); 
+  const isAutoOpenRef = useRef(isAutoOpen);
+
   const [showNoMoneyModal, setShowNoMoneyModal] = useState(false);
   const [moneyNeeded, setMoneyNeeded] = useState(0);
 
@@ -34,8 +40,20 @@ export default function CasesPage() {
   const [hasLimitedWin, setHasLimitedWin] = useState(false); 
   
   const WINNING_INDEX = 40; 
-
   const [dbItemsMap, setDbItemsMap] = useState({});
+
+  // Sincronizar el ref del Auto Open para usarlo dentro de los setTimeouts
+  useEffect(() => {
+      isAutoOpenRef.current = isAutoOpen;
+  }, [isAutoOpen]);
+
+  // Hook para ejecutar el Auto Open con el state más reciente
+  useEffect(() => {
+      if (triggerOpen) {
+          setTriggerOpen(false);
+          openCase();
+      }
+  }, [triggerOpen]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,10 +64,14 @@ export default function CasesPage() {
         setUserProfile(profile);
       }
 
-      const { data: itemsDbData } = await supabase.from('items').select('name, is_limited, max_quantity, value, image_url, color, id');
+      // FIX: Seleccionamos TODOS (*) los campos de items para tener la info completa (limited, max_quantity, value, etc)
+      const { data: itemsDbData } = await supabase.from('items').select('*');
       const itemMap = {};
       if(itemsDbData) {
-          itemsDbData.forEach(i => itemMap[i.name] = i);
+          itemsDbData.forEach(i => {
+              itemMap[i.id] = i; // Clave primaria: ID
+              itemMap[i.name] = i; // Respaldo: Nombre
+          });
       }
       setDbItemsMap(itemMap);
 
@@ -97,6 +119,7 @@ export default function CasesPage() {
     if (userProfile.saldo_verde < totalCost) {
       setMoneyNeeded(totalCost);
       setShowNoMoneyModal(true);
+      setIsAutoOpen(false); // Apagar Auto Open si no hay dinero
       return;
     }
     
@@ -105,44 +128,52 @@ export default function CasesPage() {
     setHasLimitedWin(false);
 
     try {
-      // --- ANTI-BYPASS FOR LIMITED PETS ---
+      // --- WHOLE FIX: CARGAR DATOS REALES DE LA DB ---
       const validItemsToRoll = [];
       let totalChance = 0;
 
       for (let item of selectedCase.items) {
-          const dbItem = dbItemsMap[item.name];
-          const isLim = dbItem?.is_limited || item.is_limited;
-          const maxQ = dbItem?.max_quantity || item.max_quantity;
+          const dbItem = dbItemsMap[item.item_id] || dbItemsMap[item.id] || dbItemsMap[item.name];
+          if (!dbItem) continue; // Si el item no existe en la DB real, lo ignoramos
+
+          const isLim = dbItem.is_limited;
+          const maxQ = dbItem.max_quantity;
           
           if (isLim && maxQ) {
-              const itemId = dbItem?.id || item.id || item.item_id;
-              if (itemId) {
-                  const { count } = await supabase
-                      .from('inventory')
-                      .select('*', { count: 'exact', head: true })
-                      .eq('item_id', itemId);
-                  
-                  if (count >= maxQ) {
-                      continue; // Global limit reached, remove from pool
-                  }
+              const { count } = await supabase
+                  .from('inventory')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('item_id', dbItem.id);
+              
+              if (count >= maxQ) {
+                  continue; // Límite global alcanzado, se elimina del pool
               }
           }
-          validItemsToRoll.push(item);
+
+          // Creamos un objeto fusionado. DB es la verdad absoluta.
+          validItemsToRoll.push({
+              ...dbItem, // Inyectamos id, name, value, color, image_url, is_limited...
+              chance: item.chance, // Conservamos la chance de la configuración de la caja
+              img: dbItem.image_url, // Normalizamos prop img para PetCard
+              valor: dbItem.value // Normalizamos prop valor para PetCard
+          });
           totalChance += item.chance;
       }
 
       if (validItemsToRoll.length === 0) throw new Error("No items available in this case (all reached their global limit).");
 
-      // Recalculate chances
+      // Recalcular probabilidades
       const normalizedItems = validItemsToRoll.map(item => ({
           ...item,
           chance: (item.chance / totalChance) * 100
       }));
       // ---------------------------------------------------
 
+      // Actualización optimista de UI
       const newBalance = userProfile.saldo_verde - totalCost;
-      const { error: chargeError } = await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
+      setUserProfile(prev => ({ ...prev, saldo_verde: newBalance }));
 
+      const { error: chargeError } = await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
       if (chargeError) throw new Error("Failed to deduct balance: " + chargeError.message);
 
       const winners = [];
@@ -150,53 +181,28 @@ export default function CasesPage() {
       let foundLimited = false;
       
       for (let i = 0; i < quantity; i++) {
-          const rawWinner = getRandomVisualItem(normalizedItems);
-          const dbItem = dbItemsMap[rawWinner.name];
+          const winner = getRandomVisualItem(normalizedItems); // Ya trae todos los datos de DB!
+          if (winner.is_limited) foundLimited = true;
 
-          let realItemId = rawWinner.id || rawWinner.item_id || dbItem?.id;
-          let isLim = dbItem?.is_limited || rawWinner.is_limited;
-
-          if (!realItemId) {
-             const { data: itemData } = await supabase.from('items').select('id, is_limited').eq('name', rawWinner.name).single();
-             if (itemData) {
-                 realItemId = itemData.id;
-                 isLim = itemData.is_limited;
-             }
-             else {
-                 // Rollback balance
-                 await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
-                 throw new Error(`Could not find real ID for "${rawWinner.name}" in database. Balance refunded.`);
-             }
-          }
+          winners.push({
+             ...winner,
+             isLimited: winner.is_limited
+          });
           
-          if (isLim) foundLimited = true;
-
-          // Normalize for PetCard compatibility
-          const finalWinner = { 
-              ...rawWinner, 
-              isLimited: isLim,
-              id: realItemId,
-              valor: rawWinner.valor || rawWinner.value || dbItem?.value || 0,
-              img: rawWinner.img || rawWinner.image_url || dbItem?.image_url,
-              color: rawWinner.color || dbItem?.color || '#ffffff'
-          };
-          
-          winners.push(finalWinner);
-          
-          // Secure Inventory Insert Payload
           inventoryInserts.push({ 
               user_id: currentUser.id, 
-              item_id: realItemId,
-              is_limited: isLim,
-              original_owner: isLim ? (userProfile.username || currentUser.email?.split('@')[0] || 'Player') : null
+              item_id: winner.id,
+              is_limited: winner.is_limited,
+              original_owner: winner.is_limited ? (userProfile.username || currentUser.email?.split('@')[0] || 'Player') : null
           });
       }
 
-      const { data: insertedInv, error: invError } = await supabase.from('inventory').insert(inventoryInserts).select();
+      const { error: invError } = await supabase.from('inventory').insert(inventoryInserts);
 
       if (invError) {
-          // --- SECURITY ROLLBACK ---
+          // Rollback si falla
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
+          setUserProfile(prev => ({ ...prev, saldo_verde: prev.saldo_verde + totalCost }));
           throw new Error("Failed to insert items into inventory. Your balance was refunded. " + invError.message);
       }
 
@@ -212,6 +218,10 @@ export default function CasesPage() {
       }
       setSpinnerTracks(tracks);
 
+      // FAST ROLL LOGIC
+      const spinDuration = isFastRoll ? 1.5 : 6;
+      const resultDelay = isFastRoll ? 1800 : 6500;
+
       setTimeout(() => {
         if (slidersRef.current) {
           slidersRef.current.forEach(el => {
@@ -219,7 +229,7 @@ export default function CasesPage() {
               el.style.transition = 'none';
               el.style.transform = `translateX(0px)`;
               setTimeout(() => {
-                el.style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.15, 1)';
+                el.style.transition = `transform ${spinDuration}s cubic-bezier(0.15, 0.85, 0.15, 1)`;
                 const isMulti = quantity > 1;
                 const itemWidth = isMulti ? 128 : 188; 
                 el.style.transform = `translateX(-${(WINNING_INDEX * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)}px)`;
@@ -251,18 +261,21 @@ export default function CasesPage() {
             }, 150);
         }
 
-        supabase.auth.getUser().then(res => {
-             supabase.from('profiles').select('*').eq('id', res.data.user.id).single().then(p => {
-                 if(p.data) setUserProfile(p.data);
-             });
-        });
-      }, 6500);
+        // AUTO OPEN LOGIC
+        if (isAutoOpenRef.current) {
+            setTimeout(() => {
+                if (isAutoOpenRef.current) setTriggerOpen(true);
+            }, 1500); // 1.5 segundos en la pantalla de result antes de tirar
+        }
+
+      }, resultDelay);
 
     } catch (error) {
       console.error(error);
       alert(error.message);
       setSpinning(false);
-      setView('store'); // Return to store on fail
+      setIsAutoOpen(false);
+      setView('store');
     }
   };
 
@@ -362,7 +375,7 @@ export default function CasesPage() {
         {/* INSPECT VIEW */}
         {view === 'inspect' && selectedCase && (
           <div className="animate-fade-in">
-            <button onClick={() => setView('store')} className="text-[#8f9ac6] hover:text-white font-bold text-sm flex items-center gap-2 transition-colors mb-8 bg-[#1c1f2e] px-5 py-2.5 rounded-xl border border-[#252839] w-max shadow-md hover:border-cyan-500/50">
+            <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="text-[#8f9ac6] hover:text-white font-bold text-sm flex items-center gap-2 transition-colors mb-8 bg-[#1c1f2e] px-5 py-2.5 rounded-xl border border-[#252839] w-max shadow-md hover:border-cyan-500/50">
                &lsaquo; Back to Store
             </button>
             <div className="flex flex-col lg:flex-row gap-10 items-start">
@@ -389,9 +402,29 @@ export default function CasesPage() {
                             </button>
                         ))}
                     </div>
+
+                    {/* TOGGLES ACTIVABLES (FAST ROLL & AUTO OPEN) */}
+                    <div className="flex items-center justify-center gap-6 mt-6 w-full">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                            <div className={`w-10 h-5 rounded-full relative transition-colors ${isFastRoll ? 'bg-cyan-500' : 'bg-gray-700'}`}>
+                                <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${isFastRoll ? 'left-5' : 'left-1'}`}></div>
+                            </div>
+                            <span className="text-white font-bold text-sm uppercase tracking-wider group-hover:text-cyan-400">Fast ⚡</span>
+                            <input type="checkbox" className="hidden" checked={isFastRoll} onChange={e => setIsFastRoll(e.target.checked)} />
+                        </label>
+                        
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                            <div className={`w-10 h-5 rounded-full relative transition-colors ${isAutoOpen ? 'bg-cyan-500' : 'bg-gray-700'}`}>
+                                <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${isAutoOpen ? 'left-5' : 'left-1'}`}></div>
+                            </div>
+                            <span className="text-white font-bold text-sm uppercase tracking-wider group-hover:text-cyan-400">Auto 🔄</span>
+                            <input type="checkbox" className="hidden" checked={isAutoOpen} onChange={e => setIsAutoOpen(e.target.checked)} />
+                        </label>
+                    </div>
+
                 </div>
 
-                <button onClick={openCase} disabled={spinning} className="w-full py-4 rounded-2xl font-black text-xl text-white uppercase tracking-widest shadow-[0_5px_20px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_30px_rgba(6,182,212,0.6)] transition-all hover:-translate-y-1 bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center gap-3 z-10">
+                <button onClick={openCase} disabled={spinning} className="w-full py-4 mt-2 rounded-2xl font-black text-xl text-white uppercase tracking-widest shadow-[0_5px_20px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_30px_rgba(6,182,212,0.6)] transition-all hover:-translate-y-1 bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center gap-3 z-10">
                   OPEN {quantity > 1 ? `x${quantity}` : ''} FOR <GreenCoin cls="w-6 h-6"/> {formatValue(selectedCase.price * quantity)}
                 </button>
               </div>
@@ -401,19 +434,25 @@ export default function CasesPage() {
                   Case Contents
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {selectedCase.items.map((item, idx) => {
-                    const isLimitedItem = dbItemsMap[item.name]?.is_limited === true || item.is_limited === true || item.limited === true;
+                  {selectedCase.items.map((rawItem, idx) => {
+                    // AQUÍ ESTÁ LA MAGIA: Fusionamos con la DB real para mostrar los datos
+                    const dbItem = dbItemsMap[rawItem.item_id] || dbItemsMap[rawItem.id] || dbItemsMap[rawItem.name] || {};
+                    const isLimitedItem = dbItem.is_limited || false;
+                    const itemName = dbItem.name || rawItem.name;
+                    const itemImg = dbItem.image_url || rawItem.img;
+                    const itemColor = dbItem.color || rawItem.color || '#ffffff';
+                    const itemValue = dbItem.value || rawItem.valor || 0;
 
                     return (
-                    <div key={idx} className={`bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40 ${isLimitedItem ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : ''}`} style={!isLimitedItem ? { borderColor: `${item.color}40` } : {}}>
-                      <div className="absolute inset-1 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ background: `radial-gradient(circle at center, ${isLimitedItem ? '#facc15' : item.color} 0%, transparent 70%)` }}></div>
+                    <div key={idx} className={`bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40 ${isLimitedItem ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : ''}`} style={!isLimitedItem ? { borderColor: `${itemColor}40` } : {}}>
+                      <div className="absolute inset-1 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ background: `radial-gradient(circle at center, ${isLimitedItem ? '#facc15' : itemColor} 0%, transparent 70%)` }}></div>
                       
                       <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-20">
                           <span className="text-[10px] font-black uppercase text-white/50 bg-black/60 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
                               Chance
                           </span>
-                          <span className={`text-xs font-black px-2 py-0.5 rounded-full shadow-sm border ${isLimitedItem ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : ''}`} style={!isLimitedItem ? { backgroundColor: `${item.color}20`, color: item.color, borderColor: `${item.color}50` } : {}}>
-                            {item.chance}%
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-full shadow-sm border ${isLimitedItem ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : ''}`} style={!isLimitedItem ? { backgroundColor: `${itemColor}20`, color: itemColor, borderColor: `${itemColor}50` } : {}}>
+                            {rawItem.chance}%
                           </span>
                       </div>
                       
@@ -424,14 +463,14 @@ export default function CasesPage() {
                       )}
 
                       <div className="relative w-full flex-1 flex items-center justify-center mt-6">
-                         <div className="absolute w-12 h-12 rounded-full blur-[15px] opacity-30 group-hover:opacity-60 transition-opacity" style={{ backgroundColor: isLimitedItem ? '#facc15' : item.color }}></div>
-                         <img src={item.img} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform z-10 relative" alt={item.name} />
+                         <div className="absolute w-12 h-12 rounded-full blur-[15px] opacity-30 group-hover:opacity-60 transition-opacity" style={{ backgroundColor: isLimitedItem ? '#facc15' : itemColor }}></div>
+                         <img src={itemImg} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform z-10 relative" alt={itemName} />
                       </div>
                       
                       <div className="w-full text-center mt-auto border-t border-[#374151]/50 bg-[#0a0a0a]/50 py-2 px-1 z-10 rounded-b-lg">
-                        <p className={`font-black text-[11px] uppercase tracking-wide w-full truncate px-1 ${isLimitedItem ? 'text-yellow-400' : ''}`} style={!isLimitedItem ? {color: item.color} : {}}>{item.name}</p>
+                        <p className={`font-black text-[11px] uppercase tracking-wide w-full truncate px-1 ${isLimitedItem ? 'text-yellow-400' : ''}`} style={!isLimitedItem ? {color: itemColor} : {}}>{itemName}</p>
                         <p className="text-gray-400 text-[10px] font-bold mt-0.5 flex items-center justify-center gap-1">
-                            <GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(item.valor || item.value || dbItemsMap[item.name]?.value || 0)}
+                            <GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(itemValue)}
                         </p>
                       </div>
                     </div>
@@ -524,12 +563,18 @@ export default function CasesPage() {
                   </p>
                   
                   <div className="flex gap-4 w-full relative z-10">
-                    <button onClick={() => setView('store')} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
+                    <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
                       Store
                     </button>
-                    <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
-                      Spin Again
-                    </button>
+                    {isAutoOpen ? (
+                        <button onClick={() => setIsAutoOpen(false)} className="flex-1 bg-red-600 hover:bg-red-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(220,38,38,0.4)]">
+                            Stop Auto 🛑
+                        </button>
+                    ) : (
+                        <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
+                            Spin Again
+                        </button>
+                    )}
                   </div>
                 </div>
             ) : (
@@ -550,12 +595,18 @@ export default function CasesPage() {
                     </div>
 
                     <div className="flex gap-4 w-full max-w-md relative z-10">
-                        <button onClick={() => setView('store')} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
+                        <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
                           Store
                         </button>
-                        <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
-                          Spin {quantity} More
-                        </button>
+                        {isAutoOpen ? (
+                            <button onClick={() => setIsAutoOpen(false)} className="flex-1 bg-red-600 hover:bg-red-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(220,38,38,0.4)]">
+                                Stop Auto 🛑
+                            </button>
+                        ) : (
+                            <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
+                              Spin {quantity} More
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
