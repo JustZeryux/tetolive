@@ -68,7 +68,7 @@ export default function RussianRoulettePage() {
   const [actionLog, setActionLog] = useState("WAITING...");
   const [isProcessing, setIsProcessing] = useState(false);
   const [potTotal, setPotTotal] = useState(0);
-  const [winData, setWinData] = useState(null); // Epic Win Screen Data
+  const [winData, setWinData] = useState(null); 
   
   // VISUAL EFFECTS
   const [gunAngle, setGunAngle] = useState(-90);
@@ -83,20 +83,30 @@ export default function RussianRoulettePage() {
   const activeChannelRef = useRef(null); 
   const [uiChamber, setUiChamber] = useState(0); 
 
+  // FIX 1: Extracción Segura del Inventario
   const fetchUserInventory = async (userId) => {
-      // Obtenemos item_id para poder re-insertar correctamente a la mochila después
-      const { data: inv } = await supabase.from('inventory').select(`id, item_id, items (name, value, image_url, color, is_shiny, is_mythic)`).eq('user_id', userId);
+      const { data: inv, error } = await supabase.from('inventory').select(`id, item_id, items (*)`).eq('user_id', userId);
+      
+      if (error) console.error("Error cargando inventario:", error);
+      
       if (inv) {
-          setUserInventory(inv.map(i => ({ 
-              id: i.id, 
-              item_id: i.item_id,
-              name: i.items.name, 
-              value: i.items.value, 
-              image_url: i.items.image_url, 
-              color: i.items.color,
-              is_shiny: i.items.is_shiny,
-              is_mythic: i.items.is_mythic
-          })));
+          setUserInventory(inv.map(i => {
+              // Supabase puede devolver items como arreglo en vez de objeto a veces
+              const itemData = Array.isArray(i.items) ? i.items[0] : i.items;
+              if(!itemData) return null;
+              
+              return { 
+                  id: i.id, 
+                  item_id: i.item_id,
+                  name: itemData.name, 
+                  value: itemData.value || 0, 
+                  // FIX ICONOS: Fallback en cascada si no existe image_url
+                  image_url: itemData.image_url || itemData.image || itemData.img || '/file.svg', 
+                  color: itemData.color,
+                  is_shiny: itemData.is_shiny,
+                  is_mythic: itemData.is_mythic
+              }
+          }).filter(Boolean)); // Elimina nulos por si alguna pet viene rota
       }
   };
 
@@ -115,7 +125,6 @@ export default function RussianRoulettePage() {
     return () => cleanupChannel(); 
   }, []);
 
-  // --- AUDIO ZERO-LATENCY ENGINE ---
   const unlockAudio = () => {
       ['spin', 'click', 'bang', 'win'].forEach(id => {
           const el = document.getElementById(`sfx-${id}`);
@@ -138,7 +147,6 @@ export default function RussianRoulettePage() {
   
   const calculateSelectedValue = () => selectedPets.reduce((sum, p) => sum + p.value, 0);
 
-  // --- TRIGONOMETRIC MATH (GUN AIMING) ---
   const getCircleMath = (index, total) => {
       const startAngle = Math.PI / 2; 
       const angleStep = (2 * Math.PI) / total;
@@ -167,20 +175,18 @@ export default function RussianRoulettePage() {
   }, [players, currentUser]);
 
 
-  // --- LOCAL VS BOT MATCH ---
   const startBotMatch = async () => {
       unlockAudio();
       const isCoin = betType === 'coins';
       const myBetVal = isCoin ? coinBet : calculateSelectedValue();
       
-      if (isCoin && userProfile.saldo_verde < myBetVal) return showToast("Insufficient Green Coins!", "error");
-      if (!isCoin && selectedPets.length === 0) return showToast("Select at least one pet from your inventory!", "error");
+      if (isCoin && userProfile.saldo_verde < myBetVal) return showToast("Saldo insuficiente!", "error");
+      if (!isCoin && selectedPets.length === 0) return showToast("Selecciona al menos una mascota!", "error");
       
       if (isCoin) {
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
           setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
       } else {
-          // Descontar mascotas localmente de la base de datos
           await supabase.from('inventory').delete().in('id', selectedPets.map(p => p.id));
           await fetchUserInventory(currentUser.id);
       }
@@ -199,7 +205,8 @@ export default function RussianRoulettePage() {
       
       setPotTotal(myBetVal * 2);
       
-      const botPlayer = { id: 'bot', name: 'TetoBot', avatar: '/TetoGun.png', isDead: false };
+      // FIX ICONOS: Bot Avatar Fallback
+      const botPlayer = { id: 'bot', name: 'TetoBot', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TetoBot&backgroundColor=8b0000', isDead: false };
       const mePlayer = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
       
       setPlayers([mePlayer, botPlayer]);
@@ -265,7 +272,6 @@ export default function RussianRoulettePage() {
   }, [turnId, view, mode, cylinderSpinning]);
 
 
-  // --- MULTIPLAYER ONLINE ENGINE (2% COINFLIP MATCHMAKING & NO GHOST CHANNELS) ---
   const cleanupChannel = () => {
       if (activeChannelRef.current) {
           supabase.removeChannel(activeChannelRef.current);
@@ -290,67 +296,65 @@ export default function RussianRoulettePage() {
       activeChannelRef.current = channel;
   };
 
+  // FIX 2: EVITAR EL ROBO (NO COBRAR HASTA CONFIRMAR LA BASE DE DATOS)
   const hostOnlineMatch = async () => {
       unlockAudio();
       const isCoins = betType === 'coins';
       const myBetVal = isCoins ? coinBet : calculateSelectedValue();
 
-      if (isCoins && userProfile.saldo_verde < myBetVal) return showToast("Insufficient coins.", "error");
-      if (!isCoins && selectedPets.length === 0) return showToast("Select pets to host a lobby.", "error");
+      if (isCoins && userProfile.saldo_verde < myBetVal) return showToast("Saldo Insuficiente.", "error");
+      if (!isCoins && selectedPets.length === 0) return showToast("Selecciona mascotas para crear la mesa.", "error");
       
-      // Descontar saldo/items al hostear
-      if (isCoins) {
-          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
-          setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
-      } else {
-          await supabase.from('inventory').delete().in('id', selectedPets.map(p => p.id));
-          await fetchUserInventory(currentUser.id);
-      }
-
       const me = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
 
-      const { data } = await supabase.from('roulette_lobbies').insert({
+      // 1. INTENTAR CREAR LA SALA PRIMERO
+      const { data, error } = await supabase.from('roulette_lobbies').insert({
           host_id: currentUser.id, 
           host_name: userProfile.username, 
           bet_type: betType, 
           bet_amount: myBetVal, 
           players: [me],
-          pool_items: !isCoins ? selectedPets : []
+          pool_items: !isCoins ? selectedPets : [],
+          status: 'waiting' // Asegurar el status para evitar bugs
       }).select().single();
 
-      if (data) {
-          setCurrentRoom(data);
-          setPlayers([me]);
-          setPotTotal(myBetVal);
-          connectToRoom(data.id);
-          setView('playing'); 
-          setActionLog("WAITING FOR PLAYERS...");
-      }
-  };
-
-  const joinOnlineMatch = async (lobby) => {
-      unlockAudio();
-      const isCoins = lobby.bet_type === 'coins';
-      const myBetVal = isCoins ? lobby.bet_amount : calculateSelectedValue();
-
-      if (isCoins && userProfile.saldo_verde < myBetVal) return showToast("Insufficient balance.", "error");
-      
-      // Matchmaking: Regla del 2% estricto tipo Coinflip para Pets
-      if (!isCoins) {
-          const diff = Math.abs(myBetVal - lobby.bet_amount);
-          const maxDiff = lobby.bet_amount * 0.02;
-          if (diff > maxDiff) {
-              return showToast("Your pets value must be within 2% of the host's value!", "error");
-          }
+      if (error || !data) {
+          console.error("Lobby Error:", error);
+          return showToast("Error al crear la partida en los servidores.", "error");
       }
 
-      // Descontar saldo/items al unirse
+      // 2. SI LA SALA SE CREÓ BIEN, AHORA SÍ COBRAMOS
       if (isCoins) {
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
           setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
       } else {
           await supabase.from('inventory').delete().in('id', selectedPets.map(p => p.id));
           await fetchUserInventory(currentUser.id);
+      }
+
+      // 3. CONTINUAR CON EL JUEGO
+      setCurrentRoom(data);
+      setPlayers([me]);
+      setPotTotal(myBetVal);
+      connectToRoom(data.id);
+      setView('playing'); 
+      setActionLog("WAITING FOR PLAYERS...");
+  };
+
+  // FIX 3: MISMO BLINDAJE PARA JOIN MATCH
+  const joinOnlineMatch = async (lobby) => {
+      unlockAudio();
+      const isCoins = lobby.bet_type === 'coins';
+      const myBetVal = isCoins ? lobby.bet_amount : calculateSelectedValue();
+
+      if (isCoins && userProfile.saldo_verde < myBetVal) return showToast("Saldo Insuficiente.", "error");
+      
+      if (!isCoins) {
+          const diff = Math.abs(myBetVal - lobby.bet_amount);
+          const maxDiff = lobby.bet_amount * 0.02;
+          if (diff > maxDiff) {
+              return showToast("El valor de tus mascotas debe estar a un margen de 2% del Host!", "error");
+          }
       }
 
       const me = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
@@ -359,11 +363,23 @@ export default function RussianRoulettePage() {
       
       const joinPayload = { event: 'player_joined', ts: Date.now() };
 
-      await supabase.from('roulette_lobbies').update({ 
+      // 1. INTENTAR UNIRSE PRIMERO A LA DB
+      const { error } = await supabase.from('roulette_lobbies').update({ 
           players: updatedPlayers, 
           action_payload: joinPayload,
           pool_items: updatedPool 
       }).eq('id', lobby.id);
+
+      if (error) return showToast("La sala ya no está disponible o hubo un error.", "error");
+
+      // 2. SI TODO SALIÓ BIEN, COBRAMOS
+      if (isCoins) {
+          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
+          setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
+      } else {
+          await supabase.from('inventory').delete().in('id', selectedPets.map(p => p.id));
+          await fetchUserInventory(currentUser.id);
+      }
 
       setCurrentRoom(lobby);
       setPlayers(updatedPlayers);
@@ -374,17 +390,16 @@ export default function RussianRoulettePage() {
   };
 
   const connectToRoom = (roomId) => {
-      cleanupChannel(); // Evita suscripciones fantasmas
+      cleanupChannel(); 
 
       const channel = supabase.channel(`room_${roomId}_updates`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roulette_lobbies', filter: `id=eq.${roomId}` }, (payload) => {
           const newRow = payload.new;
-          setCurrentRoom(newRow); // Previene closures stale
+          setCurrentRoom(newRow); 
           setPotTotal(newRow.bet_amount * newRow.players.length);
 
           const action = newRow.action_payload;
           
-          // UI Spoiler Fix: No renderizamos la muerte instantáneamente hasta que la bala "salga" visualmente.
           if (action?.event !== 'shoot_action') {
               setPlayers(newRow.players);
           }
@@ -440,7 +455,6 @@ export default function RussianRoulettePage() {
   };
 
 
-  // --- UNIFIED SHOOTING LOGIC ---
   const handleShoot = async (targetId) => {
       if (isProcessing || turnId !== currentUser.id || cylinderSpinning) return;
       setIsProcessing(true);
@@ -452,7 +466,6 @@ export default function RussianRoulettePage() {
           const shootPayload = { event: 'shoot_action', shooterId: currentUser.id, targetId, isBullet, ts: Date.now() };
           await supabase.from('roulette_lobbies').update({ action_payload: shootPayload, players: newPlayers }).eq('id', currentRoom.id);
       } else {
-          // LOCAL VISUALS
           const targetVisual = visualCirclePlayers.find(p => p.id === targetId);
           setGunAngle(targetVisual.gunDegrees); 
           setActionLog(targetId === currentUser.id ? "YOU AIM AT YOURSELF..." : "YOU AIM AT TETOBOT...");
@@ -484,7 +497,6 @@ export default function RussianRoulettePage() {
       }
   };
 
-  // --- SAFE MULTIPLAYER VISUAL EXECUTION ---
   const executeOnlineVisuals = async (action, newRow) => {
       const currentDbPlayers = newRow.players;
       const shooterName = currentDbPlayers.find(p => p.id === action.shooterId)?.name;
@@ -512,7 +524,6 @@ export default function RussianRoulettePage() {
           setScreenFlash(true);
           setActionLog(`💥 BANG! 💥`);
           
-          // Renderiza la calavera de forma segura despues del bang
           setPlayers(currentDbPlayers);
 
           setTimeout(() => {
@@ -587,7 +598,6 @@ export default function RussianRoulettePage() {
               await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde + prize }).eq('id', currentUser.id);
               setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde + prize}));
           } else {
-              // Recolectar la pool de mascotas y agregarlas al inventario ganador
               const allBotsPets = mode === 'bot' ? botPets : [];
               const allLobbyPets = roomState ? roomState.pool_items : [];
               wonItemsList = mode === 'bot' ? [...selectedPets, ...allBotsPets] : allLobbyPets;
@@ -617,6 +627,37 @@ export default function RussianRoulettePage() {
       setGunFiring(false);
       setScreenFlash(false);
       setIsProcessing(false);
+  };
+
+  // FIX 4: DESTRUCTOR DE GHOST MATCHES Y REEMBOLSOS DE HUIDA
+  const handleLeaveMatch = async () => {
+      if (currentRoom && currentRoom.status === 'waiting') {
+          if (currentRoom.host_id === currentUser.id) {
+              // El Host destruye la sala y recibe refund completo
+              await supabase.from('roulette_lobbies').delete().eq('id', currentRoom.id);
+              await processRefund();
+          } else {
+              // El Guest abandona, se saca de la lista y recibe refund
+              const newPlayers = currentRoom.players.filter(p => p.id !== currentUser.id);
+              await supabase.from('roulette_lobbies').update({ players: newPlayers }).eq('id', currentRoom.id);
+              await processRefund();
+          }
+      }
+      leaveToMenu();
+  };
+
+  const processRefund = async () => {
+      if (betType === 'coins') {
+          const refundAmt = currentRoom ? currentRoom.bet_amount : coinBet;
+          await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde + refundAmt }).eq('id', currentUser.id);
+          setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde + refundAmt}));
+      } else {
+          // Devolver Pets al inventario local
+          const insertPayload = selectedPets.map(p => ({ user_id: currentUser.id, item_id: p.item_id || p.id }));
+          await supabase.from('inventory').insert(insertPayload);
+          await fetchUserInventory(currentUser.id);
+      }
+      showToast("Apuesta reembolsada por abandonar.", "info");
   };
 
   const leaveToMenu = () => {
@@ -774,6 +815,15 @@ export default function RussianRoulettePage() {
         {view === 'playing' && (
             <div className="relative w-full h-[70vh] flex items-center justify-center animate-fade-in mt-10">
                 
+                {/* BOTÓN ANTI GHOST MATCHES */}
+                {currentRoom?.status === 'waiting' && (
+                    <div className="absolute top-0 left-0 z-50">
+                        <button onClick={handleLeaveMatch} className="bg-red-600/80 hover:bg-red-500 text-white px-6 py-3 rounded-full font-black uppercase tracking-widest text-xs border border-red-400/50 backdrop-blur-md transition-all active:scale-95">
+                            ← Abandonar (Reembolso)
+                        </button>
+                    </div>
+                )}
+
                 {/* TABLE BACKGROUND */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1000px] h-[65vh] max-h-[600px] bg-[#140808] border-[20px] border-[#1a1111] rounded-[600px] shadow-[0_0_100px_rgba(0,0,0,1),inset_0_0_150px_rgba(0,0,0,1)] z-0 flex items-center justify-center pointer-events-none">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 rounded-[500px]"></div>
@@ -789,11 +839,11 @@ export default function RussianRoulettePage() {
                         ) : (
                             <div className="flex flex-col items-center gap-4">
                                 <div className="flex -space-x-4">
-                                    {selectedPets.slice(0,3).map((p,i) => <img key={i} src={p.image_url || p.img} className="w-12 h-12 rounded-full border-2 border-white bg-black/80 shadow-lg object-contain p-1" />)}
+                                    {selectedPets.slice(0,3).map((p,i) => <img key={i} src={p.image_url || p.img || '/file.svg'} className="w-12 h-12 rounded-full border-2 border-white bg-black/80 shadow-lg object-contain p-1" />)}
                                 </div>
                                 <span className="text-sm font-black text-red-600 italic">VS {mode === 'online' ? 'LOBBY' : 'TETO'}</span>
                                 <div className="flex -space-x-4">
-                                    {(mode === 'bot' ? botPets : (currentRoom?.pool_items || [])).slice(0,3).map((p,i) => <img key={`b${i}`} src={p.image_url || p.img} className="w-12 h-12 rounded-full border-2 border-gray-500 bg-black/80 shadow-lg object-contain p-1 opacity-80" />)}
+                                    {(mode === 'bot' ? botPets : (currentRoom?.pool_items || [])).slice(0,3).map((p,i) => <img key={`b${i}`} src={p.image_url || p.img || '/file.svg'} className="w-12 h-12 rounded-full border-2 border-gray-500 bg-black/80 shadow-lg object-contain p-1 opacity-80" />)}
                                 </div>
                             </div>
                         )}
@@ -861,10 +911,10 @@ export default function RussianRoulettePage() {
         {view === 'result' && (
             <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
                 
-                {/* Backpack Icon (Destination for flying items) */}
+                {/* FIX ICONOS: Backpack Icon Fallback a un emoji gigante por si la imagen se rompe */}
                 {actionLog.includes('WON') && (
-                    <div className="absolute top-10 right-10 z-50">
-                        <img src="/Affiliates.png" className="w-24 h-24 animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] filter grayscale brightness-200" alt="Backpack" />
+                    <div className="absolute top-10 right-10 z-50 text-7xl animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">
+                        🎒
                     </div>
                 )}
 
