@@ -63,6 +63,7 @@ export default function RussianRoulettePage() {
   const [lobbies, setLobbies] = useState([]);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [players, setPlayers] = useState([]); 
+  const [joiningLobby, setJoiningLobby] = useState(null); // NUEVO ESTADO
 
   const [turnId, setTurnId] = useState(null); 
   const [actionLog, setActionLog] = useState("WAITING...");
@@ -83,7 +84,7 @@ export default function RussianRoulettePage() {
   const activeChannelRef = useRef(null); 
   const [uiChamber, setUiChamber] = useState(0); 
 
-  // FIX 1: Extracción Segura del Inventario
+  // Extracción Segura del Inventario
   const fetchUserInventory = async (userId) => {
       const { data: inv, error } = await supabase.from('inventory').select(`id, item_id, items (*)`).eq('user_id', userId);
       
@@ -91,7 +92,6 @@ export default function RussianRoulettePage() {
       
       if (inv) {
           setUserInventory(inv.map(i => {
-              // Supabase puede devolver items como arreglo en vez de objeto a veces
               const itemData = Array.isArray(i.items) ? i.items[0] : i.items;
               if(!itemData) return null;
               
@@ -100,13 +100,12 @@ export default function RussianRoulettePage() {
                   item_id: i.item_id,
                   name: itemData.name, 
                   value: itemData.value || 0, 
-                  // FIX ICONOS: Fallback en cascada si no existe image_url
                   image_url: itemData.image_url || itemData.image || itemData.img || '/file.svg', 
                   color: itemData.color,
                   is_shiny: itemData.is_shiny,
                   is_mythic: itemData.is_mythic
               }
-          }).filter(Boolean)); // Elimina nulos por si alguna pet viene rota
+          }).filter(Boolean)); 
       }
   };
 
@@ -205,7 +204,6 @@ export default function RussianRoulettePage() {
       
       setPotTotal(myBetVal * 2);
       
-      // FIX ICONOS: Bot Avatar Fallback
       const botPlayer = { id: 'bot', name: 'TetoBot', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TetoBot&backgroundColor=8b0000', isDead: false };
       const mePlayer = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
       
@@ -296,7 +294,6 @@ export default function RussianRoulettePage() {
       activeChannelRef.current = channel;
   };
 
-  // FIX 2: EVITAR EL ROBO (NO COBRAR HASTA CONFIRMAR LA BASE DE DATOS)
   const hostOnlineMatch = async () => {
       unlockAudio();
       const isCoins = betType === 'coins';
@@ -307,7 +304,6 @@ export default function RussianRoulettePage() {
       
       const me = { id: currentUser.id, name: userProfile.username, avatar: getAvatar(userProfile.avatar_url, userProfile.username), isDead: false };
 
-      // 1. INTENTAR CREAR LA SALA PRIMERO
       const { data, error } = await supabase.from('roulette_lobbies').insert({
           host_id: currentUser.id, 
           host_name: userProfile.username, 
@@ -315,7 +311,7 @@ export default function RussianRoulettePage() {
           bet_amount: myBetVal, 
           players: [me],
           pool_items: !isCoins ? selectedPets : [],
-          status: 'waiting' // Asegurar el status para evitar bugs
+          status: 'waiting'
       }).select().single();
 
       if (error || !data) {
@@ -323,7 +319,6 @@ export default function RussianRoulettePage() {
           return showToast("Error al crear la partida en los servidores.", "error");
       }
 
-      // 2. SI LA SALA SE CREÓ BIEN, AHORA SÍ COBRAMOS
       if (isCoins) {
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
           setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
@@ -332,7 +327,6 @@ export default function RussianRoulettePage() {
           await fetchUserInventory(currentUser.id);
       }
 
-      // 3. CONTINUAR CON EL JUEGO
       setCurrentRoom(data);
       setPlayers([me]);
       setPotTotal(myBetVal);
@@ -341,7 +335,6 @@ export default function RussianRoulettePage() {
       setActionLog("WAITING FOR PLAYERS...");
   };
 
-  // FIX 3: MISMO BLINDAJE PARA JOIN MATCH
   const joinOnlineMatch = async (lobby) => {
       unlockAudio();
       const isCoins = lobby.bet_type === 'coins';
@@ -363,7 +356,6 @@ export default function RussianRoulettePage() {
       
       const joinPayload = { event: 'player_joined', ts: Date.now() };
 
-      // 1. INTENTAR UNIRSE PRIMERO A LA DB
       const { error } = await supabase.from('roulette_lobbies').update({ 
           players: updatedPlayers, 
           action_payload: joinPayload,
@@ -372,7 +364,6 @@ export default function RussianRoulettePage() {
 
       if (error) return showToast("La sala ya no está disponible o hubo un error.", "error");
 
-      // 2. SI TODO SALIÓ BIEN, COBRAMOS
       if (isCoins) {
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde - myBetVal }).eq('id', currentUser.id);
           setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde - myBetVal}));
@@ -629,15 +620,12 @@ export default function RussianRoulettePage() {
       setIsProcessing(false);
   };
 
-  // FIX 4: DESTRUCTOR DE GHOST MATCHES Y REEMBOLSOS DE HUIDA
   const handleLeaveMatch = async () => {
       if (currentRoom && currentRoom.status === 'waiting') {
           if (currentRoom.host_id === currentUser.id) {
-              // El Host destruye la sala y recibe refund completo
               await supabase.from('roulette_lobbies').delete().eq('id', currentRoom.id);
               await processRefund();
           } else {
-              // El Guest abandona, se saca de la lista y recibe refund
               const newPlayers = currentRoom.players.filter(p => p.id !== currentUser.id);
               await supabase.from('roulette_lobbies').update({ players: newPlayers }).eq('id', currentRoom.id);
               await processRefund();
@@ -652,7 +640,6 @@ export default function RussianRoulettePage() {
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde + refundAmt }).eq('id', currentUser.id);
           setUserProfile(prev => ({...prev, saldo_verde: prev.saldo_verde + refundAmt}));
       } else {
-          // Devolver Pets al inventario local
           const insertPayload = selectedPets.map(p => ({ user_id: currentUser.id, item_id: p.item_id || p.id }));
           await supabase.from('inventory').insert(insertPayload);
           await fetchUserInventory(currentUser.id);
@@ -667,6 +654,7 @@ export default function RussianRoulettePage() {
       setPlayers([]); 
       setSelectedPets([]); 
       setWinData(null);
+      setJoiningLobby(null); // NUEVO ESTADO RESETEADO
   };
 
   return (
@@ -735,7 +723,21 @@ export default function RussianRoulettePage() {
                                         {l.bet_type === 'coins' ? <GreenCoin cls="w-8 h-8"/> : '🐾'} {formatValue(l.bet_amount)}
                                     </p>
                                 </div>
-                                <button onClick={() => joinOnlineMatch(l)} disabled={l.players?.length >= 6} className="bg-white text-black hover:bg-blue-500 hover:text-white px-10 py-4 rounded-xl font-black uppercase transition-all disabled:opacity-20 active:scale-95">Join</button>
+                                <button 
+                                    onClick={() => {
+                                        if (l.bet_type === 'coins') {
+                                            joinOnlineMatch(l);
+                                        } else {
+                                            setJoiningLobby(l);
+                                            setBetType('pets');
+                                            setView('betting');
+                                        }
+                                    }} 
+                                    disabled={l.players?.length >= 6} 
+                                    className="bg-white text-black hover:bg-blue-500 hover:text-white px-10 py-4 rounded-xl font-black uppercase transition-all disabled:opacity-20 active:scale-95"
+                                >
+                                    Join
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -743,20 +745,22 @@ export default function RussianRoulettePage() {
             </div>
         )}
 
-        {/* === SETUP BET === */}
+        {/* === SETUP BET / JOIN PREVIEW === */}
         {view === 'betting' && (
             <div className="animate-fade-in max-w-5xl mx-auto w-full py-10">
                 <div className="flex items-center justify-between mb-8">
                     <button onClick={leaveToMenu} className="bg-[#111] border border-[#333] px-6 py-3 rounded-xl text-gray-400 hover:text-white font-black uppercase tracking-widest transition-all">← Back</button>
-                    <h2 className="text-4xl font-black uppercase tracking-widest">Set Wager</h2>
+                    <h2 className="text-4xl font-black uppercase tracking-widest text-center">
+                        {joiningLobby ? 'Select Pets to Join' : 'Set Wager'}
+                    </h2>
                     <div className="w-24"></div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 bg-[#0a0a0a] rounded-[2rem] p-8 border border-[#222] shadow-2xl">
                         <div className="flex gap-4 mb-8 bg-[#111] p-2 rounded-2xl border border-[#333]">
-                            <button onClick={() => setBetType('coins')} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'coins' ? (mode === 'online' ? 'bg-blue-600' : 'bg-red-600') + ' text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'}`}>Coins</button>
-                            <button onClick={() => setBetType('pets')} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'pets' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'}`}>Pets</button>
+                            <button disabled={!!joiningLobby} onClick={() => setBetType('coins')} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'coins' ? (mode === 'online' ? 'bg-blue-600' : 'bg-red-600') + ' text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'} disabled:opacity-50`}>Coins</button>
+                            <button disabled={!!joiningLobby} onClick={() => setBetType('pets')} className={`flex-1 py-4 rounded-xl font-black uppercase tracking-widest transition-all ${betType === 'pets' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:bg-[#222]'} disabled:opacity-50`}>Pets</button>
                         </div>
 
                         {betType === 'coins' ? (
@@ -787,10 +791,22 @@ export default function RussianRoulettePage() {
                     <div className="bg-[#0a0a0a] rounded-[2rem] p-8 border border-[#222] shadow-2xl flex flex-col justify-between">
                         <div>
                             <h4 className="text-gray-600 font-black uppercase tracking-[0.3em] text-xs mb-8 text-center border-b border-[#222] pb-4">Match Preview</h4>
-                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Total Pot</p>
-                            <div className={`text-5xl font-black drop-shadow-xl flex flex-col items-center gap-3 text-center mb-10 ${mode === 'online' ? 'text-blue-500' : 'text-red-500'}`}>
-                                {betType === 'coins' ? <><GreenCoin cls="w-16 h-16"/> {formatValue(coinBet * 2)}</> : 'PETS MIX'}
-                            </div>
+                            
+                            {joiningLobby ? (
+                                <div className="bg-blue-900/20 border border-blue-500/50 p-4 rounded-xl mb-6 text-center">
+                                    <p className="text-xs text-blue-400 font-black uppercase tracking-widest mb-1">Target Value to Join</p>
+                                    <p className="text-2xl font-black text-white">🐾 {formatValue(joiningLobby.bet_amount)}</p>
+                                    <p className="text-[10px] text-gray-400 mt-1 uppercase">Must be within 2% margin</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Total Pot</p>
+                                    <div className={`text-5xl font-black drop-shadow-xl flex flex-col items-center gap-3 text-center mb-10 ${mode === 'online' ? 'text-blue-500' : 'text-red-500'}`}>
+                                        {betType === 'coins' ? <><GreenCoin cls="w-16 h-16"/> {formatValue(coinBet * 2)}</> : 'PETS MIX'}
+                                    </div>
+                                </>
+                            )}
+
                             <div className="flex justify-between items-center bg-[#111] p-4 rounded-2xl border border-[#222]">
                                 <div className="text-center w-full">
                                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">You</p>
@@ -799,12 +815,21 @@ export default function RussianRoulettePage() {
                                 <span className="text-2xl font-black italic text-red-600 mx-4">VS</span>
                                 <div className="text-center w-full">
                                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{mode==='online' ? 'Lobby' : 'Bot'}</p>
-                                    <p className="text-lg font-black text-white">{mode === 'online' ? 'ANY' : 'TETO'}</p>
+                                    <p className="text-lg font-black text-white">{mode === 'online' ? (joiningLobby ? joiningLobby.host_name : 'ANY') : 'TETO'}</p>
                                 </div>
                             </div>
                         </div>
-                        <button onClick={mode === 'online' ? hostOnlineMatch : startBotMatch} className={`w-full py-6 mt-8 text-white font-black text-xl uppercase tracking-widest rounded-2xl transition-all active:scale-95 ${mode === 'online' ? 'bg-gradient-to-r from-blue-700 to-blue-500 shadow-[0_5px_30px_rgba(37,99,235,0.4)]' : 'bg-gradient-to-r from-red-700 to-red-500 shadow-[0_5px_30px_rgba(220,38,38,0.4)]'}`}>
-                            {mode === 'online' ? 'Create Lobby' : 'Start Match'}
+                        <button 
+                            onClick={() => {
+                                if (joiningLobby) {
+                                    joinOnlineMatch(joiningLobby);
+                                } else {
+                                    mode === 'online' ? hostOnlineMatch() : startBotMatch();
+                                }
+                            }} 
+                            className={`w-full py-6 mt-8 text-white font-black text-xl uppercase tracking-widest rounded-2xl transition-all active:scale-95 ${mode === 'online' ? 'bg-gradient-to-r from-blue-700 to-blue-500 shadow-[0_5px_30px_rgba(37,99,235,0.4)]' : 'bg-gradient-to-r from-red-700 to-red-500 shadow-[0_5px_30px_rgba(220,38,38,0.4)]'}`}
+                        >
+                            {joiningLobby ? 'Confirm Join' : (mode === 'online' ? 'Create Lobby' : 'Start Match')}
                         </button>
                     </div>
                 </div>
@@ -911,7 +936,6 @@ export default function RussianRoulettePage() {
         {view === 'result' && (
             <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
                 
-                {/* FIX ICONOS: Backpack Icon Fallback a un emoji gigante por si la imagen se rompe */}
                 {actionLog.includes('WON') && (
                     <div className="absolute top-10 right-10 z-50 text-7xl animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">
                         🎒
