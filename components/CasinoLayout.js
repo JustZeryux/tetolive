@@ -48,6 +48,7 @@ const menuSections = [
       { name: 'Leaderboard', path: '/leaderboard', iconImg: '/Leaderboard.png' },
       { name: 'Affiliates', path: '/affiliates', iconImg: '/Affiliates.png' },
       { name: 'Provably Fair', path: '/provably-fair', iconImg: '/ProvablyFair.png' },
+      { name: 'History', path: '/history', iconImg: '/TetoGun.png' },
     ]
   }
 ];
