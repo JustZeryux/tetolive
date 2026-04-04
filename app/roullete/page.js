@@ -48,6 +48,8 @@ const GunSVG = ({ targetAngle, isShaking, isFiring, isSpinningCylinder }) => (
 );
 
 export default function RussianRoulettePage() {
+  const [isLoading, setIsLoading] = useState(true); // <--- ESTADO DE CARGA AÑADIDO
+
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [userInventory, setUserInventory] = useState([]);
@@ -63,7 +65,7 @@ export default function RussianRoulettePage() {
   const [lobbies, setLobbies] = useState([]);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [players, setPlayers] = useState([]); 
-  const [joiningLobby, setJoiningLobby] = useState(null); // NUEVO ESTADO
+  const [joiningLobby, setJoiningLobby] = useState(null);
 
   const [turnId, setTurnId] = useState(null); 
   const [actionLog, setActionLog] = useState("WAITING...");
@@ -118,6 +120,7 @@ export default function RussianRoulettePage() {
         setUserProfile(profile);
         await fetchUserInventory(user.id);
       }
+      setIsLoading(false); // <--- TERMINA LA CARGA SOLO HASTA QUE TODO ESTÉ LISTO
     };
     init();
 
@@ -657,6 +660,16 @@ export default function RussianRoulettePage() {
       setJoiningLobby(null); // NUEVO ESTADO RESETEADO
   };
 
+  // --- PANTALLA DE CARGA GLOBAL ---
+  if (isLoading || !currentUser || !userProfile) {
+      return (
+          <div className="min-h-[calc(100vh-80px)] bg-[#050505] flex flex-col items-center justify-center text-white font-black tracking-widest animate-pulse">
+              <span className="text-6xl mb-4">🔫</span>
+              <p className="text-xl text-gray-500 uppercase">CARGANDO ROULETTE...</p>
+          </div>
+      );
+  }
+
   return (
     <div className={`min-h-[calc(100vh-80px)] bg-[#050505] text-white font-sans overflow-hidden transition-colors duration-100 ${screenFlash ? 'bg-red-900' : ''}`}>
       
@@ -778,11 +791,18 @@ export default function RussianRoulettePage() {
                             <div>
                                 <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-4 flex justify-between"><span>Inventory ({selectedPets.length})</span> <span className="text-green-400">Value: {formatValue(calculateSelectedValue())}</span></p>
                                 <div className="grid grid-cols-3 md:grid-cols-4 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar p-4 bg-[#111] rounded-2xl border border-[#333]">
-                                    {userInventory.map(pet => (
-                                        <div key={pet.id} onClick={() => togglePetSelection(pet)} className={`relative transition-all cursor-pointer ${selectedPets.find(p=>p.id===pet.id) ? 'scale-105 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] border-2 border-red-500 rounded-xl z-10' : 'hover:-translate-y-1'}`}>
-                                            <PetCard pet={pet} />
+                                    {/* AVISO SI EL INVENTARIO ESTÁ VACÍO */}
+                                    {userInventory.length === 0 ? (
+                                        <div className="col-span-full border-2 border-dashed border-[#333] p-8 text-center text-gray-500 font-bold uppercase tracking-widest rounded-xl">
+                                            Inventario de mascotas vacío
                                         </div>
-                                    ))}
+                                    ) : (
+                                        userInventory.map(pet => (
+                                            <div key={pet.id} onClick={() => togglePetSelection(pet)} className={`relative transition-all cursor-pointer ${selectedPets.find(p=>p.id===pet.id) ? 'scale-105 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] border-2 border-red-500 rounded-xl z-10' : 'hover:-translate-y-1'}`}>
+                                                <PetCard pet={pet} />
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )}
