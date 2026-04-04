@@ -43,54 +43,49 @@ export default function VaultPage() {
         setBalances({ walletGreen: profile.saldo_verde || 0, vaultGreen: profile.vault_verde || 0 });
       }
 
-      // Fetch Inventory (CORREGIDO: Extracción blindada para evitar objetos anidados)
+      // Fetch Inventory (Completamente blindado con '*, items(*)')
       const { data: inv, error: invError } = await supabase
         .from('inventory')
-        .select(`id, item_id, is_shiny, is_mythic, items (*)`)
+        .select(`*, items(*)`)
         .eq('user_id', user.id);
         
       if (invError) console.error("Error fetch inventory:", invError);
       
       if (inv) {
           setInventory(inv.map(i => {
-              // Supabase puede devolver items como Array u Objeto, esto lo estandariza:
-              const itemData = Array.isArray(i.items) ? i.items[0] : i.items;
-              if(!itemData) return null;
-
+              const itemData = Array.isArray(i.items) ? i.items[0] : (i.items || {});
               return {
                   ...itemData,
                   inv_id: i.id, 
                   item_id: i.item_id, 
-                  is_shiny: i.is_shiny !== null ? i.is_shiny : itemData.is_shiny, 
-                  is_mythic: i.is_mythic !== null ? i.is_mythic : itemData.is_mythic,
+                  is_shiny: i.is_shiny || itemData.is_shiny || false, 
+                  is_mythic: i.is_mythic || itemData.is_mythic || false,
                   image_url: itemData.image_url || itemData.image || itemData.img || '/file.svg'
               };
-          }).filter(Boolean));
+          }));
       }
 
-      // Fetch Daycare (CORREGIDO: Extracción blindada)
+      // Fetch Daycare (Completamente blindado)
       const { data: daycare, error: dayError } = await supabase
         .from('daycare')
-        .select(`id, item_id, is_shiny, is_mythic, deposited_at, items (*)`)
+        .select(`*, items(*)`)
         .eq('user_id', user.id);
         
       if (dayError) console.error("Error fetch daycare:", dayError);
       
       if (daycare) {
           setDaycarePets(daycare.map(d => {
-              const itemData = Array.isArray(d.items) ? d.items[0] : d.items;
-              if(!itemData) return null;
-
+              const itemData = Array.isArray(d.items) ? d.items[0] : (d.items || {});
               return {
                   ...itemData,
                   daycare_id: d.id, 
                   item_id: d.item_id, 
                   deposited_at: d.deposited_at, 
-                  is_shiny: d.is_shiny !== null ? d.is_shiny : itemData.is_shiny, 
-                  is_mythic: d.is_mythic !== null ? d.is_mythic : itemData.is_mythic,
+                  is_shiny: d.is_shiny || itemData.is_shiny || false, 
+                  is_mythic: d.is_mythic || itemData.is_mythic || false,
                   image_url: itemData.image_url || itemData.image || itemData.img || '/file.svg'
               };
-          }).filter(Boolean));
+          }));
       }
     }
     setCargando(false);
@@ -98,7 +93,7 @@ export default function VaultPage() {
 
   useEffect(() => {
     fetchAllData();
-    const interval = setInterval(() => setLiveTime(Date.now()), 1000); // Ticks every second for live yield
+    const interval = setInterval(() => setLiveTime(Date.now()), 1000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -143,8 +138,8 @@ export default function VaultPage() {
     const elapsedMs = liveTime - new Date(depositedAt).getTime();
     const days = elapsedMs / (1000 * 60 * 60 * 24);
     
-    const baseYield = petValue * 0.25;
-    const extraYield = petValue * (0.005 * days);
+    const baseYield = (petValue || 0) * 0.25;
+    const extraYield = (petValue || 0) * (0.005 * days);
     return baseYield + extraYield;
   };
 
@@ -161,15 +156,15 @@ export default function VaultPage() {
     const { data, error } = await supabase.from('daycare').insert({ 
         user_id: user.id, 
         item_id: pet.item_id,
-        is_shiny: pet.is_shiny,
-        is_mythic: pet.is_mythic
+        is_shiny: pet.is_shiny || false,
+        is_mythic: pet.is_mythic || false
     }).select().single();
     
     if (error) {
       console.error(error);
       showToast("Error moving pet to daycare.", "error");
     } else {
-      showToast(`${pet.name} is now resting in the Daycare!`, "success");
+      showToast(`${pet.name || 'Pet'} is now resting in the Daycare!`, "success");
       setInventory(prev => prev.filter(p => p.inv_id !== pet.inv_id));
       setDaycarePets(prev => [...prev, { ...pet, daycare_id: data.id, deposited_at: data.deposited_at }]);
     }
@@ -189,8 +184,8 @@ export default function VaultPage() {
     const { data: newInv, error: insertError } = await supabase.from('inventory').insert({ 
         user_id: user.id, 
         item_id: daycarePet.item_id,
-        is_shiny: daycarePet.is_shiny,
-        is_mythic: daycarePet.is_mythic
+        is_shiny: daycarePet.is_shiny || false,
+        is_mythic: daycarePet.is_mythic || false
     }).select().single();
     
     if (insertError) console.error("Error devolviendo al inv:", insertError);
@@ -212,7 +207,6 @@ export default function VaultPage() {
   };
 
   const closeEpicLoot = () => setEpicClaimData(null);
-
 
   if (cargando) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white font-black tracking-widest animate-pulse">ACCESSING VAULT...</div>;
 
