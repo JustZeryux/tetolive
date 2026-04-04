@@ -355,7 +355,6 @@ export default function BlackjackPage() {
       setIsProcessing(false);
   };
 
-  // --- SOLUCIÓN GHOST MATCHES: ELIMINAR PARTIDA DESDE EL LOBBY ---
   const cancelLobbyGame = async (gameId) => {
       setIsProcessing(true);
       try {
@@ -371,7 +370,6 @@ export default function BlackjackPage() {
       if(!currentUser) return alert("Log in first.");
       setIsProcessing(true);
       try {
-          // CLONACIÓN PROFUNDA PARA EVITAR CRASH
           const dp = JSON.parse(JSON.stringify(gameToJoin.datos_partida));
           dp.p2 = { id: currentUser.id, name: userProfile.username || 'Challenger', avatar: userProfile.avatar_url || '/default-avatar.png', hand: [], score: 0, status: 'waiting', pets: [] };
           
@@ -485,7 +483,6 @@ export default function BlackjackPage() {
   const handlePvPAction = async (action) => {
       setIsProcessing(true);
       try {
-          // CLONACIÓN PROFUNDA (Protección contra crashes de React)
           let dp = JSON.parse(JSON.stringify(activePvPGame.datos_partida));
           let isP1 = currentUser.id === activePvPGame.creador_id;
           let pKey = isP1 ? 'p1' : 'p2';
@@ -994,13 +991,24 @@ export default function BlackjackPage() {
                                               {activePvPGame.datos_partida.currency === 'green' ? <GreenCoin cls="w-6 h-6"/> : <RedCoin cls="w-6 h-6"/>}
                                               {formatValue(activePvPGame.datos_partida.betAmount)}
                                           </span>
+                                          
+                                          {/* ======= SOLUCIÓN DEL BOTÓN PARA EL CHALLENGER ======= */}
                                           {!isHost && (
                                               activePvPGame.datos_partida.currency === 'green' ? (
                                                   <button onClick={challengerAcceptBetAndDeal} disabled={isProcessing} className="w-full py-3 bg-[#22c55e] hover:bg-[#16a34a] text-black font-black rounded-lg uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(34,197,94,0.4)] disabled:opacity-50 transition-all hover:scale-105">Match & Deal</button>
                                               ) : (
-                                                  <button onClick={openInventoryModal} disabled={isProcessing} className="w-full py-3 bg-[#ef4444] hover:bg-red-600 text-white font-black rounded-lg uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(239,68,68,0.4)] disabled:opacity-50 transition-all hover:scale-105">Select Pets to Match</button>
+                                                  selectedPets.length > 0 ? (
+                                                      <div className="flex gap-2">
+                                                          <button onClick={openInventoryModal} disabled={isProcessing} className="w-1/3 py-3 bg-[#1c1f2e] hover:bg-[#252839] border border-[#3b405a] text-white font-black rounded-lg uppercase tracking-widest text-[10px] md:text-xs transition-all">Edit</button>
+                                                          <button onClick={challengerAcceptBetAndDeal} disabled={isProcessing} className="w-2/3 py-3 bg-[#22c55e] hover:bg-[#16a34a] text-black font-black rounded-lg uppercase tracking-widest text-[10px] md:text-xs shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all hover:scale-105">Match & Deal</button>
+                                                      </div>
+                                                  ) : (
+                                                      <button onClick={openInventoryModal} disabled={isProcessing} className="w-full py-3 bg-[#ef4444] hover:bg-red-600 text-white font-black rounded-lg uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(239,68,68,0.4)] disabled:opacity-50 transition-all hover:scale-105">Select Pets to Match</button>
+                                                  )
                                               )
                                           )}
+                                          {/* ======================================================= */}
+                                          
                                           {isHost && <p className="text-[#555b82] text-xs font-bold uppercase">Waiting...</p>}
                                       </div>
                                   </div>
