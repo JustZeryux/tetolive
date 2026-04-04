@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/utils/Supabase';
 import { showToast } from '@/components/EpicToasts';
 import PetCard from '@/components/PetCard';
@@ -30,7 +30,6 @@ export default function VaultPage() {
   const [epicClaimData, setEpicClaimData] = useState(null); // Epic Loot Window
 
   // --- 1. INITIAL FETCH ---
-// --- 1. INITIAL FETCH ---
   const fetchAllData = async () => {
     setCargando(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -44,27 +43,55 @@ export default function VaultPage() {
         setBalances({ walletGreen: profile.saldo_verde || 0, vaultGreen: profile.vault_verde || 0 });
       }
 
-      // Fetch Inventory (CORREGIDO)
+      // Fetch Inventory (CORREGIDO: Extracción blindada para evitar objetos anidados)
       const { data: inv, error: invError } = await supabase
         .from('inventory')
-        .select(`id, item_id, is_shiny, is_mythic, items (name, value, image_url, color)`)
+        .select(`id, item_id, is_shiny, is_mythic, items (*)`)
         .eq('user_id', user.id);
         
       if (invError) console.error("Error fetch inventory:", invError);
-      if (inv) setInventory(inv.map(i => ({ 
-        ...i.items, inv_id: i.id, item_id: i.item_id, is_shiny: i.is_shiny, is_mythic: i.is_mythic 
-      })));
+      
+      if (inv) {
+          setInventory(inv.map(i => {
+              // Supabase puede devolver items como Array u Objeto, esto lo estandariza:
+              const itemData = Array.isArray(i.items) ? i.items[0] : i.items;
+              if(!itemData) return null;
 
-      // Fetch Daycare (CORREGIDO)
+              return {
+                  ...itemData,
+                  inv_id: i.id, 
+                  item_id: i.item_id, 
+                  is_shiny: i.is_shiny !== null ? i.is_shiny : itemData.is_shiny, 
+                  is_mythic: i.is_mythic !== null ? i.is_mythic : itemData.is_mythic,
+                  image_url: itemData.image_url || itemData.image || itemData.img || '/file.svg'
+              };
+          }).filter(Boolean));
+      }
+
+      // Fetch Daycare (CORREGIDO: Extracción blindada)
       const { data: daycare, error: dayError } = await supabase
         .from('daycare')
-        .select(`id, item_id, is_shiny, is_mythic, deposited_at, items (name, value, image_url, color)`)
+        .select(`id, item_id, is_shiny, is_mythic, deposited_at, items (*)`)
         .eq('user_id', user.id);
         
       if (dayError) console.error("Error fetch daycare:", dayError);
-      if (daycare) setDaycarePets(daycare.map(d => ({ 
-        ...d.items, daycare_id: d.id, item_id: d.item_id, deposited_at: d.deposited_at, is_shiny: d.is_shiny, is_mythic: d.is_mythic 
-      })));
+      
+      if (daycare) {
+          setDaycarePets(daycare.map(d => {
+              const itemData = Array.isArray(d.items) ? d.items[0] : d.items;
+              if(!itemData) return null;
+
+              return {
+                  ...itemData,
+                  daycare_id: d.id, 
+                  item_id: d.item_id, 
+                  deposited_at: d.deposited_at, 
+                  is_shiny: d.is_shiny !== null ? d.is_shiny : itemData.is_shiny, 
+                  is_mythic: d.is_mythic !== null ? d.is_mythic : itemData.is_mythic,
+                  image_url: itemData.image_url || itemData.image || itemData.img || '/file.svg'
+              };
+          }).filter(Boolean));
+      }
     }
     setCargando(false);
   };
@@ -403,17 +430,6 @@ export default function VaultPage() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
       `}</style>
-
-      {/* ========================================================
-        SQL SNIPPET REQUIRED IN SUPABASE FOR THE DAYCARE TABLE:
-        ========================================================
-        CREATE TABLE daycare (
-            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-            user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-            item_id UUID REFERENCES items(id) ON DELETE CASCADE,
-            deposited_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-      */}
     </div>
   );
 }
