@@ -19,10 +19,10 @@ export default function TradingRoomPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [userInventory, setUserInventory] = useState([]);
-  const [botFullInventory, setBotFullInventory] = useState([]); // For Bot Mode
+  const [botFullInventory, setBotFullInventory] = useState([]); 
   
-  const [view, setView] = useState('menu'); // 'menu' | 'lobbies' | 'trading' | 'result'
-  const [mode, setMode] = useState('bot'); // 'bot' | 'online'
+  const [view, setView] = useState('menu'); 
+  const [mode, setMode] = useState('bot'); 
   const [lobbies, setLobbies] = useState([]);
   const [currentRoom, setCurrentRoom] = useState(null);
   const activeChannelRef = useRef(null);
@@ -34,18 +34,32 @@ export default function TradingRoomPage() {
   const [myOffer, setMyOffer] = useState({ coins: '', items: [] });
   const [partnerOffer, setPartnerOffer] = useState({ coins: '', items: [] });
   
-  const [myConfirmations, setMyConfirmations] = useState(0); // 0=Editing, 1=Locked, 2=Final Accept
+  const [myConfirmations, setMyConfirmations] = useState(0); 
   const [partnerConfirmations, setPartnerConfirmations] = useState(0);
 
   const [partnerInfo, setPartnerInfo] = useState({ name: 'Waiting...', avatar: '' });
 
-  // --- INITIALIZATION ---
+  // --- FIX 1: EXTRACCIÓN BLINDADA DEL INVENTARIO ---
   const fetchInventory = async (userId) => {
-      const { data: inv } = await supabase.from('inventory').select(`id, item_id, items (name, value, image_url, color, is_shiny, is_mythic)`).eq('user_id', userId);
+      const { data: inv, error } = await supabase.from('inventory').select(`id, item_id, items (*)`).eq('user_id', userId);
+      if (error) console.error("Error fetching inventory:", error);
+      
       if (inv) {
-          setUserInventory(inv.map(i => ({ 
-              ...i.items, inv_id: i.id, item_id: i.item_id 
-          })));
+          setUserInventory(inv.map(i => {
+              const itemData = Array.isArray(i.items) ? i.items[0] : i.items;
+              if(!itemData) return null;
+              
+              return { 
+                  inv_id: i.id, 
+                  item_id: i.item_id,
+                  name: itemData.name, 
+                  value: itemData.value || 0, 
+                  image_url: itemData.image_url || itemData.image || itemData.img || '/file.svg', 
+                  color: itemData.color,
+                  is_shiny: itemData.is_shiny,
+                  is_mythic: itemData.is_mythic
+              };
+          }).filter(Boolean));
       }
   };
 
@@ -58,7 +72,6 @@ export default function TradingRoomPage() {
         setUserProfile(profile);
         await fetchInventory(user.id);
 
-        // Preload bot items
         const { data: allItems } = await supabase.from('items').select('*').gt('value', 0);
         if (allItems) setBotFullInventory(allItems);
       }
@@ -80,18 +93,16 @@ export default function TradingRoomPage() {
       return coins + itemsValue;
   };
 
-  // --- ANTI-SCAM ENGINE: TRIGGER ON ANY OFFER EDIT ---
+  // --- ANTI-SCAM ENGINE ---
   const handleMyOfferChange = (newOffer) => {
-      if (myConfirmations >= 1) return; // Block edit if locked
+      if (myConfirmations >= 1) return; 
       setMyOffer(newOffer);
       
-      // Local Bot Mode
       if (mode === 'bot') {
           setMyConfirmations(0);
           setPartnerConfirmations(0);
           simulateBotResponse(newOffer);
       } 
-      // Online Mode
       else if (currentRoom) {
           syncOfferToDB(newOffer);
       }
@@ -113,15 +124,14 @@ export default function TradingRoomPage() {
           return;
       }
 
-      // TetoBot tries to match the value roughly (+/- 10%)
       let botItems = [];
       let currentBotVal = 0;
-      const targetVal = playerValue * (0.9 + Math.random() * 0.2); // Random matching
+      const targetVal = playerValue * (0.9 + Math.random() * 0.2); 
 
       const shuffled = [...botFullInventory].sort(() => 0.5 - Math.random());
       for (const item of shuffled) {
           if (currentBotVal + item.value <= targetVal && botItems.length < 6) {
-              botItems.push({...item, item_id: item.id, inv_id: `bot_${Math.random()}`});
+              botItems.push({...item, item_id: item.id, inv_id: `bot_${Math.random()}`, image_url: item.image_url || item.image || item.img});
               currentBotVal += item.value;
           }
       }
@@ -132,28 +142,24 @@ export default function TradingRoomPage() {
 
   const executeBotTrade = async () => {
       setIsProcessing(true);
-      await new Promise(r => setTimeout(r, 1500)); // Suspense
+      await new Promise(r => setTimeout(r, 1500)); 
 
-      // 1. Deduct my items/coins
       if (myOffer.items.length > 0) {
           await supabase.from('inventory').delete().in('id', myOffer.items.map(i => i.inv_id));
       }
       let newBalance = userProfile.saldo_verde - (Number(myOffer.coins) || 0);
 
-      // 2. Add Partner items/coins to me
       if (partnerOffer.items.length > 0) {
           const insertPayload = partnerOffer.items.map(p => ({ user_id: currentUser.id, item_id: p.item_id || p.id }));
           await supabase.from('inventory').insert(insertPayload);
       }
       newBalance += (Number(partnerOffer.coins) || 0);
 
-      // 3. Update Profile
       await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
       setUserProfile(prev => ({...prev, saldo_verde: newBalance}));
 
       await fetchInventory(currentUser.id);
       
-      // TRIGGER EPIC WINDOW
       setEpicTradeData(partnerOffer);
       setView('result');
       setIsProcessing(false);
@@ -205,6 +211,7 @@ export default function TradingRoomPage() {
       }
   };
 
+  // --- FIX 2: MOTOR DE EJECUCIÓN SINCRONIZADA ---
   const connectToRoom = (roomId, isHost) => {
       cleanupChannel();
 
@@ -217,7 +224,6 @@ export default function TradingRoomPage() {
               setPartnerInfo({ name: room.guest_name, avatar: getAvatar(room.guest_avatar, room.guest_name) });
           }
 
-          // Sync Offers
           if (isHost) {
               setPartnerOffer(room.guest_offer || {coins:'', items:[]});
               setMyConfirmations(room.host_confirm);
@@ -228,9 +234,16 @@ export default function TradingRoomPage() {
               setPartnerConfirmations(room.host_confirm);
           }
 
-          // Execution Trigger
+          // FIX 2.1: El host escucha cuando AMBOS llegan a 2 y manda el estado "completed"
+          if (isHost && room.host_confirm === 2 && room.guest_confirm === 2 && room.status === 'trading') {
+              executeOnlineSwapInDB(room.id);
+          }
+
+          // FIX 2.2: Ambos escuchan el evento "completed" para procesar su inventario localmente
           if (room.status === 'completed') {
-              handleTradeSuccessOnline(isHost ? room.guest_offer : room.host_offer, room.final_balance);
+              const received = isHost ? room.guest_offer : room.host_offer;
+              const given = isHost ? room.host_offer : room.guest_offer;
+              handleTradeSuccessOnline(received, given);
           } else if (room.status === 'cancelled') {
               showToast("Trade Cancelled by partner.", "error");
               leaveToMenu();
@@ -240,23 +253,48 @@ export default function TradingRoomPage() {
       activeChannelRef.current = channel;
   };
 
-  const handleTradeSuccessOnline = async (receivedOffer, myNewBalance) => {
-      setUserProfile(prev => ({...prev, saldo_verde: myNewBalance}));
+  const executeOnlineSwapInDB = async (roomId) => {
+      await supabase.from('trading_lobbies').update({ status: 'completed' }).eq('id', roomId);
+  };
+
+  // --- FIX 3: RLS BYPASS Y ACTUALIZACIÓN AISLADA ---
+  const handleTradeSuccessOnline = async (receivedOffer, myOfferGiven) => {
+      // 1. Me quito las mascotas que di
+      if (myOfferGiven.items.length > 0) {
+          await supabase.from('inventory').delete().in('id', myOfferGiven.items.map(i => i.inv_id));
+      }
+      
+      // 2. Me agrego las mascotas que recibí
+      if (receivedOffer.items.length > 0) {
+          const insertPayload = receivedOffer.items.map(p => ({ user_id: currentUser.id, item_id: p.item_id || p.id }));
+          await supabase.from('inventory').insert(insertPayload);
+      }
+
+      // 3. Matemáticas de monedas usando la base de datos fresca para evitar desincronización
+      const coinDiff = (Number(receivedOffer.coins) || 0) - (Number(myOfferGiven.coins) || 0);
+      const { data: latestProfile } = await supabase.from('profiles').select('saldo_verde').eq('id', currentUser.id).single();
+      const currentBalance = latestProfile ? latestProfile.saldo_verde : userProfile.saldo_verde;
+      const newBalance = currentBalance + coinDiff;
+
+      await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
+      
+      setUserProfile(prev => ({...prev, saldo_verde: newBalance}));
       await fetchInventory(currentUser.id);
+      
       setEpicTradeData(receivedOffer);
       setView('result');
+      setIsProcessing(false);
       cleanupChannel();
   };
 
   // --- ACTION BUTTONS ---
   const handleLockOffer = async () => {
-      // Validation
       const myCoinVal = Number(myOffer.coins) || 0;
-      if (myCoinVal > userProfile.saldo_verde) return showToast("Insufficient balance!", "error");
+      if (myCoinVal > userProfile.saldo_verde) return showToast("Saldo Insuficiente!", "error");
       
       if (mode === 'bot') {
           setMyConfirmations(1);
-          setTimeout(() => setPartnerConfirmations(1), 1000); // Bot instantly locks too
+          setTimeout(() => setPartnerConfirmations(1), 1000); 
       } else {
           setMyConfirmations(1);
           const isHost = currentRoom.host_id === currentUser.id;
@@ -271,37 +309,7 @@ export default function TradingRoomPage() {
           setIsProcessing(true);
           const isHost = currentRoom.host_id === currentUser.id;
           await supabase.from('trading_lobbies').update(isHost ? { host_confirm: 2 } : { guest_confirm: 2 }).eq('id', currentRoom.id);
-          // Actual DB trigger or edge function should handle the swap when both = 2. 
-          // For frontend demo purposes, we trust the host to execute the swap if both = 2:
-          if (isHost && partnerConfirmations === 2) {
-              executeOnlineSwapInDB();
-          } else if (!isHost && partnerConfirmations === 2) {
-              // Guest waits for host to finalize
-          }
       }
-  };
-
-  const executeOnlineSwapInDB = async () => {
-      // VERY SIMPLIFIED FRONTEND SWAP EXECUTION (Should be backend in production)
-      const hostCoins = Number(currentRoom.host_offer.coins) || 0;
-      const guestCoins = Number(currentRoom.guest_offer.coins) || 0;
-      
-      // Update items owner
-      if (currentRoom.host_offer.items.length > 0) await supabase.from('inventory').update({user_id: currentRoom.guest_id}).in('id', currentRoom.host_offer.items.map(i=>i.inv_id));
-      if (currentRoom.guest_offer.items.length > 0) await supabase.from('inventory').update({user_id: currentRoom.host_id}).in('id', currentRoom.guest_offer.items.map(i=>i.inv_id));
-      
-      // Update Balances
-      const { data: pHost } = await supabase.from('profiles').select('saldo_verde').eq('id', currentRoom.host_id).single();
-      const { data: pGuest } = await supabase.from('profiles').select('saldo_verde').eq('id', currentRoom.guest_id).single();
-      
-      const newHostBalance = pHost.saldo_verde - hostCoins + guestCoins;
-      const newGuestBalance = pGuest.saldo_verde - guestCoins + hostCoins;
-      
-      await supabase.from('profiles').update({saldo_verde: newHostBalance}).eq('id', currentRoom.host_id);
-      await supabase.from('profiles').update({saldo_verde: newGuestBalance}).eq('id', currentRoom.guest_id);
-      
-      // Mark Complete
-      await supabase.from('trading_lobbies').update({status: 'completed', final_balance: newHostBalance}).eq('id', currentRoom.id); // Hack for frontend sync
   };
 
   const cancelTrade = async () => {
@@ -320,6 +328,7 @@ export default function TradingRoomPage() {
       setMyConfirmations(0);
       setPartnerConfirmations(0);
       setEpicTradeData(null);
+      setIsProcessing(false);
   };
 
 
@@ -329,7 +338,7 @@ export default function TradingRoomPage() {
       if (newItems.some(i => i.inv_id === pet.inv_id)) {
           newItems = newItems.filter(i => i.inv_id !== pet.inv_id);
       } else {
-          if (newItems.length >= 12) return showToast("Max 12 items per trade", "error");
+          if (newItems.length >= 12) return showToast("Máximo 12 mascotas por intercambio", "error");
           newItems.push(pet);
       }
       handleMyOfferChange({ ...myOffer, items: newItems });
@@ -349,7 +358,7 @@ export default function TradingRoomPage() {
                 <p className="text-gray-400 mb-16 tracking-[0.5em] uppercase font-bold border-b border-cyan-900/50 pb-4 z-10">Secure Exchange Network</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl z-10">
-                    <button onClick={() => { setMode('bot'); setPartnerInfo({name: 'TetoBot', avatar: '/TetoGun.png'}); setView('trading'); }} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-yellow-500 shadow-2xl flex flex-col items-center">
+                    <button onClick={() => { setMode('bot'); setPartnerInfo({name: 'TetoBot', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TetoBot&backgroundColor=000000'}); setView('trading'); }} className="group relative bg-[#0a0a0a] border border-[#222] p-12 rounded-[2rem] transition-all hover:scale-105 hover:border-yellow-500 shadow-2xl flex flex-col items-center">
                         <span className="text-7xl mb-4 group-hover:scale-125 transition-transform">🤖</span>
                         <h3 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Trade Bot</h3>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Instant Value Exchange</p>
@@ -435,7 +444,10 @@ export default function TradingRoomPage() {
                   <div className="flex items-center gap-4">
                     <GreenCoin cls="w-10 h-10"/>
                     <input type="number" disabled={myConfirmations >= 1} value={myOffer.coins}
-                      onChange={(e) => handleMyOfferChange({...myOffer, coins: e.target.value})}
+                      onChange={(e) => {
+                          const val = Math.max(0, Number(e.target.value));
+                          handleMyOfferChange({...myOffer, coins: val > 0 ? val.toString() : ''});
+                      }}
                       className="bg-transparent text-4xl font-black text-white outline-none w-full placeholder-gray-800 disabled:opacity-50"
                       placeholder="0"
                     />
@@ -480,7 +492,7 @@ export default function TradingRoomPage() {
                        </button>
                    )}
                    {myConfirmations === 1 && partnerConfirmations >= 1 && (
-                       <button onClick={handleFinalAccept} disabled={isProcessing} className="w-full py-6 bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_0_30px_rgba(6,182,212,0.5)] text-xl animate-pulse">
+                       <button onClick={handleFinalAccept} disabled={isProcessing} className="w-full py-6 bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_0_30px_rgba(6,182,212,0.5)] text-xl animate-pulse disabled:opacity-50 disabled:cursor-not-allowed">
                            {isProcessing ? 'PROCESSING...' : 'ACCEPT TRADE (2/2)'}
                        </button>
                    )}
@@ -566,8 +578,8 @@ export default function TradingRoomPage() {
         {/* === EPIC RESULT SCREEN === */}
         {view === 'result' && epicTradeData && (
             <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
-                <div className="absolute top-10 right-10 z-50">
-                    <img src="/Affiliates.png" className="w-24 h-24 animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] filter grayscale brightness-200" alt="Backpack" />
+                <div className="absolute top-10 right-10 z-50 text-6xl animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">
+                    🎒
                 </div>
 
                 <div className="text-[120px] leading-none mb-4 z-10 drop-shadow-[0_0_80px_rgba(34,197,94,0.8)] animate-bounce-slight">🤝</div>
