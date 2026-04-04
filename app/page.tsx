@@ -53,6 +53,13 @@ export default function Home() {
       img: '/TetoGun.png', // <-- Usamos la imagen que tenías, luego la cambias por Blackjack.png
       auraColor: '#ff0000' // Verde
     },
+    { 
+      name: 'RPG', 
+      desc: 'Get Full Stacked', 
+      path: '/expedition', 
+      img: '/RPG.png', 
+      auraColor: '#ec4899' // Rosa
+    },
   ];
 
   return (
