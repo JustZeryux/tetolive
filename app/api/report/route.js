@@ -6,7 +6,7 @@ export async function POST(req) {
         const { logId, userId, actionType, details, description } = body;
 
         // Reemplaza esto con tu Webhook real de Discord
-        const DISCORD_WEBHOOK_URL = "AQUI_PONES_TU_ENLACE_DE_WEBHOOK";
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1489886211450605639/VM7L5-G5-5oPRjBj7_OHVlJ6ml__-sb_qgbLiFk0hfSCRSZAs8Z8SvKt2P08ZIouo9SN";
 
         const embed = {
             title: "🚨 NUEVO REPORTE DE BUG / PÉRDIDA DE ITEMS",
