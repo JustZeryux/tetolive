@@ -183,7 +183,6 @@ export default function VaultPage() {
     
     setProcesando(false);
   };
-2. Actualiza la tabla daycare en Supabase
 
   const closeEpicLoot = () => setEpicClaimData(null);
 
