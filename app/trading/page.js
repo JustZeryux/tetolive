@@ -98,14 +98,12 @@ export default function TradingRoomPage() {
   // --- DIRECT P2P INVITATIONS (REALTIME MAGIC) ---
   const setupRealtimeNotifications = (myId) => {
       supabase.channel('trade_notifications')
-        // Escucha invitaciones directas hacia mí
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trading_lobbies', filter: `guest_id=eq.${myId}` }, (payload) => {
             if (payload.new.status === 'pending_invite') {
                 showToast(`¡${payload.new.host_name} te ha enviado un Trade!`, "success");
                 setIncomingTrade(payload.new);
             }
         })
-        // Escucha si aceptaron o rechazaron mi invitación
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trading_lobbies', filter: `host_id=eq.${myId}` }, (payload) => {
             if (payload.new.status === 'trading' && payload.old.status === 'pending_invite') {
                 showToast("¡Tradeo aceptado! Entrando al lobby...", "success");
@@ -122,31 +120,40 @@ export default function TradingRoomPage() {
   };
 
   const sendDirectTradeRequest = async (targetId, targetName) => {
-      const { error } = await supabase.from('trading_lobbies').insert({
-          host_id: currentUser.id,
-          host_name: userProfile.username,
-          host_avatar: userProfile.avatar_url,
-          guest_id: targetId,
-          host_offer: { coins: '', items: [] },
-          guest_offer: { coins: '', items: [] },
-          status: 'pending_invite'
-      });
-      if (!error) {
+      try {
+          const { error } = await supabase.from('trading_lobbies').insert({
+              host_id: currentUser.id,
+              host_name: userProfile?.username || 'Player',
+              host_avatar: userProfile?.avatar_url || '',
+              guest_id: targetId,
+              guest_name: targetName,
+              guest_avatar: '',
+              host_offer: { coins: '', items: [] },
+              guest_offer: { coins: '', items: [] },
+              host_confirm: 0,
+              guest_confirm: 0,
+              status: 'pending_invite'
+          });
+          
+          if (error) throw error;
           showToast(`Petición enviada a ${targetName}. Esperando respuesta...`, "success");
-      } else {
-          showToast("Error al enviar la petición.", "error");
+      } catch (err) {
+          console.error("Direct Trade Error:", err);
+          showToast("Error al invitar: " + err.message, "error");
       }
   };
 
   const respondToTradeInvite = async (tradeId, accept) => {
       const status = accept ? 'trading' : 'cancelled';
-      const { data, error } = await supabase.from('trading_lobbies').update({
-          status, 
-          guest_name: userProfile.username, 
-          guest_avatar: userProfile.avatar_url
-      }).eq('id', tradeId).select().single();
+      try {
+          const { data, error } = await supabase.from('trading_lobbies').update({
+              status, 
+              guest_name: userProfile?.username || 'Player', 
+              guest_avatar: userProfile?.avatar_url || ''
+          }).eq('id', tradeId).select().single();
 
-      if (!error) {
+          if (error) throw error;
+
           setIncomingTrade(null);
           if (accept && data) {
               setCurrentRoom(data);
@@ -155,6 +162,9 @@ export default function TradingRoomPage() {
               setMode('online');
               setView('trading');
           }
+      } catch (err) {
+          console.error("Invite Response Error:", err);
+          showToast("Error al responder: " + err.message, "error");
       }
   };
 
@@ -190,7 +200,11 @@ export default function TradingRoomPage() {
       const updates = isHost ? { host_offer: newOffer, host_confirm: 0, guest_confirm: 0 } 
                              : { guest_offer: newOffer, host_confirm: 0, guest_confirm: 0 };
       
-      await supabase.from('trading_lobbies').update(updates).eq('id', currentRoom.id);
+      const { error } = await supabase.from('trading_lobbies').update(updates).eq('id', currentRoom.id);
+      if (error) {
+          console.error("Sync Offer Error:", error);
+          showToast("Error sincronizando oferta: " + error.message, "error");
+      }
   };
 
   // --- BOT LOGIC (BALANCEADO Y JUSTO) ---
@@ -203,15 +217,12 @@ export default function TradingRoomPage() {
 
       let botItems = [];
       let currentBotVal = 0;
-      // Botón justo: Retorna entre 95% y 105% del valor apostado
       const targetVal = playerValue * (0.95 + Math.random() * 0.1); 
 
-      // Ordenamos las mascotas del bot de mayor a menor para dar items de calidad
       const sortedFullInv = [...botFullInventory].sort((a, b) => b.value - a.value);
       
       for (const item of sortedFullInv) {
           if (currentBotVal + item.value <= targetVal && botItems.length < 6) {
-              // 80% de probabilidad de agarrar el item (para dar un poco de aleatoriedad natural)
               if (Math.random() > 0.2) {
                   botItems.push({...item, item_id: item.id, inv_id: `bot_${Math.random()}`, image_url: item.image_url || item.image || item.img});
                   currentBotVal += item.value;
@@ -266,32 +277,57 @@ export default function TradingRoomPage() {
   };
 
   const createTradeRoom = async () => {
-      const { data } = await supabase.from('trading_lobbies').insert({
-          host_id: currentUser.id, host_name: userProfile.username, host_avatar: userProfile.avatar_url,
-          host_offer: { coins: '', items: [] }, guest_offer: { coins: '', items: [] },
-          status: 'waiting'
-      }).select().single();
+      setIsProcessing(true);
+      try {
+          const { data, error } = await supabase.from('trading_lobbies').insert({
+              host_id: currentUser.id, 
+              host_name: userProfile?.username || 'Host', 
+              host_avatar: userProfile?.avatar_url || '',
+              host_offer: { coins: '', items: [] }, 
+              guest_offer: { coins: '', items: [] },
+              host_confirm: 0,
+              guest_confirm: 0,
+              status: 'waiting'
+          }).select().single();
 
-      if (data) {
-          setCurrentRoom(data);
-          setPartnerInfo({ name: 'Waiting for partner...', avatar: '' });
-          connectToRoom(data.id, true);
-          setView('trading');
+          if (error) throw error;
+
+          if (data) {
+              setCurrentRoom(data);
+              setPartnerInfo({ name: 'Waiting for partner...', avatar: '' });
+              connectToRoom(data.id, true);
+              setView('trading');
+          }
+      } catch (err) {
+          console.error("Create Room Error:", err);
+          showToast("Error al crear la sala: " + err.message, "error");
       }
+      setIsProcessing(false);
   };
 
   const joinTradeRoom = async (lobby) => {
-      const { data } = await supabase.from('trading_lobbies').update({
-          guest_id: currentUser.id, guest_name: userProfile.username, guest_avatar: userProfile.avatar_url,
-          status: 'trading'
-      }).eq('id', lobby.id).select().single();
+      setIsProcessing(true);
+      try {
+          const { data, error } = await supabase.from('trading_lobbies').update({
+              guest_id: currentUser.id, 
+              guest_name: userProfile?.username || 'Guest', 
+              guest_avatar: userProfile?.avatar_url || '',
+              status: 'trading'
+          }).eq('id', lobby.id).select().single();
 
-      if (data) {
-          setCurrentRoom(data);
-          setPartnerInfo({ name: data.host_name, avatar: getAvatar(data.host_avatar, data.host_name) });
-          connectToRoom(data.id, false);
-          setView('trading');
+          if (error) throw error;
+
+          if (data) {
+              setCurrentRoom(data);
+              setPartnerInfo({ name: data.host_name, avatar: getAvatar(data.host_avatar, data.host_name) });
+              connectToRoom(data.id, false);
+              setView('trading');
+          }
+      } catch (err) {
+          console.error("Join Room Error:", err);
+          showToast("Error al unirse a la sala: " + err.message, "error");
       }
+      setIsProcessing(false);
   };
 
   const connectToRoom = (roomId, isHost) => {
@@ -374,7 +410,11 @@ export default function TradingRoomPage() {
       } else {
           setMyConfirmations(1);
           const isHost = currentRoom.host_id === currentUser.id;
-          await supabase.from('trading_lobbies').update(isHost ? { host_confirm: 1 } : { guest_confirm: 1 }).eq('id', currentRoom.id);
+          const { error } = await supabase.from('trading_lobbies').update(isHost ? { host_confirm: 1 } : { guest_confirm: 1 }).eq('id', currentRoom.id);
+          if (error) {
+              showToast("Error: " + error.message, "error");
+              setMyConfirmations(0);
+          }
       }
   };
 
@@ -384,7 +424,11 @@ export default function TradingRoomPage() {
       } else {
           setIsProcessing(true);
           const isHost = currentRoom.host_id === currentUser.id;
-          await supabase.from('trading_lobbies').update(isHost ? { host_confirm: 2 } : { guest_confirm: 2 }).eq('id', currentRoom.id);
+          const { error } = await supabase.from('trading_lobbies').update(isHost ? { host_confirm: 2 } : { guest_confirm: 2 }).eq('id', currentRoom.id);
+          if (error) {
+              showToast("Error: " + error.message, "error");
+              setIsProcessing(false);
+          }
       }
   };
 
@@ -471,7 +515,7 @@ export default function TradingRoomPage() {
                 <div className="flex justify-between items-center mb-8 bg-[#0a0a0a] p-6 rounded-[2rem] border border-[#222] shadow-xl">
                     <button onClick={leaveToMenu} className="text-gray-500 hover:text-white font-black tracking-widest uppercase text-sm">← Back</button>
                     <h2 className="text-3xl font-black uppercase tracking-widest text-cyan-500">Public Trades</h2>
-                    <button onClick={createTradeRoom} className="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all active:scale-95">Host Trade</button>
+                    <button onClick={createTradeRoom} disabled={isProcessing} className="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all active:scale-95 disabled:opacity-50">Host Trade</button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
@@ -488,7 +532,7 @@ export default function TradingRoomPage() {
                                     <p className="text-sm text-gray-500 uppercase font-black tracking-widest mt-1">Looking for offers</p>
                                 </div>
                             </div>
-                            <button onClick={() => joinTradeRoom(l)} className="w-full bg-white text-black hover:bg-cyan-500 hover:text-white py-4 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95">Join Trade</button>
+                            <button onClick={() => joinTradeRoom(l)} disabled={isProcessing} className="w-full bg-white text-black hover:bg-cyan-500 hover:text-white py-4 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50">Join Trade</button>
                         </div>
                     ))}
                 </div>
