@@ -30,6 +30,7 @@ export default function VaultPage() {
   const [epicClaimData, setEpicClaimData] = useState(null); // Epic Loot Window
 
   // --- 1. INITIAL FETCH ---
+// --- 1. INITIAL FETCH ---
   const fetchAllData = async () => {
     setCargando(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -43,13 +44,27 @@ export default function VaultPage() {
         setBalances({ walletGreen: profile.saldo_verde || 0, vaultGreen: profile.vault_verde || 0 });
       }
 
-      // Fetch Inventory
-      const { data: inv } = await supabase.from('inventory').select(`id, item_id, items (name, value, image_url, color, is_shiny, is_mythic)`).eq('user_id', user.id);
-      if (inv) setInventory(inv.map(i => ({ ...i.items, inv_id: i.id, item_id: i.item_id })));
+      // Fetch Inventory (CORREGIDO)
+      const { data: inv, error: invError } = await supabase
+        .from('inventory')
+        .select(`id, item_id, is_shiny, is_mythic, items (name, value, image_url, color)`)
+        .eq('user_id', user.id);
+        
+      if (invError) console.error("Error fetch inventory:", invError);
+      if (inv) setInventory(inv.map(i => ({ 
+        ...i.items, inv_id: i.id, item_id: i.item_id, is_shiny: i.is_shiny, is_mythic: i.is_mythic 
+      })));
 
-      // Fetch Daycare (Requires 'daycare' table)
-      const { data: daycare } = await supabase.from('daycare').select(`id, item_id, deposited_at, items (name, value, image_url, color, is_shiny, is_mythic)`).eq('user_id', user.id);
-      if (daycare) setDaycarePets(daycare.map(d => ({ ...d.items, daycare_id: d.id, item_id: d.item_id, deposited_at: d.deposited_at })));
+      // Fetch Daycare (CORREGIDO)
+      const { data: daycare, error: dayError } = await supabase
+        .from('daycare')
+        .select(`id, item_id, is_shiny, is_mythic, deposited_at, items (name, value, image_url, color)`)
+        .eq('user_id', user.id);
+        
+      if (dayError) console.error("Error fetch daycare:", dayError);
+      if (daycare) setDaycarePets(daycare.map(d => ({ 
+        ...d.items, daycare_id: d.id, item_id: d.item_id, deposited_at: d.deposited_at, is_shiny: d.is_shiny, is_mythic: d.is_mythic 
+      })));
     }
     setCargando(false);
   };
@@ -96,7 +111,7 @@ export default function VaultPage() {
     setProcesando(false);
   };
 
-  // --- 3. DAYCARE LOGIC (PETS) ---
+// --- 3. DAYCARE LOGIC (PETS) ---
   const calculateYield = (petValue, depositedAt) => {
     const elapsedMs = liveTime - new Date(depositedAt).getTime();
     const days = elapsedMs / (1000 * 60 * 60 * 24);
@@ -115,14 +130,19 @@ export default function VaultPage() {
     // 1. Remove from inventory
     await supabase.from('inventory').delete().eq('id', pet.inv_id);
     
-    // 2. Add to daycare
-    const { data, error } = await supabase.from('daycare').insert({ user_id: user.id, item_id: pet.item_id }).select().single();
+    // 2. Add to daycare (GUARDANDO SHINY/MYTHIC)
+    const { data, error } = await supabase.from('daycare').insert({ 
+        user_id: user.id, 
+        item_id: pet.item_id,
+        is_shiny: pet.is_shiny,
+        is_mythic: pet.is_mythic
+    }).select().single();
     
     if (error) {
-      showToast("Error moving pet to daycare. Is the 'daycare' table created?", "error");
+      console.error(error);
+      showToast("Error moving pet to daycare.", "error");
     } else {
       showToast(`${pet.name} is now resting in the Daycare!`, "success");
-      // Update local state smoothly
       setInventory(prev => prev.filter(p => p.inv_id !== pet.inv_id));
       setDaycarePets(prev => [...prev, { ...pet, daycare_id: data.id, deposited_at: data.deposited_at }]);
     }
@@ -138,26 +158,32 @@ export default function VaultPage() {
     // 1. Remove from daycare
     await supabase.from('daycare').delete().eq('id', daycarePet.daycare_id);
     
-    // 2. Return to inventory
-    const { data: newInv } = await supabase.from('inventory').insert({ user_id: user.id, item_id: daycarePet.item_id }).select().single();
+    // 2. Return to inventory (DEVOLVIENDO EL SHINY/MYTHIC)
+    const { data: newInv, error: insertError } = await supabase.from('inventory').insert({ 
+        user_id: user.id, 
+        item_id: daycarePet.item_id,
+        is_shiny: daycarePet.is_shiny,
+        is_mythic: daycarePet.is_mythic
+    }).select().single();
+    
+    if (insertError) console.error("Error devolviendo al inv:", insertError);
     
     // 3. Add generated Green Coins to Wallet
     const { data: profile } = await supabase.from('profiles').select('saldo_verde').eq('id', user.id).single();
     await supabase.from('profiles').update({ saldo_verde: profile.saldo_verde + generatedYield }).eq('id', user.id);
 
-    // TRIGGER EPIC LOOT WINDOW
     setEpicClaimData({
       pet: { ...daycarePet, inv_id: newInv?.id },
       yieldAmount: generatedYield
     });
 
-    // Update States
     setDaycarePets(prev => prev.filter(p => p.daycare_id !== daycarePet.daycare_id));
     setBalances(prev => ({ ...prev, walletGreen: prev.walletGreen + generatedYield }));
     setInventory(prev => [...prev, { ...daycarePet, inv_id: newInv?.id }]);
     
     setProcesando(false);
   };
+2. Actualiza la tabla daycare en Supabase
 
   const closeEpicLoot = () => setEpicClaimData(null);
 
