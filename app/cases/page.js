@@ -24,7 +24,6 @@ export default function CasesPage() {
   
   const [quantity, setQuantity] = useState(1);
 
-  // --- NUEVOS ESTADOS PARA FUNCIONES ACTIVABLES ---
   const [isFastRoll, setIsFastRoll] = useState(false);
   const [isAutoOpen, setIsAutoOpen] = useState(false);
   const [triggerOpen, setTriggerOpen] = useState(false); 
@@ -42,12 +41,10 @@ export default function CasesPage() {
   const WINNING_INDEX = 40; 
   const [dbItemsMap, setDbItemsMap] = useState({});
 
-  // Sincronizar el ref del Auto Open para usarlo dentro de los setTimeouts
   useEffect(() => {
       isAutoOpenRef.current = isAutoOpen;
   }, [isAutoOpen]);
 
-  // Hook para ejecutar el Auto Open con el state más reciente
   useEffect(() => {
       if (triggerOpen) {
           setTriggerOpen(false);
@@ -64,13 +61,13 @@ export default function CasesPage() {
         setUserProfile(profile);
       }
 
-      // FIX: Seleccionamos TODOS (*) los campos de items para tener la info completa (limited, max_quantity, value, etc)
       const { data: itemsDbData } = await supabase.from('items').select('*');
       const itemMap = {};
       if(itemsDbData) {
           itemsDbData.forEach(i => {
-              itemMap[i.id] = i; // Clave primaria: ID
-              itemMap[i.name] = i; // Respaldo: Nombre
+              if (i.id) itemMap[i.id] = i; 
+              // FIX CRUCIAL: Guardar nombres en minúsculas y sin espacios para que no fallen las cajas viejas
+              if (i.name) itemMap[i.name.toLowerCase().trim()] = i; 
           });
       }
       setDbItemsMap(itemMap);
@@ -110,6 +107,13 @@ export default function CasesPage() {
     return items[0];
   };
 
+  // Buscador a prueba de balas
+  const getRealItemData = (rawItem) => {
+      if (!rawItem) return null;
+      const searchName = (rawItem.name || '').toLowerCase().trim();
+      return dbItemsMap[rawItem.item_id] || dbItemsMap[rawItem.id] || dbItemsMap[searchName] || null;
+  };
+
   const openCase = async () => {
     if (!currentUser || !userProfile) return alert("Please log in first.");
     if (spinning) return;
@@ -119,7 +123,7 @@ export default function CasesPage() {
     if (userProfile.saldo_verde < totalCost) {
       setMoneyNeeded(totalCost);
       setShowNoMoneyModal(true);
-      setIsAutoOpen(false); // Apagar Auto Open si no hay dinero
+      setIsAutoOpen(false); 
       return;
     }
     
@@ -128,48 +132,48 @@ export default function CasesPage() {
     setHasLimitedWin(false);
 
     try {
-      // --- WHOLE FIX: CARGAR DATOS REALES DE LA DB ---
       const validItemsToRoll = [];
       let totalChance = 0;
 
       for (let item of selectedCase.items) {
-          const dbItem = dbItemsMap[item.item_id] || dbItemsMap[item.id] || dbItemsMap[item.name];
-          if (!dbItem) continue; // Si el item no existe en la DB real, lo ignoramos
+          const dbItem = getRealItemData(item);
 
-          const isLim = dbItem.is_limited;
-          const maxQ = dbItem.max_quantity;
+          const isLim = dbItem ? dbItem.is_limited : (item.is_limited || item.limited);
+          const maxQ = dbItem ? dbItem.max_quantity : item.max_quantity;
+          const itemId = dbItem ? dbItem.id : (item.item_id || item.id);
           
-          if (isLim && maxQ) {
+          if (isLim && maxQ && itemId) {
               const { count } = await supabase
                   .from('inventory')
                   .select('*', { count: 'exact', head: true })
-                  .eq('item_id', dbItem.id);
+                  .eq('item_id', itemId);
               
               if (count >= maxQ) {
-                  continue; // Límite global alcanzado, se elimina del pool
+                  continue; 
               }
           }
 
-          // Creamos un objeto fusionado. DB es la verdad absoluta.
+          // Si dbItem existe, inyectamos sus datos reales. Si no, usamos el fallback del JSON viejo para no romper la caja.
           validItemsToRoll.push({
-              ...dbItem, // Inyectamos id, name, value, color, image_url, is_limited...
-              chance: item.chance, // Conservamos la chance de la configuración de la caja
-              img: dbItem.image_url, // Normalizamos prop img para PetCard
-              valor: dbItem.value // Normalizamos prop valor para PetCard
+              ...(dbItem || {}), 
+              id: itemId,
+              name: dbItem ? dbItem.name : item.name,
+              chance: item.chance,
+              img: dbItem ? dbItem.image_url : (item.img || item.image_url),
+              valor: dbItem ? dbItem.value : (item.valor || item.value || 0),
+              color: dbItem ? dbItem.color : (item.color || '#ffffff'),
+              is_limited: isLim || false
           });
           totalChance += item.chance;
       }
 
-      if (validItemsToRoll.length === 0) throw new Error("No items available in this case (all reached their global limit).");
+      if (validItemsToRoll.length === 0) throw new Error("No items available in this case.");
 
-      // Recalcular probabilidades
       const normalizedItems = validItemsToRoll.map(item => ({
           ...item,
           chance: (item.chance / totalChance) * 100
       }));
-      // ---------------------------------------------------
 
-      // Actualización optimista de UI
       const newBalance = userProfile.saldo_verde - totalCost;
       setUserProfile(prev => ({ ...prev, saldo_verde: newBalance }));
 
@@ -181,7 +185,7 @@ export default function CasesPage() {
       let foundLimited = false;
       
       for (let i = 0; i < quantity; i++) {
-          const winner = getRandomVisualItem(normalizedItems); // Ya trae todos los datos de DB!
+          const winner = getRandomVisualItem(normalizedItems);
           if (winner.is_limited) foundLimited = true;
 
           winners.push({
@@ -191,8 +195,8 @@ export default function CasesPage() {
           
           inventoryInserts.push({ 
               user_id: currentUser.id, 
-              item_id: winner.id,
-              is_limited: winner.is_limited,
+              item_id: winner.id || `old-${winner.name}`, // Fallback para inserts viejos
+              is_limited: winner.is_limited || false,
               original_owner: winner.is_limited ? (userProfile.username || currentUser.email?.split('@')[0] || 'Player') : null
           });
       }
@@ -200,10 +204,9 @@ export default function CasesPage() {
       const { error: invError } = await supabase.from('inventory').insert(inventoryInserts);
 
       if (invError) {
-          // Rollback si falla
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
           setUserProfile(prev => ({ ...prev, saldo_verde: prev.saldo_verde + totalCost }));
-          throw new Error("Failed to insert items into inventory. Your balance was refunded. " + invError.message);
+          throw new Error("Failed to insert items into inventory: " + invError.message);
       }
 
       setWinningItems(winners);
@@ -218,7 +221,6 @@ export default function CasesPage() {
       }
       setSpinnerTracks(tracks);
 
-      // FAST ROLL LOGIC
       const spinDuration = isFastRoll ? 1.5 : 6;
       const resultDelay = isFastRoll ? 1800 : 6500;
 
@@ -243,7 +245,6 @@ export default function CasesPage() {
         setSpinning(false);
         setView('result'); 
 
-        // --- EPIC SOUND AND FLASH FOR LIMITEDS ---
         if (foundLimited) {
             try {
                const epicAudio = new Audio('/sounds/win.mp3'); 
@@ -261,11 +262,10 @@ export default function CasesPage() {
             }, 150);
         }
 
-        // AUTO OPEN LOGIC
         if (isAutoOpenRef.current) {
             setTimeout(() => {
                 if (isAutoOpenRef.current) setTriggerOpen(true);
-            }, 1500); // 1.5 segundos en la pantalla de result antes de tirar
+            }, 1500); 
         }
 
       }, resultDelay);
@@ -403,7 +403,6 @@ export default function CasesPage() {
                         ))}
                     </div>
 
-                    {/* TOGGLES ACTIVABLES (FAST ROLL & AUTO OPEN) */}
                     <div className="flex items-center justify-center gap-6 mt-6 w-full">
                         <label className="flex items-center gap-2 cursor-pointer group">
                             <div className={`w-10 h-5 rounded-full relative transition-colors ${isFastRoll ? 'bg-cyan-500' : 'bg-gray-700'}`}>
@@ -435,13 +434,12 @@ export default function CasesPage() {
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {selectedCase.items.map((rawItem, idx) => {
-                    // AQUÍ ESTÁ LA MAGIA: Fusionamos con la DB real para mostrar los datos
-                    const dbItem = dbItemsMap[rawItem.item_id] || dbItemsMap[rawItem.id] || dbItemsMap[rawItem.name] || {};
-                    const isLimitedItem = dbItem.is_limited || false;
+                    const dbItem = getRealItemData(rawItem) || {};
+                    const isLimitedItem = dbItem.is_limited || rawItem.is_limited || rawItem.limited || false;
                     const itemName = dbItem.name || rawItem.name;
-                    const itemImg = dbItem.image_url || rawItem.img;
+                    const itemImg = dbItem.image_url || rawItem.img || rawItem.image_url;
                     const itemColor = dbItem.color || rawItem.color || '#ffffff';
-                    const itemValue = dbItem.value || rawItem.valor || 0;
+                    const itemValue = dbItem.value || rawItem.valor || rawItem.value || 0;
 
                     return (
                     <div key={idx} className={`bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40 ${isLimitedItem ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : ''}`} style={!isLimitedItem ? { borderColor: `${itemColor}40` } : {}}>
@@ -542,7 +540,6 @@ export default function CasesPage() {
             </h2>
             
             {quantity === 1 ? (
-                // EPIC HUGE REVEAL FOR 1 ITEM
                 <div className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative ${hasLimitedWin ? 'border-yellow-500 animate-shake shadow-[0_0_100px_rgba(234,179,8,0.5)] scale-110' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, boxShadow: `0 0 50px ${winningItems[0].color}40` } : {}}>
                   <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${hasLimitedWin ? '#eab308' : winningItems[0].color} 0%, transparent 60%)`}}></div>
                   <div className={`absolute -top-6 bg-[#0a0a0a] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg ${hasLimitedWin ? 'border-yellow-400 text-yellow-400 animate-pulse' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, color: winningItems[0].color } : {}}>
@@ -578,7 +575,6 @@ export default function CasesPage() {
                   </div>
                 </div>
             ) : (
-                // MULTIPLE ITEMS REVEAL (USING PETCARD)
                 <div className="flex flex-col items-center w-full max-w-[1200px] z-10">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10 w-full max-h-[50vh] overflow-y-auto custom-scrollbar p-2">
                         {winningItems.map((winItem, idx) => (
