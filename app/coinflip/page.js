@@ -16,7 +16,6 @@ const RedCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/red-coin.png" clas
 const imgMonedaHeads = '/heads.png';
 const imgMonedaTails = '/tails.png';
 
-// Helper para extraer las pets
 const extractPets = (apuesta) => {
     if (!apuesta) return [];
     if (Array.isArray(apuesta)) return apuesta; 
@@ -53,17 +52,20 @@ const playAudio = (src, vol = 0.5) => {
     } catch (e) {}
 };
 
-// --- MINI PET GRID COMPONENT PARA ARENA ---
-const MiniPetGrid = ({ pets }) => {
+// --- MINI PET GRID (AHORA CON ANIMACIÓN EN CASCADA) ---
+const MiniPetGrid = ({ pets, staggered = false }) => {
     if(!pets || pets.length === 0) return null;
     return (
-        <div className="flex justify-center flex-wrap gap-1 mt-3 w-full max-w-[140px] md:max-w-[180px] animate-fade-in">
+        <div className="flex justify-center flex-wrap gap-1 mt-3 w-full max-w-[140px] md:max-w-[180px]">
             {pets.slice(0, 8).map((p,i) => (
-                <div key={i} className="w-7 h-7 md:w-9 md:h-9 bg-[#0b0e14] border border-[#252839] rounded-md shadow-inner flex items-center justify-center p-0.5 hover:scale-110 hover:border-[#6C63FF] transition-all" title={p.nombre || p.name}>
+                <div key={i} 
+                     className={`w-7 h-7 md:w-9 md:h-9 bg-[#0b0e14] border border-[#252839] rounded-md shadow-inner flex items-center justify-center p-0.5 hover:scale-110 hover:border-[#6C63FF] transition-all ${staggered ? 'animate-pop-in opacity-0' : 'animate-fade-in'}`}
+                     style={{ animationDelay: staggered ? `${i * 0.15}s` : '0s', animationFillMode: 'forwards' }}
+                     title={p.nombre || p.name}>
                     <img src={p.image_url || p.imagen || p.url} className="w-full h-full object-contain drop-shadow-md" alt="pet"/>
                 </div>
             ))}
-            {pets.length > 8 && <div className="w-7 h-7 md:w-9 md:h-9 bg-[#0b0e14] border border-[#252839] rounded-md flex items-center justify-center text-[#8f9ac6] text-[9px] font-black shadow-inner">+{pets.length - 8}</div>}
+            {pets.length > 8 && <div className={`w-7 h-7 md:w-9 md:h-9 bg-[#0b0e14] border border-[#252839] rounded-md flex items-center justify-center text-[#8f9ac6] text-[9px] font-black shadow-inner ${staggered ? 'animate-pop-in opacity-0' : 'animate-fade-in'}`} style={{ animationDelay: staggered ? `${8 * 0.15}s` : '0s', animationFillMode: 'forwards' }}>+{pets.length - 8}</div>}
         </div>
     )
 };
@@ -143,14 +145,19 @@ export default function BloxypotCoinflip() {
     };
     cargarPartidas();
 
-    // 3. REALTIME LOBBY
+    // 3. REALTIME LOBBY (CORREGIDO EL BUG DE CANCELACIÓN Y ESPECTADORES)
     const channel = supabase.channel('lobby_coinflip')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas', filter: "modo_juego=eq.coinflip" }, 
+      // Se quitó el filtro de modo_juego aquí para que los DELETE puedan llegar correctamente
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'partidas' }, 
         (payload) => {
           if (payload.eventType === 'INSERT') {
+            if(payload.new.modo_juego !== 'coinflip') return;
             setLobbyGames(prev => [formatGameToUI(payload.new), ...prev]);
+
           } else if (payload.eventType === 'UPDATE') {
+            if(payload.new.modo_juego !== 'coinflip') return;
             const formatted = formatGameToUI(payload.new);
+
             setLobbyGames(prev => {
                 const index = prev.findIndex(g => g.id === formatted.id);
                 if (index !== -1) {
@@ -161,20 +168,24 @@ export default function BloxypotCoinflip() {
                 return [formatted, ...prev];
             });
 
-            // Si nosotros creamos y alguien se unió:
+            // Si la partida se completó, disparar animación para quien esté viéndola
             setPartidaSeleccionada((prevPartida) => {
                 if (prevPartida && prevPartida.id === formatted.id) {
                     if (prevPartida.estado === 'waiting' && formatted.estado === 'completed' && formatted.resultado) {
+                        // Cambiamos al creador de 'esperando' a 'arena'
                         if (currentUser && formatted.creador_id === currentUser.id) {
                            setVistaActual('arena'); 
-                           iniciarCinematicaMoneda(formatted);
                         }
+                        // Lanzamos la cinemática para todos los que estén viendo (espectadores y creador)
+                        iniciarCinematicaMoneda(formatted);
                     }
                     return formatted;
                 }
                 return prevPartida;
             });
+
           } else if (payload.eventType === 'DELETE') {
+            // Ahora sí atrapará el borrado de la base de datos en tiempo real
             setLobbyGames(prev => prev.filter(game => game.id !== payload.old.id));
             setPartidaSeleccionada((prev) => {
                if(prev && prev.id === payload.old.id) { setVistaActual('lobby'); return null; }
@@ -257,7 +268,7 @@ export default function BloxypotCoinflip() {
       }
   };
 
-  // --- LÓGICA DE CANCELACIÓN ---
+  // --- LÓGICA DE CANCELACIÓN (REVISADA) ---
   const cancelarPartida = async (gameId) => {
       if (!currentUser || isCanceling) return;
       setIsCanceling(true);
@@ -286,15 +297,14 @@ export default function BloxypotCoinflip() {
               if (unlockErr) console.error("Unlock error (Might already be unlocked):", unlockErr);
           }
 
-          // DESTRUIMOS LA PARTIDA SÍ O SÍ
+          // DESTRUIMOS LA PARTIDA EN SUPABASE. El Realtime se encargará de avisar a los demás.
           const { error: delErr } = await supabase.from('partidas').delete().eq('id', gameId);
           if (delErr) throw delErr;
           
-          // Actualización UI inmediata para evitar ghosting visual
+          // Actualización UI inmediata para ti
           setLobbyGames(prev => prev.filter(g => g.id !== gameId));
           setPartidaSeleccionada(null);
           setVistaActual('lobby');
-          alert("Game canceled! Pets are back in your inventory.");
           
           // Refrescar inventario local
           const { data: inventoryData } = await supabase.from('inventory').select(`id, is_locked, items ( id, name, value, image_url, color )`).eq('user_id', currentUser.id).eq('is_locked', false).limit(3000); 
@@ -325,11 +335,12 @@ export default function BloxypotCoinflip() {
       setCuentaRegresiva(null);
       
       if (juego.estado === 'completed' && juego.resultado) {
-          const caraFinal = juego.resultado.cara_moneda || (juego.resultado.lado === 'creador_gana' ? juego.lado : (juego.lado === 'Heads' ? 'Tails' : 'Heads'));
+          // Leer exacto de la base de datos
+          const caraFinal = juego.resultado.cara_moneda; 
           setGirando(false);
           setGanador(caraFinal);
           setMostrarImpacto(true);
-          setIsSpectatingCompleted(true); // Fix 3D Snap Bug para espectadores
+          setIsSpectatingCompleted(true); 
           setRotacion(caraFinal === 'Heads' ? 0 : 180);
       } else {
           setGirando(false);
@@ -386,7 +397,6 @@ export default function BloxypotCoinflip() {
 
       if (error) throw error;
 
-      // TRANSFERENCIA DE PROPIEDAD EXACTA (Previene clonación y respeta serials)
       const hostPetIds = partidaSeleccionada.petsHost.map(p => p.inventarioId || p.id).filter(Boolean);
       const challengerPetIds = selectedPetsToJoin.map(p => p.inventarioId);
       const allPetIdsInGame = [...hostPetIds, ...challengerPetIds];
@@ -434,7 +444,8 @@ export default function BloxypotCoinflip() {
             clearInterval(intervalo);
             setCuentaRegresiva(null);
             
-            const caraFinal = datosPartida.resultado?.cara_moneda || (datosPartida.resultado?.lado === 'creador_gana' ? datosPartida.lado : (datosPartida.lado === 'Heads' ? 'Tails' : 'Heads'));
+            // Calculamos exactamente lo que dice la DB
+            const caraFinal = datosPartida.resultado?.cara_moneda;
 
             setGirando(true);
             playAudio('/sounds/spin.mp3', 0.7);
@@ -668,7 +679,7 @@ export default function BloxypotCoinflip() {
            </div>
         )}
 
-        {/* WAITING VIEW (Cuando creas y esperas) */}
+        {/* WAITING VIEW */}
         {vistaActual === 'esperando' && partidaSeleccionada && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-4">
                 <div className="bg-[#14151f] border-2 border-[#252839] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-10 max-w-sm w-full flex flex-col items-center text-center">
@@ -693,11 +704,18 @@ export default function BloxypotCoinflip() {
             </div>
         )}
 
-        {/* ARENA VIEW (El combate épico) */}
+        {/* ARENA VIEW */}
         {vistaActual === 'arena' && partidaSeleccionada && (() => {
-            // Lógica para determinar quién se desliza a dónde
             const hostGana = mostrarImpacto && ganador === partidaSeleccionada.lado;
             const challengerGana = mostrarImpacto && ganador !== partidaSeleccionada.lado && ganador !== null;
+
+            // Mostrar el nombre del ganador explícitamente
+            let textoVictoria = "READY";
+            if (cuentaRegresiva !== null) textoVictoria = "PREPARING";
+            else if (girando) textoVictoria = "FLIPPING";
+            else if (hostGana) textoVictoria = `${partidaSeleccionada.host} WINS!`;
+            else if (challengerGana) textoVictoria = `${partidaSeleccionada.challenger} WINS!`;
+            else if (partidaSeleccionada.estado === 'waiting') textoVictoria = "WAITING";
 
             return (
           <div className="w-full flex flex-col items-center animate-fade-in mt-4">
@@ -705,7 +723,6 @@ export default function BloxypotCoinflip() {
               ← Exit Arena
             </button>
             
-            {/* CONTENEDOR PRINCIPAL ARENA (Avatars, Textos y Mascotas) */}
             <div className="flex items-start justify-between w-full max-w-5xl bg-[#14151f] p-8 md:p-12 rounded-[3rem] border border-[#252839] shadow-2xl mb-16 relative overflow-hidden h-[320px]">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#facc15]/5 via-transparent to-[#a855f7]/5 pointer-events-none"></div>
                 
@@ -719,13 +736,14 @@ export default function BloxypotCoinflip() {
                     />
                     <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 mt-2 ${hostGana ? 'text-white drop-shadow-md' : 'text-white'}`}>{partidaSeleccionada.host}</span>
                     <span className="text-[#facc15] font-black text-[10px] uppercase tracking-widest bg-[#facc15]/10 px-3 py-1 rounded-full border border-[#facc15]/20">Host</span>
-                    {/* EXHIBICIÓN DE PETS DEL HOST */}
+                    
+                    {/* PETS HOST - CON ANIMACIÓN CASCADA AL UNIRSE ALGUIEN */}
                     <div className={`transition-opacity duration-500 ${mostrarImpacto ? 'opacity-0' : 'opacity-100'}`}>
-                       <MiniPetGrid pets={partidaSeleccionada.petsHost} />
+                       <MiniPetGrid pets={partidaSeleccionada.petsHost} staggered={partidaSeleccionada.estado === 'completed' || partidaSeleccionada.estado === 'in_progress'} />
                     </div>
                 </div>
 
-                {/* VS AND TOTAL VALUE (Centro) */}
+                {/* VS Y TOTAL (Centro) */}
                 <div className={`flex flex-col items-center justify-start pt-6 w-1/3 relative z-10 transition-opacity duration-500 ${mostrarImpacto ? 'opacity-0' : 'opacity-100'}`}>
                     <div className="text-4xl md:text-5xl font-black text-[#252839] italic">VS</div>
                     <div className="mt-4 flex items-center gap-2 text-xl md:text-3xl font-black text-white bg-[#0b0e14] px-4 py-2 md:px-6 md:py-3 rounded-2xl border border-[#252839] shadow-inner">
@@ -745,9 +763,10 @@ export default function BloxypotCoinflip() {
                            />
                            <span className={`font-black text-lg text-center truncate w-full transition-colors duration-500 mt-2 ${challengerGana ? 'text-white drop-shadow-md' : 'text-white'}`}>{partidaSeleccionada.challenger}</span>
                            <span className="text-[#a855f7] font-black text-[10px] uppercase tracking-widest bg-[#a855f7]/10 px-3 py-1 rounded-full border border-[#a855f7]/20">Challenger</span>
-                           {/* EXHIBICIÓN DE PETS DEL CHALLENGER */}
+                           
+                           {/* PETS CHALLENGER - CON ANIMACIÓN CASCADA AL APARECER */}
                            <div className={`transition-opacity duration-500 ${mostrarImpacto ? 'opacity-0' : 'opacity-100'}`}>
-                              <MiniPetGrid pets={partidaSeleccionada.petsChallenger} />
+                              <MiniPetGrid pets={partidaSeleccionada.petsChallenger} staggered={true} />
                            </div>
                         </>
                     ) : (
@@ -759,7 +778,6 @@ export default function BloxypotCoinflip() {
                 </div>
             </div>
 
-            {/* COINFLIP ANIMATION STAGE (Forzado CSS 3D Seguro) */}
             <div className="relative flex justify-center items-center h-48 md:h-64 mb-16 w-full -mt-20 z-30">
               {cuentaRegresiva !== null && (
                   <div className="absolute inset-0 flex items-center justify-center z-50 animate-ping-slow">
@@ -770,29 +788,27 @@ export default function BloxypotCoinflip() {
               <div className={`absolute inset-0 bg-${ganador === 'Heads' ? '[#facc15]' : '[#a855f7]'} blur-[120px] rounded-full transition-all duration-700 ease-out z-0 pointer-events-none ${mostrarImpacto ? 'opacity-40 scale-[2.5]' : 'opacity-0 scale-50'}`}></div>
               
               <div className={`relative w-40 h-40 md:w-56 md:h-56 perspective-[1200px] z-10 ${cuentaRegresiva !== null ? 'opacity-10 blur-md scale-90' : 'opacity-100'}`}
-                   style={{ transform: girando ? 'translateY(-100px) scale(1.4)' : (mostrarImpacto ? 'translateY(40px) scale(1)' : 'translateY(0px) scale(1)'), transition: girando ? 'transform 2.5s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'transform 0.8s cubic-bezier(0.5, 0, 0.2, 1)' }}
+                    style={{ transform: girando ? 'translateY(-100px) scale(1.4)' : (mostrarImpacto ? 'translateY(40px) scale(1)' : 'translateY(0px) scale(1)'), transition: girando ? 'transform 2.5s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'transform 0.8s cubic-bezier(0.5, 0, 0.2, 1)' }}
               >
-                {/* LA MONEDA 3D - FIXED CSS */}
                 <div className="w-full h-full relative preserve-3d drop-shadow-[0_30px_30px_rgba(0,0,0,0.8)]"
                   style={{ transition: isSpectatingCompleted ? 'none' : (girando ? 'transform 4s cubic-bezier(0.1, 0.8, 0.1, 1)' : 'transform 0.5s ease-out'), transform: `rotateY(${rotacion}deg) ${girando ? 'rotateX(20deg)' : 'rotateX(0deg)'}` }}
                 >
-                  {/* LADO FRONTAL (HEADS) */}
                   <div className={`absolute inset-0 backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Heads' ? 'border-[#facc15] shadow-[0_0_100px_rgba(250,204,21,1)]' : 'border-[#252839] shadow-inner'}`}
-                       style={{ transform: 'rotateY(0deg)' }}>
+                        style={{ transform: 'rotateY(0deg)' }}>
                     <img src={imgMonedaHeads} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Heads" />
                   </div>
 
-                  {/* LADO TRASERO (TAILS) */}
                   <div className={`absolute inset-0 backface-hidden rounded-full border-[6px] md:border-[8px] bg-[#14151f] flex items-center justify-center transition-all duration-300 ${mostrarImpacto && ganador === 'Tails' ? 'border-[#a855f7] shadow-[0_0_100px_rgba(168,85,247,1)]' : 'border-[#252839] shadow-inner'}`}
-                       style={{ transform: 'rotateY(180deg)' }}>
+                        style={{ transform: 'rotateY(180deg)' }}>
                     <img src={imgMonedaTails} className="w-[85%] h-[85%] object-contain drop-shadow-2xl" alt="Tails" />
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* AHORA MUESTRA EXACTAMENTE QUIÉN GANÓ */}
             <h2 className={`text-4xl md:text-5xl font-black uppercase tracking-[0.2em] min-h-[60px] transition-all duration-500 z-40 ${mostrarImpacto ? (ganador === 'Heads' ? 'text-[#facc15] drop-shadow-[0_0_30px_#facc15] animate-bounce-in' : 'text-[#a855f7] drop-shadow-[0_0_30px_#a855f7] animate-bounce-in') : 'text-white'}`}>
-              {cuentaRegresiva !== null ? 'PREPARING' : (ganador ? `${ganador} WINS!` : (girando ? 'FLIPPING' : (partidaSeleccionada.estado === 'waiting' ? 'WAITING' : 'READY')))}
+              {textoVictoria}
             </h2>
           </div>
           );
@@ -869,7 +885,7 @@ export default function BloxypotCoinflip() {
         </div>
       )}
 
-      {/* CLASES MÁGICAS PARA 3D COMPATIBLE Y ANIMACIONES */}
+      {/* CLASES CSS NECESARIAS PARA LAS NUEVAS ANIMACIONES */}
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -878,7 +894,9 @@ export default function BloxypotCoinflip() {
         
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         
-        /* 3D SAFE FIXES */
+        /* FIX DE SUPABASE 3D Y NUEVA ANIMACION POP-IN (CASCADA) */
+        .animate-pop-in { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
         .perspective-[1200px] { perspective: 1200px; -webkit-perspective: 1200px; }
         .preserve-3d { transform-style: preserve-3d; -webkit-transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
@@ -894,6 +912,11 @@ export default function BloxypotCoinflip() {
         @keyframes pingSlow {
           0% { transform: scale(0.8); opacity: 1; }
           100% { transform: scale(1.2); opacity: 0; }
+        }
+        @keyframes popIn {
+          0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+          70% { opacity: 1; transform: scale(1.1) translateY(0); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}} />
     </div>
