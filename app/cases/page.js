@@ -10,61 +10,130 @@ const formatValue = (val) => {
   return val?.toLocaleString() || '0';
 };
 
-// --- HELPERS VISUALES DE RAREZA ---
-const getPetVariants = (name) => {
-  if (!name) return { isShiny: false, isMythic: false, isXL: false };
-  const lowerName = name.toLowerCase();
+// --- MOTOR DE VARIANTES MODULARES ---
+const getPetVariants = (name, isDBLimited = false) => {
+  const lowerName = (name || '').toLowerCase();
   return {
     isShiny: lowerName.includes('shiny'),
     isMythic: lowerName.includes('mythic'),
-    isXL: lowerName.includes('xl') 
+    isXL: lowerName.includes('xl'),
+    isLimited: isDBLimited
   };
 };
 
-const getRarityClass = (variants) => {
-  if (variants.isXL) return "rarity-xl";
-  if (variants.isShiny && variants.isMythic) return "rarity-shiny-mythic";
-  if (variants.isMythic) return "rarity-mythic";
-  if (variants.isShiny) return "rarity-shiny";
-  return "rarity-standard";
+// Generador de Banner Dinámico para Combinaciones
+const getBannerInfo = (variants) => {
+  if (!variants.isMythic && !variants.isXL && !variants.isLimited) return null; 
+  
+  let parts = [];
+  if (variants.isLimited) parts.push("LIMITED");
+  if (variants.isShiny) parts.push("SHINY");
+  if (variants.isMythic && !variants.isLimited) parts.push("MYTHIC"); 
+  if (variants.isXL) parts.push("XL");
+
+  if (parts.length === 1 && variants.isXL) parts = ["XL PURE"];
+  if (parts.length === 0) return null;
+  
+  const text = parts.join(" ");
+  const textScale = parts.length > 2 ? 'text-[7px] px-2' : 'text-[9px] px-4'; 
+
+  let bgClass = "bg-gradient-to-r from-gray-700 to-gray-500 text-white";
+  if (variants.isLimited) {
+      bgClass = "bg-[linear-gradient(90deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)] bg-[length:200%_auto] animate-rainbow-bg text-white border-white shadow-[0_0_20px_rgba(255,255,255,0.8)]";
+  } else if (variants.isXL) {
+      bgClass = "bg-gradient-to-r from-yellow-400 via-yellow-100 to-yellow-400 text-yellow-900 border-yellow-200 shadow-[0_0_15px_#FFD700] animate-pulse-slow";
+  } else if (variants.isShiny && variants.isMythic) {
+      bgClass = "bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 text-white border-cyan-200 shadow-[0_0_15px_#a855f7]";
+  } else if (variants.isMythic) {
+      bgClass = "bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white border-rose-200 shadow-[0_0_15px_#DC143C]";
+  }
+
+  return { text, bgClass, textScale };
 };
 
-// --- COMPONENTE VISUAL REUTILIZABLE (MEJORADO) ---
+// --- COMPONENTE VISUAL REUTILIZABLE (PET VISUAL CARD) ---
 const PetVisualCard = ({ item, chance, isSpinner = false, isResult = false }) => {
-  const variants = getPetVariants(item.name);
-  const rarityClass = getRarityClass(variants);
-  const isRare = chance > 0 && chance < 1; // Menos de 1% es raro
+  const isDBLimited = item.is_limited || item.limited || false;
+  const variants = getPetVariants(item.name, isDBLimited);
+  const banner = getBannerInfo(variants);
+  const isRare = chance > 0 && chance < 1; 
 
-  // Clases dinámicas: Agregamos is-result-item para la victoria masiva
-  const cardClasses = `pet-card-visual ${rarityClass} ${isRare ? 'is-rare' : ''} ${isSpinner ? 'is-spinner-item' : ''} ${isResult ? 'is-result-item' : ''}`;
+  const cardClasses = [
+    'pet-card-visual',
+    variants.isShiny ? 'has-shiny' : 'is-standard',
+    variants.isMythic ? 'has-mythic' : '',
+    variants.isShiny && variants.isMythic ? 'has-shiny-mythic' : '',
+    variants.isXL ? 'has-xl' : '',
+    variants.isLimited ? 'has-limited' : '',
+    isRare ? 'is-rare' : '',
+    isSpinner ? 'is-spinner-item' : '',
+    isResult ? 'is-result-item' : ''
+  ].filter(Boolean).join(' ');
   
   return (
     <div className={cardClasses} style={{ '--item-color': item.color || '#ffffff' }}>
-      {/* Capas de Brillo y Efectos */}
+      
+      {/* CAPAS DE EFECTOS MODULARES FUSIONADOS */}
       <div className="pet-glow-layer"></div>
+      
+      {variants.isShiny && <div className="shiny-glint"></div>}
+      {variants.isMythic && <div className="mythic-aura"></div>}
+      {variants.isShiny && variants.isMythic && <div className="holographic-sweep"></div>}
+      
+      {variants.isXL && (
+          <>
+              <div className="xl-god-rays"></div>
+              <div className="xl-particles"></div>
+          </>
+      )}
+      
+      {variants.isLimited && (
+          <>
+              <div className="limited-galaxy-bg"></div>
+              <div className="limited-stars"></div>
+          </>
+      )}
+      
       <div className="pet-sparkle-overlay"></div>
-      {variants.isXL && <div className="xl-particle-effect"></div>}
 
-      {/* Chance Badge (Solo si no es ruleta y no es resultado final) */}
-      {!isSpinner && !isResult && chance != null && (
-        <div className="pet-chance-badge shadow-lg">
+      {/* BANNER DINÁMICO */}
+      {banner && !isSpinner && !isResult && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-max max-w-[95%] z-40 pointer-events-none">
+              <div className={`font-black py-0.5 rounded-b-lg uppercase tracking-[0.2em] border-b-2 text-center whitespace-nowrap ${banner.bgClass} ${banner.textScale}`}>
+                  {banner.text}
+              </div>
+          </div>
+      )}
+
+      {/* CHANCE BADGE */}
+      {!isResult && !isSpinner && chance != null && (
+        <div className={`pet-chance-badge ${isRare ? 'rare-heartbeat' : ''} shadow-lg`} style={{borderColor: `${item.color || '#ffffff'}50`}}>
           {chance.toFixed(variants.isXL || chance < 0.1 ? 2 : 1)}%
         </div>
       )}
 
-      {/* Imagen con animación de levitación */}
-      <div className="pet-image-container">
-        <img src={item.img || item.image_url} alt={item.name} className={`pet-image ${isResult ? 'animate-epic-float' : ''}`} />
+      {/* IMAGEN DE LA PET */}
+      <div className="pet-image-container z-30">
+        {(variants.isXL || variants.isMythic || variants.isLimited) && !isSpinner && (
+            <div className={`absolute bottom-0 w-24 h-5 blur-[12px] rounded-full mix-blend-screen transition-opacity duration-500 pet-floor-shadow
+                ${variants.isLimited ? 'bg-fuchsia-500/50' : variants.isXL ? 'bg-yellow-500/50' : 'bg-red-500/50'}`}>
+            </div>
+        )}
+        <img 
+            src={item.img || item.image_url} 
+            alt={item.name} 
+            className={`pet-image 
+                ${isResult && variants.isLimited ? 'animate-levitate-epic' : isResult ? 'animate-epic-float' : ''} 
+                ${!isResult && variants.isLimited ? 'animate-levitate-epic' : !isResult && variants.isXL ? 'animate-levitate-slow' : ''}`} 
+        />
       </div>
 
-      {/* Info Bar (Nombre y Valor) */}
-      <div className="pet-info-bar">
-        <p className="pet-name">{item.name}</p>
-        {!isSpinner && (
-            <p className="pet-value">
-            <GreenCoin cls="w-3 h-3 grayscale opacity-70"/> {formatValue(item.valor || item.value || 0)}
-            </p>
-        )}
+      {/* INFO BOTTOM */}
+      <div className="pet-info-bar z-40">
+        <p className={`pet-name ${variants.isShiny && variants.isMythic ? 'holo-text' : ''}`}>{item.name}</p>
+        <p className="pet-value">
+          <GreenCoin cls="w-3 h-3 grayscale opacity-70"/> {formatValue(item.valor || item.value || 0)}
+        </p>
       </div>
     </div>
   );
@@ -112,11 +181,10 @@ export default function CasesPage() {
       }
   }, [triggerOpen]);
 
-  // --- useEffect OPTIMIZADO Y 100% SEGURO (CON PAGINACIÓN) ---
+  // Carga Segura con Paginación para que soporte 9500 ítems sin ahogarse
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Auth & Profile
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
           setCurrentUser(userData.user);
@@ -124,7 +192,6 @@ export default function CasesPage() {
           setUserProfile(profile);
         }
 
-        // 2. Cases
         const { data: dbCases, error: casesError } = await supabase.from('cases').select('*');
         if (casesError) throw casesError;
         
@@ -136,7 +203,6 @@ export default function CasesPage() {
           }));
         }
 
-        // 3. LA SOLUCIÓN: Descargar TODO el catálogo en páginas de 1000 en 1000
         let allItems = [];
         let start = 0;
         const pageSize = 1000;
@@ -155,7 +221,6 @@ export default function CasesPage() {
           }
         }
 
-        // 4. Mapeo a prueba de balas (por ID y por Nombre minúscula)
         let itemMap = {};
         allItems.forEach(i => {
           if (i.id) itemMap[i.id] = i; 
@@ -166,7 +231,7 @@ export default function CasesPage() {
         setCasesData(formatCases);
         
       } catch (error) {
-        console.error("🚨 Error crítico cargando la base de datos:", error);
+        console.error("🚨 Error crítico:", error);
       } finally {
         setIsLoading(false);
       }
@@ -226,20 +291,13 @@ export default function CasesPage() {
 
       for (let item of selectedCase.items) {
           const dbItem = getRealItemData(item);
-
           const isLim = dbItem ? dbItem.is_limited : (item.is_limited || item.limited);
           const maxQ = dbItem ? dbItem.max_quantity : item.max_quantity;
           const itemId = dbItem ? dbItem.id : (item.item_id || item.id);
           
           if (isLim && maxQ && itemId) {
-              const { count } = await supabase
-                  .from('inventory')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('item_id', itemId);
-              
-              if (count >= maxQ) {
-                  continue; 
-              }
+              const { count } = await supabase.from('inventory').select('*', { count: 'exact', head: true }).eq('item_id', itemId);
+              if (count >= maxQ) continue; 
           }
 
           validItemsToRoll.push({
@@ -264,7 +322,6 @@ export default function CasesPage() {
 
       const newBalance = userProfile.saldo_verde - totalCost;
       setUserProfile(prev => ({ ...prev, saldo_verde: newBalance }));
-
       const { error: chargeError } = await supabase.from('profiles').update({ saldo_verde: newBalance }).eq('id', currentUser.id);
       if (chargeError) throw new Error("Failed to deduct balance: " + chargeError.message);
 
@@ -276,10 +333,7 @@ export default function CasesPage() {
           const winner = getRandomVisualItem(normalizedItems);
           if (winner.is_limited) foundLimited = true;
 
-          winners.push({
-             ...winner,
-             isLimited: winner.is_limited
-          });
+          winners.push({ ...winner, isLimited: winner.is_limited });
           
           inventoryInserts.push({ 
               user_id: currentUser.id, 
@@ -294,7 +348,7 @@ export default function CasesPage() {
       if (invError) {
           await supabase.from('profiles').update({ saldo_verde: userProfile.saldo_verde }).eq('id', currentUser.id);
           setUserProfile(prev => ({ ...prev, saldo_verde: prev.saldo_verde + totalCost }));
-          throw new Error("Failed to insert items into inventory: " + invError.message);
+          throw new Error("Failed to insert items: " + invError.message);
       }
 
       setWinningItems(winners);
@@ -312,17 +366,22 @@ export default function CasesPage() {
       const spinDuration = isFastRoll ? 1.5 : 6;
       const resultDelay = isFastRoll ? 1800 : 6500;
 
+      // EL FIX MATEMÁTICO PERFECTO DE LA RULETA
       setTimeout(() => {
         if (slidersRef.current) {
           slidersRef.current.forEach(el => {
-            if (el) {
+            if (el && el.parentElement) {
               el.style.transition = 'none';
               el.style.transform = `translateX(0px)`;
+              
               setTimeout(() => {
-                el.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0.9, 0.2, 1)`; // Curva más dramática
+                el.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0.9, 0.2, 1)`;
                 const isMulti = quantity > 1;
-                const itemWidth = isMulti ? 128 : 188; 
-                el.style.transform = `translateX(-${(WINNING_INDEX * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)}px)`;
+                const itemWidth = isMulti ? 140 + 16 : 180 + 16; 
+                const trackWidth = el.parentElement.parentElement.offsetWidth;
+                const centerOffset = (WINNING_INDEX * itemWidth) - (trackWidth / 2) + (itemWidth / 2);
+                
+                el.style.transform = `translateX(-${centerOffset}px)`;
               }, 50);
             }
           });
@@ -351,11 +410,8 @@ export default function CasesPage() {
         }
 
         if (isAutoOpenRef.current) {
-            setTimeout(() => {
-                if (isAutoOpenRef.current) setTriggerOpen(true);
-            }, 1500); 
+            setTimeout(() => { if (isAutoOpenRef.current) setTriggerOpen(true); }, 1500); 
         }
-
       }, resultDelay);
 
     } catch (error) {
@@ -377,7 +433,6 @@ export default function CasesPage() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0b0e14] text-white p-4 md:p-8 relative overflow-hidden font-sans selection:bg-cyan-500 selection:text-white">
-      {/* Fondo Base Épico */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[600px] bg-gradient-to-b from-[#6C63FF]/20 to-transparent blur-[120px] pointer-events-none z-0"></div>
       <div className="absolute bottom-0 left-0 w-full h-[300px] bg-gradient-to-t from-cyan-900/10 to-transparent pointer-events-none z-0"></div>
       
@@ -536,14 +591,8 @@ export default function CasesPage() {
                   {selectedCase.items.map((rawItem, idx) => {
                     const dbItem = getRealItemData(rawItem);
                     if (!dbItem) return null; 
-
-                    return (
-                        <PetVisualCard 
-                          key={idx}
-                          item={dbItem}
-                          chance={rawItem.chance}
-                        />
-                    )})}
+                    return <PetVisualCard key={idx} item={dbItem} chance={rawItem.chance} />
+                  })}
                 </div>
               </div>
 
@@ -551,35 +600,32 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* --- OPENING VIEW (SPINNER ÉPICO) --- */}
+        {/* --- OPENING VIEW (SPINNER) --- */}
         {view === 'opening' && (
           <div className="animate-fade-in flex flex-col items-center justify-center min-h-[70vh] relative">
-            {/* Efecto de velocidad en el fondo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-30">
                  <div className="speed-lines"></div>
             </div>
 
-            <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-[0.3em] mb-16 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] z-10 unboxing-text animate-pulse">
+            <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-[0.3em] mb-12 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] z-10 unboxing-text animate-pulse">
               Rolling...
             </h2>
             
-            <div className={`flex flex-col gap-6 w-full max-w-[1100px] z-10 ${quantity > 5 ? 'grid grid-cols-2' : ''}`}>
+            <div className={`flex flex-col gap-6 w-full max-w-[1200px] z-10 ${quantity > 5 ? 'grid grid-cols-2' : ''}`}>
                 {spinnerTracks.map((track, trackIdx) => {
                     const isMulti = quantity > 1;
-                    const containerHeight = isMulti ? "h-[150px]" : "h-[300px]";
+                    const containerHeight = isMulti ? "h-[220px]" : "h-[300px]";
 
                     return (
                         <div key={trackIdx} className={`relative w-full ${containerHeight} bg-[#040508] border-y-4 border-[#1f2937] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-[2rem] flex items-center`}>
-                          {/* Sombras Laterales */}
+                          
                           <div className="absolute left-0 top-0 bottom-0 w-40 bg-gradient-to-r from-[#040508] via-[#040508]/80 to-transparent z-20 pointer-events-none"></div>
                           <div className="absolute right-0 top-0 bottom-0 w-40 bg-gradient-to-l from-[#040508] via-[#040508]/80 to-transparent z-20 pointer-events-none"></div>
                           
-                          {/* Puntero Láser Neón */}
                           <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-cyan-400 z-30 shadow-[0_0_30px_4px_rgba(34,211,238,1)] -translate-x-1/2 pointer-events-none flex flex-col justify-between items-center">
                               <div className="w-6 h-6 bg-cyan-400 rotate-45 -mt-3 shadow-[0_0_20px_rgba(34,211,238,1)]"></div>
                               <div className="w-6 h-6 bg-cyan-400 rotate-45 -mb-3 shadow-[0_0_20px_rgba(34,211,238,1)]"></div>
                           </div>
-                          <div className="absolute left-1/2 top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent z-20 -translate-x-1/2 pointer-events-none"></div>
                           
                           <div className="absolute top-0 bottom-0 left-1/2 flex items-center w-max z-10">
                             <div ref={el => slidersRef.current[trackIdx] = el} className="flex items-center h-full will-change-transform sliders-container">
@@ -588,7 +634,7 @@ export default function CasesPage() {
                                     <PetVisualCard 
                                       item={item} 
                                       chance={item.chance}
-                                      isSpinner={true}
+                                      isSpinner={true} 
                                     />
                                 </div>
                               ))}
@@ -601,21 +647,15 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* --- RESULT VIEW (RESULTADOS MASIVOS) --- */}
+        {/* --- RESULT VIEW --- */}
         {view === 'result' && winningItems.length > 0 && (
           <div className={`w-full flex flex-col items-center justify-center min-h-[75vh] relative z-20 ${hasLimitedWin ? 'animate-epic-reveal' : 'animate-bounce-in-up'}`}>
             
-            {/* Efectos de fondo para victorias */}
             <div className="fixed inset-0 bg-black/80 z-0 animate-fade-in pointer-events-none backdrop-blur-sm"></div>
             {hasLimitedWin && (
                 <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
                     <div className="w-[150vw] h-[150vw] rounded-full bg-gradient-to-tr from-yellow-600/40 via-yellow-400/10 to-transparent animate-spin-slow blur-[100px]"></div>
                     <div className="absolute w-full h-full bg-yellow-500/10 animate-pulse-fast particles-bg"></div>
-                </div>
-            )}
-            {!hasLimitedWin && (
-                <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
-                    <div className="absolute w-full h-full bg-cyan-500/5 animate-pulse particles-bg"></div>
                 </div>
             )}
 
@@ -624,7 +664,6 @@ export default function CasesPage() {
             </h2>
             
             {quantity === 1 ? (
-                // --- GANANCIA ÚNICA (TARJETA GIGANTE isResult=true) ---
                 <div className="z-10 w-full flex flex-col items-center">
                     <PetVisualCard item={winningItems[0]} chance={0} isResult={true} /> 
                     
@@ -644,11 +683,10 @@ export default function CasesPage() {
                     </div>
                 </div>
             ) : (
-                // --- GANANCIA MÚLTIPLE (GRID) ---
                 <div className="flex flex-col items-center w-full max-w-[1200px] z-10 animate-fade-in-up">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-12 w-full max-h-[55vh] overflow-y-auto custom-scrollbar p-5 bg-[#0a0a0a]/70 backdrop-blur-md rounded-[2.5rem] border-2 border-[#2a2d42] shadow-[0_30px_60px_rgba(0,0,0,0.8)]">
                         {winningItems.map((winItem, idx) => (
-                             <PetVisualCard key={idx} item={winItem} chance={0} />
+                             <PetVisualCard key={idx} item={winItem} chance={0} isResult={true} />
                         ))}
                     </div>
                     
@@ -677,190 +715,143 @@ export default function CasesPage() {
 
       </div>
       
-      {/* --- ESTILOS VISUALES PREMIUM Y ANIMACIONES --- */}
+      {/* --- ESTILOS VISUALES PREMIUM --- */}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0b0e14; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; border: 2px solid #0b0e14; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
 
-        /* --- SISTEMA DE CARTAS DE MASCOTAS --- */
+        /* --- SISTEMA DE CARTAS MODULARES --- */
+        
+        /* EL FIX DEL MOUSE (Transición súper suave en el estado base) */
         .pet-card-visual {
-            background: #11131a;
-            border-radius: 1.5rem;
-            padding: 0.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            overflow: hidden;
-            width: 100%;
-            height: 230px; 
-            border: 2px solid transparent;
+            background: #11131a; border-radius: 1.5rem; padding: 0.5rem; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative; 
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.6s ease-out, border-color 0.6s ease-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); overflow: hidden; width: 100%; height: 230px; border: 2px solid transparent;
         }
 
+        /* Hover base suave */
         .pet-card-visual:not(.is-spinner-item):not(.is-result-item):hover {
-            transform: translateY(-10px) scale(1.03);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 25px var(--item-color, #ffffff)40;
+            transform: translateY(-10px) scale(1.04); 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 30px var(--item-color, #ffffff)40; 
             z-index: 10;
         }
 
-        /* --- LA TARJETA GIGANTE DEL RESULTADO (EL FIX) --- */
-        .pet-card-visual.is-result-item {
-            width: 280px !important;
-            height: 380px !important;
-            border-radius: 2rem;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.9), 0 0 60px var(--item-color, #ffffff)50;
-            border: 3px solid var(--item-color, #ffffff)80;
-            animation: epic-float 4s ease-in-out infinite;
-            z-index: 50;
-            background: linear-gradient(180deg, rgba(17,19,26,0.9) 0%, rgba(10,10,10,0.95) 100%);
-        }
-        
-        .pet-card-visual.is-result-item .pet-image {
-            max-width: 95%;
-            max-height: 180px;
-            filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9)) drop-shadow(0 0 30px var(--item-color, #ffffff)60);
-        }
-        
-        .pet-card-visual.is-result-item .pet-name {
-            font-size: 1.5rem;
-            line-height: 1.4;
-            padding-bottom: 0.5rem;
-        }
-        
-        .pet-card-visual.is-result-item .pet-info-bar {
-            padding: 1.5rem 1rem;
-            border-radius: 0 0 1.8rem 1.8rem;
-            background: rgba(0,0,0,0.6);
-            border-top: 2px solid var(--item-color, #ffffff)40;
-        }
-
-        /* Ajustes para la ruleta */
+        /* RULETA (Desactiva pointer-events para 0 lag visual) */
         .pet-card-visual.is-spinner-item {
-            width: 190px; 
-            height: 260px;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
-            border: 1px solid #2a2d42;
-            background: #0a0a0a;
+            width: 180px; height: 240px; box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+            border: 2px solid #2a2d42; background: #0a0a0a;
+            pointer-events: none !important; 
         }
         
-        .opening-view grid .pet-card-visual.is-spinner-item {
-            width: 130px;
-            height: 130px;
-            border-radius: 1.2rem;
-        }
+        .opening-view grid .pet-card-visual.is-spinner-item { width: 140px; height: 190px; border-radius: 1.2rem; }
+        .grid .is-spinner-item .pet-name { font-size: 0.65rem; }
+        .grid .is-spinner-item .pet-image { max-width: 65%; max-height: 80px; }
+        .grid .is-spinner-item .pet-value { font-size: 0.65rem; margin-top: 0.2rem; }
+        .grid .is-spinner-item .pet-chance-badge { font-size: 0.55rem; padding: 0.2rem 0.5rem; }
+        .grid .is-spinner-item .pet-info-bar { padding: 0.5rem; }
 
-        /* Capas básicas */
-        .pet-glow-layer {
-            position: absolute; inset: 0; opacity: 0.15; transition: opacity 0.4s; pointer-events: none;
+        /* TARJETA GIGANTE RESULTADO */
+        .pet-card-visual.is-result-item {
+            width: 280px !important; height: 380px !important; border-radius: 2rem;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9), 0 0 60px var(--item-color, #ffffff)50; border: 3px solid var(--item-color, #ffffff)80;
+            animation: epic-float 4s ease-in-out infinite; z-index: 50; background: linear-gradient(180deg, rgba(17,19,26,0.9) 0%, rgba(10,10,10,0.95) 100%);
         }
-        .pet-card-visual:not(.is-result-item):hover .pet-glow-layer { opacity: 0.5; }
-        .pet-card-visual.is-result-item .pet-glow-layer { opacity: 0.6; }
-
-        .pet-info-bar {
-            width: 100%; text-align: center; margin-top: auto;
-            border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.5);
-            padding: 0.75rem 0.5rem; z-index: 10; border-radius: 0 0 1.3rem 1.3rem;
-            backdrop-filter: blur(10px);
+        .grid .pet-card-visual.is-result-item { /* Si es ganancia multiple, tamaño normal */
+            width: 100% !important; height: 250px !important; border-radius: 1.5rem; border-width: 2px; animation: none; background: #11131a;
         }
+        
+        .pet-card-visual.is-result-item .pet-image { max-width: 95%; max-height: 180px; filter: drop-shadow(0 20px 25px rgba(0,0,0,0.9)) drop-shadow(0 0 30px var(--item-color, #ffffff)60); }
+        .pet-card-visual.is-result-item .pet-name { font-size: 1.5rem; line-height: 1.4; padding-bottom: 0.5rem; }
+        .pet-card-visual.is-result-item .pet-info-bar { padding: 1.5rem 1rem; border-radius: 0 0 1.8rem 1.8rem; background: rgba(0,0,0,0.6); border-top: 2px solid var(--item-color, #ffffff)40; }
+        .grid .is-result-item .pet-name { font-size: 0.85rem; padding-bottom: 0; }
+        .grid .is-result-item .pet-image { max-height: 110px; }
+        .grid .is-result-item .pet-info-bar { padding: 0.75rem 0.5rem; border-radius: 0 0 1.3rem 1.3rem; }
 
-        .pet-name {
-            font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.85rem;
-            color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+        /* CAPAS BASE */
+        .pet-glow-layer { position: absolute; inset: 0; opacity: 0.15; transition: opacity 0.5s ease-out; pointer-events: none; z-index: 1; background: radial-gradient(circle at center, var(--item-color, #ffffff) 0%, transparent 75%); }
+        .pet-card-visual:not(.is-result-item):hover .pet-glow-layer { opacity: 0.6; }
+
+        .pet-info-bar { width: 100%; text-align: center; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.7); padding: 0.6rem; z-index: 40; backdrop-filter: blur(10px); border-radius: 0 0 1.3rem 1.3rem; }
+        
+        .pet-image-container { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; z-index: 30;}
+        .pet-image { width: auto; max-width: 85%; height: auto; max-height: 110px; object-fit: contain; filter: drop-shadow(0 15px 20px rgba(0,0,0,0.8)); transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.6s ease; }
+        .pet-floor-shadow { transition: opacity 0.6s ease, transform 0.6s ease; opacity: 0.5; transform: scale(1); }
+
+        /* EL FIX DEL MOUSE (Imagen) */
+        .pet-card-visual:not(.is-spinner-item):not(.is-result-item):hover .pet-image { transform: scale(1.25) rotate(-5deg); filter: drop-shadow(0 25px 35px rgba(0,0,0,0.9)) drop-shadow(0 0 20px var(--item-color, #ffffff)60); }
+        .pet-card-visual:not(.is-spinner-item):not(.is-result-item):hover .pet-floor-shadow { opacity: 0.8; transform: scale(1.3); }
+
+        .pet-chance-badge { position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(5px); color: white; font-weight: 900; font-size: 0.65rem; padding: 0.25rem 0.6rem; border-radius: 2rem; z-index: 45; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+
+        /* TEXTO DEL NOMBRE */
+        .pet-name { font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 3px 6px rgba(0,0,0,0.9); color: white; transition: color 0.4s ease, text-shadow 0.4s ease; }
+        .pet-value { color: #8f9ac6; font-size: 0.75rem; font-weight: 900; margin-top: 0.4rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; }
+
+        /* --- MODULOS DE EFECTOS (CON TRANSICIONES SUAVES AL QUITAR EL MOUSE) --- */
+
+        .is-standard { border-color: rgba(255,255,255,0.08); }
+
+        /* ⚡ SHINY */
+        .has-shiny { box-shadow: 0 10px 25px rgba(0,0,0,0.6), 0 0 15px #00FFFF15; }
+        .has-shiny.is-standard { border-color: #00FFFF40; }
+        .has-shiny .pet-name { color: #00FFFF; text-shadow: 0 0 12px #00FFFF80; }
+        .has-shiny:not(.is-spinner-item):not(.is-result-item):hover { box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 30px #00FFFF50, inset 0 0 20px #00FFFF20; border-color: #00FFFF80; }
+        .shiny-glint { position: absolute; top: 0; left: -100%; width: 40%; height: 100%; z-index: 25; background: linear-gradient(to right, transparent, rgba(0, 255, 255, 0.5), transparent); transform: skewX(-25deg); animation: shiny-laser 4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite; pointer-events: none; mix-blend-mode: color-dodge; }
+
+        /* 🔮 MYTHIC (EL FIX DEL BREATHE SUAVE) */
+        /* En lugar de meter la animación sólo en el hover, hacemos que sea una transición de shadow natural, o dejamos una pulsación suave constante que se intensifica al hacer hover */
+        .has-mythic { box-shadow: 0 10px 30px rgba(0,0,0,0.7), inset 0 0 20px #DC143C30; border-color: #DC143C50; }
+        .has-mythic .pet-name { color: #FF4D6D; text-shadow: 0 0 15px #DC143C90; }
+        /* El hover ahora usa transition: all 0.6s (definido en la base) para que regrese suave */
+        .has-mythic:not(.is-spinner-item):not(.is-result-item):hover { 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 50px #DC143C70, inset 0 0 40px #DC143C50; 
+            border-color: #DC143C; 
         }
+        /* El aura está siempre ahí, pero se vuelve más brillante suavemente en hover */
+        .mythic-aura { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150%; height: 150%; background: radial-gradient(circle, rgba(220, 20, 60, 0.3) 0%, transparent 60%); animation: pulse-aura 3s ease-in-out infinite alternate; pointer-events: none; z-index: 2; mix-blend-mode: screen; transition: background 0.6s ease; }
+        .has-mythic:not(.is-spinner-item):hover .mythic-aura { background: radial-gradient(circle, rgba(220, 20, 60, 0.6) 0%, transparent 70%); }
 
-        .pet-value {
-            color: #8f9ac6; font-size: 0.75rem; font-weight: 900; margin-top: 0.4rem;
-            display: flex; align-items: center; justify-content: center; gap: 0.3rem;
-        }
+        /* 🌟 SHINY MYTHIC HOLO */
+        .has-shiny-mythic { border-color: #fff4; background: linear-gradient(135deg, #11131a 0%, #1a1a2e 100%); }
+        .has-shiny-mythic:not(.is-spinner-item):not(.is-result-item):hover { box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 40px rgba(255,0,255,0.4); }
+        .holo-text { background: linear-gradient(90deg, #FF69B4, #00FFFF, #FFD700, #FF69B4); -webkit-background-clip: text; color: transparent; text-shadow: 0 0 15px rgba(255,255,255,0.4); animation: rainbow-bg 4s linear infinite; background-size: 300% 100%; }
+        .holographic-sweep { position: absolute; inset: 0; z-index: 25; opacity: 0.3; transition: opacity 0.6s ease; mix-blend-mode: color-dodge; pointer-events: none; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.6) 25%, rgba(0,255,255,0.6) 30%, transparent 35%, transparent 40%, rgba(255,0,255,0.5) 45%, transparent 50%); background-size: 200% 200%; animation: holo-shine 4s linear infinite; }
+        .has-shiny-mythic:not(.is-spinner-item):hover .holographic-sweep { opacity: 0.7; }
 
-        .pet-image-container {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            position: relative; z-index: 5; padding: 0.5rem; width: 100%;
-        }
+        /* 🏆 XL PURE */
+        .has-xl { border-color: transparent !important; box-shadow: 0 20px 50px rgba(0,0,0,0.9), 0 0 30px #FFD70040 !important; }
+        .has-xl:not(.is-spinner-item):not(.is-result-item):hover { box-shadow: 0 30px 60px rgba(0,0,0,1), 0 0 60px #FFD70060 !important; }
+        .has-xl:before { content: ''; position: absolute; inset: -3px; border-radius: 1.5rem; pointer-events: none; background: linear-gradient(135deg, #8a6e12 0%, #FFD700 30%, #fff8d1 50%, #FFD700 70%, #8a6e12 100%); animation: rainbow-bg 3s ease infinite; background-size: 400% 400%; z-index: -1; }
+        .has-xl .pet-name { color: #FFD700 !important; text-shadow: 0 0 20px #FFD700, 0 3px 6px rgba(0,0,0,0.9) !important; -webkit-text-fill-color: initial; background: none; }
+        .xl-god-rays { position: absolute; top: 50%; left: 50%; width: 250%; height: 250%; transform: translate(-50%, -50%); background: repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(255, 215, 0, 0.15) 15deg 30deg); animation: spin-rays 20s linear infinite; pointer-events: none; z-index: 3; mix-blend-mode: screen; transition: background 0.6s ease; }
+        .has-xl:not(.is-spinner-item):hover .xl-god-rays { background: repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(255, 215, 0, 0.3) 15deg 30deg); }
+        .xl-particles { position: absolute; inset: 0; opacity: 0.3; animation: particles-rise 3s linear infinite; pointer-events: none; z-index: 4; background-image: radial-gradient(#FFD700 2px, transparent 2px); background-size: 30px 30px; transition: opacity 0.6s ease; }
+        .has-xl:not(.is-spinner-item):hover .xl-particles { opacity: 0.8; }
 
-        .pet-image {
-            width: auto; max-width: 85%; height: auto; max-height: 100%; object-contain;
-            drop-shadow: 0 15px 25px rgba(0,0,0,0.9); transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        /* 💎 LIMITED */
+        .has-limited { border-color: transparent !important; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 50px rgba(255,0,255,0.4) !important; background: #000 !important;}
+        .has-limited:not(.is-spinner-item):not(.is-result-item):hover { box-shadow: 0 30px 70px rgba(0,0,0,1), 0 0 80px rgba(255,0,255,0.7) !important; }
+        .has-limited:after { content: ''; position: absolute; inset: -3px; border-radius: 1.5rem; pointer-events: none; background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); background-size: 200% auto; animation: rainbow-bg 2s linear infinite; z-index: -1; }
+        .has-limited .pet-name { background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000) !important; -webkit-background-clip: text !important; color: transparent !important; text-shadow: 0 0 15px rgba(255,255,255,0.7) !important; animation: rainbow-bg 3s linear infinite !important; background-size: 200% auto !important; }
+        .limited-galaxy-bg { position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(255,0,255,0.2) 0%, rgba(0,0,255,0.2) 50%, transparent 100%); z-index: 2; mix-blend-mode: screen; animation: pulse-aura 4s infinite; transition: background 0.6s ease; }
+        .has-limited:not(.is-spinner-item):hover .limited-galaxy-bg { background: radial-gradient(circle at center, rgba(255,0,255,0.5) 0%, rgba(0,0,255,0.5) 50%, transparent 100%); }
+        .limited-stars { position: absolute; inset: 0; background-image: radial-gradient(#fff 1.5px, transparent 1.5px); background-size: 20px 20px; animation: spin-rays 15s linear infinite; opacity: 0.5; z-index: 5; pointer-events: none; transition: opacity 0.6s ease; }
+        .has-limited:not(.is-spinner-item):hover .limited-stars { opacity: 1; }
 
-        .pet-card-visual:not(.is-spinner-item):not(.is-result-item):hover .pet-image {
-            transform: scale(1.2) rotate(-5deg);
-        }
+        /* EFECTOS GLOBALES COMPARTIDOS */
+        .pet-sparkle-overlay { position: absolute; inset: 0; opacity: 0.15; transition: opacity 0.6s ease; animation: shine-sparkle 5s linear infinite; pointer-events: none; z-index: 6; background-image: url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M50 50L52 52L50 54L48 52Z" fill="%23fff" fill-opacity="0.5"/%3E%3C/svg%3E'); }
+        .pet-card-visual:not(.is-spinner-item):hover .pet-sparkle-overlay { opacity: 0.4; }
 
-        .pet-chance-badge {
-            position: absolute; top: 0.75rem; right: 0.75rem; background: rgba(0,0,0,0.8);
-            border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(5px);
-            color: white; font-weight: 900; font-size: 0.65rem; padding: 0.3rem 0.7rem;
-            border-radius: 2rem; z-index: 15; letter-spacing: 0.05em;
-        }
+        .is-rare .pet-glow-layer { opacity: 0.8; }
+        .is-rare .pet-image { filter: drop-shadow(0 0 30px var(--item-color, #ffffff)80); }
+        .rare-heartbeat { background: #ff000050; border-color: #ff4d4d; color: #ffe6e6; box-shadow: 0 0 20px #ff0000; animation: heartbeat 1s infinite; }
 
-        /* --- RAREZAS --- */
-        .rarity-standard .pet-glow-layer { background: radial-gradient(circle at center, var(--item-color, #ffffff) 0%, transparent 70%); }
-        .rarity-standard:not(.is-spinner-item) { border-color: rgba(255,255,255,0.05); }
-        .rarity-standard .pet-name { color: var(--item-color, white); }
+        .speed-lines { position: absolute; top: 0; left: 0; width: 200%; height: 100%; background: repeating-linear-gradient(90deg, transparent 0%, transparent 40%, rgba(255,255,255,0.05) 45%, transparent 50%); animation: move-lines 0.5s linear infinite; }
 
-        /* Shiny ⚡ */
-        .rarity-shiny { border-color: #00FFFF40; box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 15px #00FFFF20; }
-        .rarity-shiny .pet-glow-layer { background: radial-gradient(circle at center, #00FFFF 0%, transparent 75%); opacity: 0.25; }
-        .rarity-shiny .pet-name { color: #00FFFF; text-shadow: 0 0 12px #00FFFF80; }
-        .rarity-shiny .pet-sparkle-overlay {
-            position: absolute; inset: 0; background-image: url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M50 50L52 52L50 54L48 52Z" fill="%23fff" fill-opacity="0.5"/%3E%3C/svg%3E');
-            opacity: 0.15; animation: shine-sparkle 3s linear infinite;
-        }
-
-        /* Mythic 🔮 */
-        .rarity-mythic { border-color: #DC143C40; box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px #DC143C20; }
-        .rarity-mythic .pet-glow-layer { background: radial-gradient(circle at center, #DC143C 0%, #300000 80%, transparent 100%); opacity: 0.3; }
-        .rarity-mythic .pet-name { color: #FF4D6D; text-shadow: 0 0 15px #DC143C90; }
-        .rarity-mythic:not(.is-spinner-item):hover { animation: breathe-mythic 1.5s ease-in-out infinite; }
-
-        /* Shiny Mythic 🌟 */
-        .rarity-shiny-mythic { border-color: #fff3; box-shadow: 0 15px 40px rgba(0,0,0,0.7); background: linear-gradient(135deg, #11131a 0%, #1a1a2e 100%); }
-        .rarity-shiny-mythic .pet-glow-layer { background: radial-gradient(circle at center, #00FFFF 0%, #DC143C 40%, transparent 80%); opacity: 0.35; }
-        .rarity-shiny-mythic:after { 
-            content: ''; position: absolute; inset: -2px; background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff);
-            z-index: -1; border-radius: 1.5rem; opacity: 0.5; animation: rainbow-rotate 4s linear infinite;
-        }
-        .rarity-shiny-mythic .pet-name { 
-            background: linear-gradient(90deg, #FF69B4, #00FFFF, #FF69B4); -webkit-background-clip: text; background-clip: text; color: transparent;
-            text-shadow: 0 0 15px rgba(255,255,255,0.4); animation: rainbow-rotate 4s linear infinite; background-size: 200% 100%;
-        }
-
-        /* XL 🏆 */
-        .rarity-xl { border: 3px solid transparent; background: linear-gradient(135deg, #1a1608 0%, #050505 100%); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px #FFD70020; }
-        .rarity-xl:before {
-            content: ''; position: absolute; inset: -3px; border-radius: 1.5rem;
-            background: linear-gradient(135deg, #8a6e12 0%, #FFD700 30%, #fff8d1 50%, #FFD700 70%, #8a6e12 100%);
-            animation: gradient-shift 3s ease infinite; background-size: 400% 400%; z-index: -1;
-        }
-        .rarity-xl .pet-glow-layer { background: radial-gradient(circle at center, #FFD700 0%, transparent 75%); opacity: 0.4; }
-        .rarity-xl .pet-name { color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 2px 4px rgba(0,0,0,0.8); font-size: 1.1rem; }
-        .xl-particle-effect {
-            position: absolute; inset: 0; background-image: radial-gradient(#FFD700 1.5px, transparent 1.5px);
-            background-size: 20px 20px; opacity: 0.15; animation: particles-rise 3s linear infinite;
-        }
-        .rarity-xl:not(.is-spinner-item):not(.is-result-item):hover { animation: wobble-xl 0.8s ease-in-out infinite; }
-
-        /* < 1% LOW PERCENTAGE */
-        .pet-card-visual.is-rare .pet-glow-layer { opacity: 0.6; }
-        .pet-card-visual.is-rare .pet-image { filter: drop-shadow(0 0 20px var(--item-color, #ffffff)70); }
-        .pet-card-visual.is-rare .pet-chance-badge {
-            background: #ff000040; border-color: #ff4d4d80; color: #ffcccc; box-shadow: 0 0 15px #ff0000; animation: pulse-rare-badge 1s infinite;
-        }
-
-        /* --- BACKGROUND SPEED LINES --- */
-        .speed-lines {
-            position: absolute; top: 0; left: 0; width: 200%; height: 100%;
-            background: repeating-linear-gradient(90deg, transparent 0%, transparent 40%, rgba(255,255,255,0.05) 45%, transparent 50%);
-            animation: move-lines 0.5s linear infinite;
-        }
-
-        /* --- ANIMACIONES GLOBALES --- */
+        /* --- KEYFRAMES --- */
         .animate-bounce-in { animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-bounce-in-up { animation: bounceInUp 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
@@ -874,45 +865,26 @@ export default function CasesPage() {
         .animate-float-slow { animation: floatBox 6s ease-in-out infinite; }
         .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         
-        @keyframes epic-float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-        }
+        @keyframes shiny-laser { 0%, 40% { left: -100%; } 100% { left: 200%; } }
+        @keyframes pulse-aura { 0% { transform: translate(-50%, -50%) scale(0.85); } 100% { transform: translate(-50%, -50%) scale(1.1); } }
+        @keyframes holo-shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes spin-rays { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); box-shadow: 0 0 25px #ff0000; } }
+        @keyframes animate-levitate-slow { 0%, 100% { transform: translateY(0px) scale(1.05); } 50% { transform: translateY(-8px) scale(1.05); } }
+        @keyframes animate-levitate-epic { 0%, 100% { transform: translateY(0px) scale(1.15); filter: drop-shadow(0 0 20px rgba(255,255,255,0.5)); } 50% { transform: translateY(-12px) scale(1.15); filter: drop-shadow(0 0 40px rgba(255,0,255,0.8)); } }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
+        @keyframes shine-sparkle { 0% { background-position: 0 0; } 100% { background-position: 100px 100px; } }
+        @keyframes rainbow-bg { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        @keyframes particles-rise { 0% { background-position: 0 0; opacity: 0.2; } 50% { opacity: 0.6; } 100% { background-position: 0 -150px; opacity: 0; } }
+        @keyframes epic-float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
         @keyframes floatBox { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
         @keyframes move-lines { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        @keyframes shine-sparkle { 0% { background-position: 0 0; } 100% { background-position: 100px 100px; } }
-        @keyframes breathe-mythic {
-            0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px #DC143C20; transform: translateY(-10px) scale(1.03); }
-            50% { box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px #DC143C60; transform: translateY(-10px) scale(1.05); }
-        }
-        @keyframes rainbow-rotate { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
-        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        @keyframes particles-rise { 0% { background-position: 0 0; opacity: 0.15; } 50% { opacity: 0.4; } 100% { background-position: 0 -100px; opacity: 0; } }
-        @keyframes wobble-xl {
-            0%, 100% { transform: translateY(-10px) scale(1.03); }
-            25% { transform: translateY(-10px) rotate(-2deg) scale(1.04); }
-            75% { transform: translateY(-10px) rotate(2deg) scale(1.04); }
-        }
-        @keyframes pulse-rare-badge { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounceIn { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
-        @keyframes bounceInUp { 
-            from { opacity: 0; transform: translateY(100px) scale(0.5); } 
-            to { opacity: 1; transform: translateY(0) scale(1); } 
-        }
+        @keyframes bounceInUp { from { opacity: 0; transform: translateY(100px) scale(0.5); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes epicReveal {
-          0% { opacity: 0; transform: scale(0.1) rotate(-15deg); filter: brightness(3) contrast(2); }
-          60% { transform: scale(1.15) rotate(5deg); filter: brightness(1.5) contrast(1.5); }
-          100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1) contrast(1); }
-        }
-        @keyframes shake {
-          10%, 90% { transform: translate3d(-1px, 0, 0); }
-          20%, 80% { transform: translate3d(2px, 0, 0); }
-          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-          40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-        
+        @keyframes epicReveal { 0% { opacity: 0; transform: scale(0.1) rotate(-15deg); filter: brightness(3) contrast(2); } 60% { transform: scale(1.15) rotate(5deg); filter: brightness(1.5) contrast(1.5); } 100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1) contrast(1); } }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
         .unboxing-text { text-shadow: 0 0 20px rgba(255,255,255,0.5), 0 0 40px cyan; }
       `}</style>
     </div>
