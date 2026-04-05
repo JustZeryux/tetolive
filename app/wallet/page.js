@@ -195,34 +195,93 @@ export default function EconomyPage() {
   const [itemToBuy, setItemToBuy] = useState(null);
 
   // --- CARGA DE DATOS (MOCK) ---
+// --- CARGA DE DATOS REAL DESDE SUPABASE ---
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // AQUÍ REEMPLAZAS CON TU FETCH REAL DE SUPABASE
-        setTimeout(() => {
-          // Generando 150 items para probar rendimiento
-          const mockInv = Array.from({ length: 150 }).map((_, i) => ({
-             id: `inv-${i}`, name: i % 7 === 0 ? 'Shiny Mythic Dragon' : i % 4 === 0 ? 'Mythic Giant' : 'Shiny Giant Emerald',
-             color: i % 7 === 0 ? '#ff4500' : '#00ffff', price: Math.floor(Math.random() * 500000) + 10000,
-             image_url: 'https://placehold.co/200x200/transparent/white?text=Pet', is_limited: i % 12 === 0, serial: i % 12 === 0 ? i+100 : null
-          }));
-          
-          const mockMarket = Array.from({ length: 200 }).map((_, i) => ({
-             id: `mkt-${i}`, name: i % 5 === 0 ? 'XL Golden Ticket' : 'Basic Dog',
-             color: i % 5 === 0 ? '#ffd700' : '#cccccc', market_price: Math.floor(Math.random() * 2000000) + 50000,
-             image_url: 'https://placehold.co/200x200/transparent/white?text=Pet', is_limited: false, seller_name: `Player_${i}`
-          }));
+        // 1. Obtener usuario actual
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData?.user) {
+            setIsLoading(false);
+            return;
+        }
 
-          setInventoryItems(mockInv);
-          setMarketItems(mockMarket);
-          setLockedItemIds(new Set(['inv-0', 'inv-5'])); // Simula bloqueados en DB
-          setIsLoading(false);
-        }, 800);
+        // 2. Obtener Perfil para los Balances Reales
+        const { data: profile } = await supabase.from('profiles')
+          .select('*')
+          .eq('id', userData.user.id)
+          .single();
+
+        if (profile) {
+          setBalances(prev => ({
+            ...prev,
+            green: profile.saldo_verde || 0,
+            red: profile.saldo_rojo || 0 // Cambia 'saldo_rojo' si tu columna se llama distinto
+          }));
+        }
+
+        // 3. Obtener Inventario Real (Haciendo Join con la tabla de items)
+        const { data: inventoryData, error: invError } = await supabase
+          .from('inventory')
+          .select('*, items(*)') // Trae la data del inventario Y la info de la mascota
+          .eq('user_id', userData.user.id);
+
+        if (invError) throw invError;
+
+        // 4. Obtener Market Real (Ajusta 'marketplace' si tu tabla se llama diferente)
+        const { data: marketData, error: mktError } = await supabase
+          .from('marketplace')
+          .select('*, items(*)'); 
+
+        if (mktError) throw mktError;
+
+        // Formatear Inventario y calcular el Total Value
+        let totalVal = 0;
+        const lockedSet = new Set();
+
+        const formattedInv = (inventoryData || []).map(row => {
+           // Dependiendo de cómo hiciste el join, la data de la pet está en row.items o row.item
+           const petData = row.items || row.item || {}; 
+           const price = petData.value || petData.valor || petData.price || 0;
+           totalVal += price;
+           
+           if (row.is_locked) lockedSet.add(row.id); // Si tienes sistema de bloqueo en BD
+
+           return {
+               ...row, // id del inventario, user_id, etc.
+               ...petData, // name, image_url, color, etc.
+               id: row.id, // Sobrescribimos el ID para usar el del inventario
+               item_id: petData.id,
+               price: price // Normalizamos el precio
+           };
+        });
+
+        // Formatear Marketplace
+        const formattedMarket = (marketData || []).map(row => {
+           const petData = row.items || row.item || {};
+           return {
+               ...row,
+               ...petData,
+               id: row.id,
+               item_id: petData.id,
+               market_price: row.price || row.market_price || petData.value // El precio al que se listó
+           };
+        });
+
+        // Actualizar los estados con TU data real
+        setBalances(prev => ({ ...prev, totalValue: totalVal }));
+        setLockedItemIds(lockedSet);
+        setInventoryItems(formattedInv);
+        setMarketItems(formattedMarket);
+
       } catch (error) {
-        console.error(error);
+        console.error("🚨 Error cargando datos de Supabase:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
+    
     fetchData();
   }, []);
 
