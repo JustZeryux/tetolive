@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/utils/Supabase';
-import PetCard from '@/components/PetCard';
 
 const GreenCoin = ({cls="w-4 h-4 md:w-5 md:h-5"}) => <img src="/green-coin.png" className={`${cls} inline-block drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]`} alt="G" onError={e=>e.target.style.display='none'}/>;
 
@@ -10,6 +9,66 @@ const formatValue = (val) => {
   if (val >= 1000) return parseFloat((val / 1000).toFixed(2)) + 'K';
   return val?.toLocaleString() || '0';
 };
+
+// --- HELPERS VISUALES DE RAREZA ---
+
+const getPetVariants = (name) => {
+  if (!name) return { isShiny: false, isMythic: false, isXL: false };
+  const lowerName = name.toLowerCase();
+  return {
+    isShiny: lowerName.includes('shiny'),
+    isMythic: lowerName.includes('mythic'),
+    isXL: lowerName.includes('xl') 
+  };
+};
+
+const getRarityClass = (variants) => {
+  if (variants.isXL) return "rarity-xl";
+  if (variants.isShiny && variants.isMythic) return "rarity-shiny-mythic";
+  if (variants.isMythic) return "rarity-mythic";
+  if (variants.isShiny) return "rarity-shiny";
+  return "rarity-standard";
+};
+
+// Componente visual reutilizable para los ítems
+const PetVisualCard = ({ item, chance, isSpinner = false }) => {
+  const variants = getPetVariants(item.name);
+  const rarityClass = getRarityClass(variants);
+  const isRare = chance < 1; // Menos de 1% es raro
+
+  // Clases dinámicas
+  const cardClasses = `pet-card-visual ${rarityClass} ${isRare ? 'is-rare' : ''} ${isSpinner ? 'is-spinner-item' : ''}`;
+  
+  return (
+    <div className={cardClasses} style={{ '--item-color': item.color }}>
+      {/* Capas de Brillo y Efectos */}
+      <div className="pet-glow-layer"></div>
+      <div className="pet-sparkle-overlay"></div>
+      {variants.isXL && <div className="xl-particle-effect"></div>}
+
+      {/* Chance Badge (Solo si no es ruleta) */}
+      {!isSpinner && chance && (
+        <div className="pet-chance-badge">
+          {chance.toFixed(variants.isXL || chance < 0.1 ? 2 : 1)}%
+        </div>
+      )}
+
+      {/* Imagen */}
+      <div className="pet-image-container">
+        <img src={item.img} alt={item.name} className="pet-image" />
+      </div>
+
+      {/* Info Bar (Nombre y Valor) */}
+      <div className="pet-info-bar">
+        <p className="pet-name">{item.name}</p>
+        <p className="pet-value">
+          <GreenCoin cls="w-3 h-3 grayscale opacity-70"/> {formatValue(item.valor)}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 
 export default function CasesPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -52,8 +111,10 @@ export default function CasesPage() {
       }
   }, [triggerOpen]);
 
+  // --- useEffect OPTIMIZADO: CONSULTA SELECTIVA ---
   useEffect(() => {
     const fetchData = async () => {
+      // 1. Obtener usuario
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
         setCurrentUser(userData.user);
@@ -61,27 +122,53 @@ export default function CasesPage() {
         setUserProfile(profile);
       }
 
-      const { data: itemsDbData } = await supabase.from('items').select('*');
-      const itemMap = {};
-      if(itemsDbData) {
-          itemsDbData.forEach(i => {
-              if (i.id) itemMap[i.id] = i; 
-              // FIX CRUCIAL: Guardar nombres en minúsculas y sin espacios para que no fallen las cajas viejas
-              if (i.name) itemMap[i.name.toLowerCase().trim()] = i; 
-          });
-      }
-      setDbItemsMap(itemMap);
-
+      // 2. PRIMERO descargamos las cajas (porque son poquitas)
       const { data: dbCases } = await supabase.from('cases').select('*');
+      
+      let formatCases = [];
+      let itemMap = {};
+
       if (dbCases) {
-        const formatCases = dbCases.map(c => ({
+        // Formateamos las cajas
+        formatCases = dbCases.map(c => ({
           id: c.id, name: c.name, price: c.price, img: c.image_url,
           color: c.color, shadow: c.shadow, items: c.items
         }));
-        setCasesData(formatCases);
+
+        // 3. LA MAGIA: Extraemos solo los IDs de las mascotas que SÍ están en estas cajas
+        const idsToFetch = new Set();
+        formatCases.forEach(caja => {
+          if (caja.items) {
+            caja.items.forEach(item => {
+              const id = item.item_id || item.id;
+              if (id) idsToFetch.add(id);
+            });
+          }
+        });
+
+        const idsArray = Array.from(idsToFetch);
+
+        // 4. SEGUNDO pedimos a la base de datos SOLO esas mascotas específicas
+        if (idsArray.length > 0) {
+          // Usamos .in() para buscar múltiples IDs de un solo golpe
+          const { data: itemsDbData } = await supabase.from('items').select('*').in('id', idsArray);
+
+          if (itemsDbData) {
+            itemsDbData.forEach(i => {
+              if (i.id) itemMap[i.id] = i; 
+              // FIX CRUCIAL: Guardar nombres en minúsculas y sin espacios para que no fallen las cajas viejas
+              if (i.name) itemMap[i.name.toLowerCase().trim()] = i; 
+            });
+          }
+        }
       }
+
+      // 5. Guardamos en los estados
+      setDbItemsMap(itemMap);
+      setCasesData(formatCases);
       setIsLoading(false);
     };
+
     fetchData();
   }, []);
 
@@ -372,11 +459,11 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* INSPECT VIEW */}
+        {/* INSPECT VIEW (Rediseñada) */}
         {view === 'inspect' && selectedCase && (
           <div className="animate-fade-in">
             <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="text-[#8f9ac6] hover:text-white font-bold text-sm flex items-center gap-2 transition-colors mb-8 bg-[#1c1f2e] px-5 py-2.5 rounded-xl border border-[#252839] w-max shadow-md hover:border-cyan-500/50">
-               &lsaquo; Back to Store
+                &lsaquo; Back to Store
             </button>
             <div className="flex flex-col lg:flex-row gap-10 items-start">
               
@@ -428,51 +515,23 @@ export default function CasesPage() {
                 </button>
               </div>
 
+              {/* Case Contents (Mejorado visualmente) */}
               <div className="w-full lg:w-2/3 bg-[#0a0a0a] border-2 border-[#1f2937] rounded-3xl p-8 shadow-2xl relative overflow-hidden">
                 <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-[#8f9ac6] uppercase tracking-widest mb-6 border-b border-[#374151] pb-4">
                   Case Contents
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {selectedCase.items.map((rawItem, idx) => {
-                    const dbItem = getRealItemData(rawItem) || {};
-                    const isLimitedItem = dbItem.is_limited || rawItem.is_limited || rawItem.limited || false;
-                    const itemName = dbItem.name || rawItem.name;
-                    const itemImg = dbItem.image_url || rawItem.img || rawItem.image_url;
-                    const itemColor = dbItem.color || rawItem.color || '#ffffff';
-                    const itemValue = dbItem.value || rawItem.valor || rawItem.value || 0;
+                    const dbItem = getRealItemData(rawItem);
+                    if (!dbItem) return null; // Saltar si no hay datos (no debería pasar con la optimización)
 
                     return (
-                    <div key={idx} className={`bg-[#111827] border-2 rounded-xl p-1 flex flex-col items-center justify-center relative group transition-all hover:-translate-y-1 shadow-md h-40 ${isLimitedItem ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : ''}`} style={!isLimitedItem ? { borderColor: `${itemColor}40` } : {}}>
-                      <div className="absolute inset-1 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ background: `radial-gradient(circle at center, ${isLimitedItem ? '#facc15' : itemColor} 0%, transparent 70%)` }}></div>
-                      
-                      <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-20">
-                          <span className="text-[10px] font-black uppercase text-white/50 bg-black/60 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
-                              Chance
-                          </span>
-                          <span className={`text-xs font-black px-2 py-0.5 rounded-full shadow-sm border ${isLimitedItem ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : ''}`} style={!isLimitedItem ? { backgroundColor: `${itemColor}20`, color: itemColor, borderColor: `${itemColor}50` } : {}}>
-                            {rawItem.chance}%
-                          </span>
-                      </div>
-                      
-                      {isLimitedItem && (
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center z-0 opacity-20 pointer-events-none">
-                              <span className="text-4xl">🌟</span>
-                          </div>
-                      )}
-
-                      <div className="relative w-full flex-1 flex items-center justify-center mt-6">
-                         <div className="absolute w-12 h-12 rounded-full blur-[15px] opacity-30 group-hover:opacity-60 transition-opacity" style={{ backgroundColor: isLimitedItem ? '#facc15' : itemColor }}></div>
-                         <img src={itemImg} className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform z-10 relative" alt={itemName} />
-                      </div>
-                      
-                      <div className="w-full text-center mt-auto border-t border-[#374151]/50 bg-[#0a0a0a]/50 py-2 px-1 z-10 rounded-b-lg">
-                        <p className={`font-black text-[11px] uppercase tracking-wide w-full truncate px-1 ${isLimitedItem ? 'text-yellow-400' : ''}`} style={!isLimitedItem ? {color: itemColor} : {}}>{itemName}</p>
-                        <p className="text-gray-400 text-[10px] font-bold mt-0.5 flex items-center justify-center gap-1">
-                            <GreenCoin cls="w-3 h-3 grayscale opacity-80"/> {formatValue(itemValue)}
-                        </p>
-                      </div>
-                    </div>
-                  )})}
+                        <PetVisualCard 
+                          key={idx}
+                          item={dbItem}
+                          chance={rawItem.chance}
+                        />
+                    )})}
                 </div>
               </div>
 
@@ -480,36 +539,33 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* OPENING VIEW (SPINNER) */}
+        {/* OPENING VIEW (SPINNER - Mejorado visualmente) */}
         {view === 'opening' && (
           <div className="animate-fade-in flex flex-col items-center justify-center min-h-[60vh] relative">
-            <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] z-10">
+            <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] z-10 unboxing-text">
               Unboxing...
             </h2>
             
             <div className={`flex flex-col gap-4 w-full max-w-[1000px] z-10 ${quantity > 5 ? 'grid grid-cols-2' : ''}`}>
                 {spinnerTracks.map((track, trackIdx) => {
                     const isMulti = quantity > 1;
-                    const containerHeight = isMulti ? "h-[120px]" : "h-[240px]";
-                    const itemWidthClass = isMulti ? "w-[120px] h-[100px]" : "w-[180px] h-[190px]";
-                    const imgClass = isMulti ? "w-12 h-12 mt-2" : "w-24 h-24";
-                    const textSize = isMulti ? "text-[9px]" : "text-sm";
+                    const containerHeight = isMulti ? "h-[140px]" : "h-[280px]";
 
                     return (
-                        <div key={trackIdx} className={`relative w-full ${containerHeight} bg-[#0a0a0a] border-y-4 border-[#1f2937] overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] rounded-xl flex items-center`}>
+                        <div key={trackIdx} className={`relative w-full ${containerHeight} bg-[#07080a] border-y-4 border-[#1f2937] overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] rounded-2xl flex items-center`}>
                           <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0a0a0a] to-transparent z-20 pointer-events-none"></div>
                           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0a0a0a] to-transparent z-20 pointer-events-none"></div>
-                          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-cyan-400 z-30 shadow-[0_0_25px_rgba(34,211,238,1)] -translate-x-1/2"></div>
+                          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-cyan-400 z-30 shadow-[0_0_25px_rgba(34,211,238,1)] -translate-x-1/2 roulette-pointer"></div>
                           
                           <div className="absolute top-0 bottom-0 left-1/2 flex items-center w-max z-10">
-                            <div ref={el => slidersRef.current[trackIdx] = el} className="flex items-center h-full will-change-transform">
+                            <div ref={el => slidersRef.current[trackIdx] = el} className="flex items-center h-full will-change-transform sliders-container">
                               {track.map((item, idx) => (
-                                <div key={idx} className={`${itemWidthClass} shrink-0 border border-[#374151]/50 bg-[#111827] rounded-lg mx-1 flex flex-col items-center justify-center relative overflow-hidden`} style={{ boxShadow: `inset 0 0 30px ${item.color}10` }}>
-                                  <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${item.color} 0%, transparent 60%)`}}></div>
-                                  <img src={item.img} className={`${imgClass} object-contain mb-1 drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] relative z-10`} alt={item.name} />
-                                  <div className="w-full text-center border-t border-[#374151]/50 pt-1 pb-1 relative z-10 bg-[#0a0a0a]/60 mt-auto">
-                                    <p className={`font-black ${textSize} uppercase tracking-wide w-full px-1 truncate`} style={{color: item.color}}>{item.name}</p>
-                                  </div>
+                                <div key={idx} className="shrink-0 mx-1">
+                                    <PetVisualCard 
+                                      item={item} 
+                                      chance={item.chance}
+                                      isSpinner={true}
+                                    />
                                 </div>
                               ))}
                             </div>
@@ -521,86 +577,68 @@ export default function CasesPage() {
           </div>
         )}
 
-        {/* RESULT VIEW */}
+        {/* RESULT VIEW (Resultados grandes y bonitos) */}
         {view === 'result' && winningItems.length > 0 && (
           <div className={`w-full flex flex-col items-center justify-center min-h-[70vh] relative ${hasLimitedWin ? 'animate-epic-reveal' : 'animate-bounce-in'}`}>
             
             {hasLimitedWin && (
                 <>
-                    <div className="fixed inset-0 bg-black/90 z-0 animate-fade-in pointer-events-none"></div>
-                    <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
-                        <div className="w-[200vw] h-[200vw] rounded-full bg-gradient-to-tr from-yellow-500/20 via-yellow-400/40 to-transparent animate-spin-slow blur-[100px]"></div>
-                        <div className="absolute w-full h-full bg-yellow-500/10 animate-pulse"></div>
+                    <div className="fixed inset-0 bg-black/95 z-0 animate-fade-in pointer-events-none"></div>
+                    <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+                        <div className="w-[200vw] h-[200vw] rounded-full bg-gradient-to-tr from-yellow-500/30 via-yellow-300/10 to-transparent animate-spin-slow blur-[120px]"></div>
+                        <div className="absolute w-full h-full bg-yellow-500/10 animate-pulse particles-bg"></div>
                     </div>
                 </>
             )}
 
-            <h2 className={`text-5xl font-black uppercase tracking-widest mb-10 z-10 ${hasLimitedWin ? 'text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] animate-pulse' : 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'}`}>
+            <h2 className={`text-5xl font-black uppercase tracking-widest mb-12 z-10 ${hasLimitedWin ? 'text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] animate-pulse' : 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'}`}>
               {hasLimitedWin ? '🌟 LIMITED UNBOXED! 🌟' : (quantity > 1 ? 'Items Unboxed!' : 'Item Unboxed!')}
             </h2>
             
             {quantity === 1 ? (
-                <div className={`bg-[#0a0a0a]/90 backdrop-blur-xl border-2 rounded-3xl p-12 flex flex-col items-center max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] z-10 relative ${hasLimitedWin ? 'border-yellow-500 animate-shake shadow-[0_0_100px_rgba(234,179,8,0.5)] scale-110' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, boxShadow: `0 0 50px ${winningItems[0].color}40` } : {}}>
-                  <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at center, ${hasLimitedWin ? '#eab308' : winningItems[0].color} 0%, transparent 60%)`}}></div>
-                  <div className={`absolute -top-6 bg-[#0a0a0a] px-6 py-2 border-2 rounded-full font-black uppercase tracking-widest shadow-lg ${hasLimitedWin ? 'border-yellow-400 text-yellow-400 animate-pulse' : ''}`} style={!hasLimitedWin ? { borderColor: winningItems[0].color, color: winningItems[0].color } : {}}>
-                    {hasLimitedWin ? '⭐ LIMITED ⭐' : 'NEW ITEM'}
-                  </div>
-                  
-                  <div className="relative">
-                      {hasLimitedWin && <div className="absolute inset-0 bg-yellow-500 blur-[50px] opacity-50 rounded-full animate-pulse"></div>}
-                      <img src={winningItems[0].img} className={`w-56 h-56 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] mb-8 relative z-10 ${hasLimitedWin ? 'animate-float' : 'animate-pulse-slow'}`} alt={winningItems[0].name} />
-                  </div>
-                  
-                  <h3 className="text-3xl font-black uppercase text-center mb-2 tracking-widest relative z-10" style={hasLimitedWin ? { color: '#facc15', textShadow: `0 0 30px rgba(250,204,21,0.8)` } : { color: winningItems[0].color, textShadow: `0 0 20px ${winningItems[0].color}80` }}>
-                    {winningItems[0].name}
-                  </h3>
-
-                  <p className="text-gray-300 font-bold text-lg flex items-center gap-2 mb-10 bg-[#111827] px-4 py-2 rounded-lg border border-[#374151] relative z-10 shadow-inner mt-2">
-                    Value: <GreenCoin cls="w-5 h-5 grayscale opacity-80"/> {formatValue(winningItems[0].valor || 0)}
-                  </p>
-                  
-                  <div className="flex gap-4 w-full relative z-10">
-                    <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
-                      Store
-                    </button>
-                    {isAutoOpen ? (
-                        <button onClick={() => setIsAutoOpen(false)} className="flex-1 bg-red-600 hover:bg-red-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(220,38,38,0.4)]">
-                            Stop Auto 🛑
-                        </button>
-                    ) : (
-                        <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
-                            Spin Again
-                        </button>
-                    )}
-                  </div>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center w-full max-w-[1200px] z-10">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10 w-full max-h-[50vh] overflow-y-auto custom-scrollbar p-2">
-                        {winningItems.map((winItem, idx) => (
-                            <PetCard 
-                                key={idx} 
-                                item={winItem} 
-                                showValue={true} 
-                            />
-                        ))}
-                    </div>
+                // Ganancia única grande (estilo VIP)
+                <div className="z-10 w-full max-w-xl flex flex-col items-center">
+                    <PetVisualCard item={winningItems[0]} chance={0} /> {/* Usamos 0 chance para que no salga el badge */}
                     
-                    <div className="text-xl font-black text-white mb-8 flex items-center gap-3 bg-[#111827] border border-[#374151] px-8 py-4 rounded-2xl shadow-lg relative z-10">
-                        Total Value: <span className="text-cyan-400 flex items-center gap-2"><GreenCoin cls="w-6 h-6 grayscale opacity-80"/> {formatValue(winningItems.reduce((acc, curr) => acc + (curr.valor||0), 0))}</span>
-                    </div>
-
-                    <div className="flex gap-4 w-full max-w-md relative z-10">
-                        <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border border-[#374151] text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
+                    <div className="flex gap-4 w-full mt-10 relative z-10 max-w-md">
+                        <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border-2 border-[#374151] text-white px-6 py-4 rounded-2xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
                           Store
                         </button>
                         {isAutoOpen ? (
-                            <button onClick={() => setIsAutoOpen(false)} className="flex-1 bg-red-600 hover:bg-red-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(220,38,38,0.4)]">
+                            <button onClick={() => setIsAutoOpen(false)} className="flex-1 bg-red-600 hover:bg-red-500 text-white border-none px-6 py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(220,38,38,0.4)]">
                                 Stop Auto 🛑
                             </button>
                         ) : (
-                            <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
-                              Spin {quantity} More
+                            <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
+                                Spin Again
+                            </button>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                // Ganancia múltiple (Grid)
+                <div className="flex flex-col items-center w-full max-w-[1200px] z-10 animate-fade-in-up">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-12 w-full max-h-[55vh] overflow-y-auto custom-scrollbar p-3 bg-[#0a0a0a]/50 rounded-3xl border border-[#252839]">
+                        {winningItems.map((winItem, idx) => (
+                             <PetVisualCard key={idx} item={winItem} chance={0} />
+                        ))}
+                    </div>
+                    
+                    <div className="text-2xl font-black text-white mb-10 flex items-center gap-4 bg-[#111827] border-2 border-[#374151] px-10 py-5 rounded-3xl shadow-2xl relative z-10">
+                        Total Value: <span className="text-cyan-400 flex items-center gap-2"><GreenCoin cls="w-8 h-8"/> {formatValue(winningItems.reduce((acc, curr) => acc + (curr.valor||0), 0))}</span>
+                    </div>
+
+                    <div className="flex gap-4 w-full max-w-lg relative z-10">
+                        <button onClick={() => { setView('store'); setIsAutoOpen(false); }} className="flex-1 bg-[#111827] hover:bg-[#1f2937] border-2 border-[#374151] text-white px-6 py-4 rounded-2xl font-bold uppercase tracking-widest transition-colors shadow-md hover:border-cyan-500/50">
+                          Store
+                        </button>
+                        {isAutoOpen ? (
+                            <button onClick={() => setIsAutoOpen(false)} className="flex-1 bg-red-600 hover:bg-red-500 text-white border-none px-6 py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(220,38,38,0.4)]">
+                                Stop Auto 🛑
+                            </button>
+                        ) : (
+                            <button onClick={() => openCase()} className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border-none px-6 py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(6,182,212,0.4)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.6)]">
+                                Spin {quantity} More
                             </button>
                         )}
                     </div>
@@ -610,20 +648,310 @@ export default function CasesPage() {
         )}
 
       </div>
+      
+      {/* --- ESTILOS VISUALES PREMIUM (JSX GLOBAL) --- */}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0b0e14; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+        // --- SISTEMA DE CARTAS DE MASCOTAS ---
+
+        .pet-card-visual {
+            background: #111827;
+            border-radius: 1.5rem;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            width: 100%;
+            height: 220px; // Altura estándar en Inspect View
+            border: 2px solid transparent;
+        }
+
+        .pet-card-visual:not(.is-spinner-item):hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7), 0 0 20px var(--item-color, #ffffff)40;
+            z-index: 10;
+        }
+
+        // Ajustes para la ruleta
+        .pet-card-visual.is-spinner-item {
+            width: 180px; 
+            height: 240px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+            border: 1px solid #252839;
+        }
+        
+        // Ajustes para ruleta múltiple (se calculan dinámicamente en el render pero las clases ayudan)
+        .opening-view grid .pet-card-visual.is-spinner-item {
+            width: 120px;
+            height: 120px;
+            border-radius: 1rem;
+        }
+
+        // Capas básicas
+        .pet-glow-layer {
+            position: absolute;
+            inset: 0;
+            opacity: 0.15;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .pet-card-visual:hover .pet-glow-layer { opacity: 0.4; }
+
+        .pet-info-bar {
+            width: 100%;
+            text-align: center;
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.4);
+            padding: 0.75rem 0.5rem;
+            z-index: 10;
+            border-radius: 0 0 1rem 1rem;
+        }
+
+        .pet-name {
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.8rem;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .pet-value {
+            color: #8f9ac6;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-top: 0.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .pet-image-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 5;
+            padding: 0.5rem;
+            width: 100%;
+        }
+
+        .pet-image {
+            width: auto;
+            max-width: 85%;
+            height: auto;
+            max-height: 100%;
+            object-contain;
+            drop-shadow: 0 10px 20px rgba(0,0,0,0.8);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .pet-card-visual:not(.is-spinner-item):hover .pet-image {
+            transform: scale(1.15) rotate(-3deg);
+        }
+
+        .pet-chance-badge {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            color: white;
+            font-weight: 900;
+            font-size: 0.6rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 2rem;
+            z-index: 15;
+            letter-spacing: 0.05em;
+        }
+
+        // --- ESTILOS POR RAREZA Y VARIANTES ---
+
+        // 1. Standard
+        .rarity-standard .pet-glow-layer {
+            background: radial-gradient(circle at center, var(--item-color, #ffffff) 0%, transparent 70%);
+        }
+        .rarity-standard:not(.is-spinner-item) {
+             border-color: rgba(255,255,255,0.05);
+        }
+        .rarity-standard .pet-name { color: var(--item-color, white); }
+
+        // 2. Shiny ⚡ (Destellos cian)
+        .rarity-shiny {
+            border-color: #00FFFF30;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 10px #00FFFF10;
+        }
+        .rarity-shiny .pet-glow-layer {
+            background: radial-gradient(circle at center, #00FFFF 0%, transparent 75%);
+            opacity: 0.2;
+        }
+        .rarity-shiny .pet-name { color: #00FFFF; text-shadow: 0 0 10px #00FFFF60; }
+        .rarity-shiny .pet-sparkle-overlay {
+            position: absolute; inset: 0;
+            background-image: url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M50 50L52 52L50 54L48 52Z" fill="%23fff" fill-opacity="0.5"/%3E%3C/svg%3E');
+            opacity: 0.1; animation: shine-sparkle 4s linear infinite;
+        }
+
+        // 3. Mythic 🔮 (Mágico Carmesí)
+        .rarity-mythic {
+            border-color: #DC143C30;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 10px #DC143C10;
+        }
+        .rarity-mythic .pet-glow-layer {
+            background: radial-gradient(circle at center, #DC143C 0%, #300000 80%, transparent 100%);
+            opacity: 0.25;
+        }
+        .rarity-mythic .pet-name { color: #FF4D6D; text-shadow: 0 0 12px #DC143C70; }
+        .rarity-mythic:not(.is-spinner-item):hover { animation: breathe-mythic 1.5s ease-in-out infinite; }
+
+        // 4. Shiny Mythic 🌟 (Iridiscente)
+        .rarity-shiny-mythic {
+            border-color: #fff2;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #111827 0%, #1a1a2e 100%);
+        }
+        .rarity-shiny-mythic .pet-glow-layer {
+            background: radial-gradient(circle at center, #00FFFF 0%, #DC143C 40%, transparent 80%);
+            opacity: 0.3;
+        }
+        .rarity-shiny-mythic:after { // Borde iridiscente
+            content: ''; position: absolute; inset: -1px; background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff);
+            z-index: -1; border-radius: 1.5rem; opacity: 0.3; animation: rainbow-rotate 5s linear infinite;
+        }
+        .rarity-shiny-mythic .pet-name { 
+            background: linear-gradient(90deg, #FF69B4, #00FFFF, #FF69B4);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3); animation: rainbow-rotate 5s linear infinite; background-size: 200% 100%;
+        }
+
+        // 5. !!! XL !!! 🏆 (Los más raros - VIP)
+        .rarity-xl {
+            border: 3px solid transparent;
+            background: linear-gradient(135deg, #1a1608 0%, #0a0a0a 100%);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 20px #FFD70015;
+        }
+        
+        .rarity-xl:before { // Borde dorado animado
+            content: ''; position: absolute; inset: -3px; border-radius: 1.5rem;
+            background: linear-gradient(135deg, #8a6e12 0%, #FFD700 30%, #fff8d1 50%, #FFD700 70%, #8a6e12 100%);
+            animation: gradient-shift 3s ease infinite; background-size: 400% 400%; z-index: -1;
+        }
+
+        .rarity-xl .pet-glow-layer {
+            background: radial-gradient(circle at center, #FFD700 0%, transparent 75%);
+            opacity: 0.35;
+        }
+
+        .rarity-xl .pet-name { 
+            color: #FFD700; text-shadow: 0 0 15px #FFD700, 0 2px 4px rgba(0,0,0,0.5); 
+            font-size: 1rem; // Un poco más grande
+        }
+        
+        // Partículas XL
+        .xl-particle-effect {
+            position: absolute; inset: 0;
+            background-image: radial-gradient(#FFD700 1px, transparent 1px);
+            background-size: 15px 15px; opacity: 0.1; animation: particles-rise 4s linear infinite;
+        }
+        
+        .rarity-xl:not(.is-spinner-item):hover { animation: wobble-xl 0.6s ease-in-out; }
+
+        // --- EFECTO PARA LOW PERCENTAGE (< 1%) ---
+        
+        .pet-card-visual.is-rare .pet-glow-layer {
+            opacity: 0.5; // Más intenso por defecto
+        }
+        .pet-card-visual.is-rare .pet-image {
+             filter: drop-shadow(0 0 15px var(--item-color, #ffffff)60);
+        }
+        .pet-card-visual.is-rare:hover .pet-glow-layer { opacity: 0.8; }
+        
+        .pet-card-visual.is-rare .pet-chance-badge {
+            background: #ff4d4d30; border-color: #ff4d4d60; color: #ff9999;
+            box-shadow: 0 0 10px #ff4d4d; animation: pulse-rare-badge 1s infinite;
+        }
+
+        // Ajustes para ruleta múltiple (redefinir tamaños)
+        .grid .pet-card-visual.is-spinner-item {
+            width: 128px;
+            height: 120px;
+            border-radius: 1rem;
+        }
+        .grid .is-spinner-item .pet-name { font-size: 0.6rem; }
+        .grid .is-spinner-item .pet-image { max-width: 65%; }
+        .grid .is-spinner-item .pet-value { display: none; }
+        .grid .is-spinner-item .pet-info-bar { padding: 0.3rem; }
+
+
+        // --- ANIMACIONES ---
 
         .animate-bounce-in { animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        .animate-spin-slow { animation: spin 15s linear infinite; }
-        .animate-float { animation: float 3s ease-in-out infinite; }
-        .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        .animate-epic-reveal { animation: epicReveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-spin-slow { animation: spin 20s linear infinite; }
+        .animate-epic-reveal { animation: epicReveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
         
+        @keyframes shine-sparkle {
+            0% { background-position: 0 0; }
+            100% { background-position: 100px 100px; }
+        }
+
+        @keyframes breathe-mythic {
+            0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 10px #DC143C20; transform: translateY(-8px) scale(1.02); }
+            50% { box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 30px #DC143C40; transform: translateY(-8px) scale(1.04); }
+        }
+
+        @keyframes rainbow-rotate {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes particles-rise {
+            0% { background-position: 0 0; opacity: 0.1; }
+            50% { opacity: 0.3; }
+            100% { background-position: 0 -100px; opacity: 0; }
+        }
+        
+        @keyframes wobble-xl {
+            0%, 100% { transform: translateY(-8px) scale(1.02); }
+            25% { transform: translateY(-8px) rotate(-1deg) scale(1.03); }
+            75% { transform: translateY(-8px) rotate(1deg) scale(1.03); }
+        }
+        
+        @keyframes pulse-rare-badge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @keyframes bounceIn {
           from { opacity: 0; transform: scale(0.3); }
           to { opacity: 1; transform: scale(1); }
@@ -632,21 +960,17 @@ export default function CasesPage() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-          100% { transform: translateY(0px); }
-        }
-        @keyframes shake {
-          10%, 90% { transform: translate3d(-1px, 0, 0); }
-          20%, 80% { transform: translate3d(2px, 0, 0); }
-          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-          40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
+        
         @keyframes epicReveal {
           0% { opacity: 0; transform: scale(0.1) rotate(-10deg); filter: brightness(2) contrast(2); }
-          50% { transform: scale(1.2) rotate(5deg); filter: brightness(1.5) contrast(1.5); }
+          50% { transform: scale(1.1) rotate(3deg); filter: brightness(1.3) contrast(1.3); }
           100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1) contrast(1); }
+        }
+        
+        // Corrección visual para el puntero de la ruleta
+        .opening-view h2 { text-shadow: 0 0 15px white, 0 2px 10px cyan; }
+        .opening-view:after { // Efecto de foco central
+            content:''; position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 30%, #0b0e14 70%); z-index: 5; pointer-events: none;
         }
       `}</style>
     </div>
