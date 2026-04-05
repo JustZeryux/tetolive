@@ -112,61 +112,75 @@ export default function CasesPage() {
   }, [triggerOpen]);
 
   // --- useEffect OPTIMIZADO: CONSULTA SELECTIVA ---
+  // --- useEffect OPTIMIZADO Y SEGURO ---
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Obtener usuario
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        setCurrentUser(userData.user);
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
-        setUserProfile(profile);
-      }
+      try { // 1. Agregamos Try-Catch para que nunca se quede congelado
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          setCurrentUser(userData.user);
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
+          setUserProfile(profile);
+        }
 
-      // 2. PRIMERO descargamos las cajas (porque son poquitas)
-      const { data: dbCases } = await supabase.from('cases').select('*');
-      
-      let formatCases = [];
-      let itemMap = {};
+        const { data: dbCases, error: casesError } = await supabase.from('cases').select('*');
+        if (casesError) throw casesError;
+        
+        let formatCases = [];
+        let itemMap = {};
 
-      if (dbCases) {
-        // Formateamos las cajas
-        formatCases = dbCases.map(c => ({
-          id: c.id, name: c.name, price: c.price, img: c.image_url,
-          color: c.color, shadow: c.shadow, items: c.items
-        }));
+        if (dbCases) {
+          formatCases = dbCases.map(c => ({
+            id: c.id, name: c.name, price: c.price, img: c.image_url,
+            color: c.color, shadow: c.shadow, items: c.items
+          }));
 
-        // 3. LA MAGIA: Extraemos solo los IDs de las mascotas que SÍ están en estas cajas
-        const idsToFetch = new Set();
-        formatCases.forEach(caja => {
-          if (caja.items) {
-            caja.items.forEach(item => {
-              const id = item.item_id || item.id;
-              if (id) idsToFetch.add(id);
-            });
-          }
-        });
+          const idsToFetch = new Set();
+          formatCases.forEach(caja => {
+            if (caja.items) {
+              caja.items.forEach(item => {
+                const id = item.item_id || item.id;
+                if (id) idsToFetch.add(id);
+              });
+            }
+          });
 
-        const idsArray = Array.from(idsToFetch);
+          const idsArray = Array.from(idsToFetch);
 
-        // 4. SEGUNDO pedimos a la base de datos SOLO esas mascotas específicas
-        if (idsArray.length > 0) {
-          // Usamos .in() para buscar múltiples IDs de un solo golpe
-          const { data: itemsDbData } = await supabase.from('items').select('*').in('id', idsArray);
+          // 2. EL FIX: Partir la lista en "chunks" (pedacitos de 100) para no saturar la URL
+          if (idsArray.length > 0) {
+            const chunkSize = 100;
+            const fetchPromises = [];
+            
+            for (let i = 0; i < idsArray.length; i += chunkSize) {
+              const chunk = idsArray.slice(i, i + chunkSize);
+              fetchPromises.push(supabase.from('items').select('*').in('id', chunk));
+            }
 
-          if (itemsDbData) {
-            itemsDbData.forEach(i => {
-              if (i.id) itemMap[i.id] = i; 
-              // FIX CRUCIAL: Guardar nombres en minúsculas y sin espacios para que no fallen las cajas viejas
-              if (i.name) itemMap[i.name.toLowerCase().trim()] = i; 
+            // Ejecutamos todos los pedacitos al mismo tiempo (súper rápido)
+            const results = await Promise.all(fetchPromises);
+            
+            results.forEach(res => {
+              if (res.error) console.error("Error en un chunk:", res.error);
+              if (res.data) {
+                res.data.forEach(i => {
+                  if (i.id) itemMap[i.id] = i; 
+                  if (i.name) itemMap[i.name.toLowerCase().trim()] = i; 
+                });
+              }
             });
           }
         }
-      }
 
-      // 5. Guardamos en los estados
-      setDbItemsMap(itemMap);
-      setCasesData(formatCases);
-      setIsLoading(false);
+        setDbItemsMap(itemMap);
+        setCasesData(formatCases);
+        
+      } catch (error) {
+        console.error("🚨 Error crítico cargando la página:", error);
+      } finally {
+        // 3. Pase lo que pase (éxito o error), quitamos la pantalla de carga
+        setIsLoading(false);
+      }
     };
 
     fetchData();
